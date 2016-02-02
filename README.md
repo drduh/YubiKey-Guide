@@ -40,10 +40,11 @@ If you have a comment or suggestion, please open an issue on GitHub.
   - [Import public key](#import-public-key)
   - [Trust master key](#trust-master-key)
   - [GnuPG](#gnupg)
+    - [Create configuration](#create-configuration-1)
     - [Encryption/decryption](#encryptiondecryption)
     - [Signing](#signing)
   - [SSH](#ssh)
-    - [Create configuration](#create-configuration-1)
+    - [Update configuration](#create-configuration)
     - [Replace ssh-agent with gpg-agent](#replace-ssh-agent-with-gpg-agent)
     - [Copy public key to server](#copy-public-key-to-server)
     - [Connect with public key authentication](#connect-with-public-key-authentication)
@@ -796,6 +797,25 @@ Type `key 1` again to deselect and switch to the next key.
 
 ## GnuPG
 
+### Create configuration 
+
+    $ cat > ~/gpg.conf
+    use-agent
+    personal-cipher-preferences AES256 AES192 AES CAST5
+    personal-digest-preferences SHA512 SHA384 SHA256 SHA224
+    default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
+    cert-digest-algo SHA512
+    s2k-digest-algo SHA512
+    charset utf-8
+    fixed-list-mode
+    no-comments
+    no-emit-version
+    keyid-format 0xlong
+    list-options show-uid-validity
+    verify-options show-uid-validity
+    with-fingerprint
+    ^D (Press Control-D)
+
 ### Encryption/decryption
 
     $ echo "$(uname -a)" | gpg --encrypt --armor -r 0x47FE984F98EE7407 | gpg --debug --decrypt --armor
@@ -822,20 +842,23 @@ Type `key 1` again to deselect and switch to the next key.
 
 ## SSH
 
-### Create configuration
+### Update configuration
 
+    $ cat >> ~/.gnupg/gpg-agent.conf
+    enable-ssh-support
+    ^D (Press Control-D)
+    
     $ cat > ~/.gnupg/gpg-agent.conf
     pinentry-program /usr/bin/pinentry-curses
     default-cache-ttl 60
     max-cache-ttl 120
-    enable-ssh-support
     write-env-file
     use-standard-socket
     ^D (Press Control-D)
 
 ### Replace ssh-agent with gpg-agent
 
-    $ pkill ssh-agent && \
+    $ pkill ssh-agent ; \
       eval $(gpg-agent --daemon --enable-ssh-support --use-standard-socket \
       --log-file ~/.gnupg/gpg-agent.log --write-env-file)
 
