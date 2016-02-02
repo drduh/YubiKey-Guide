@@ -44,7 +44,7 @@ If you have a comment or suggestion, please open an issue on GitHub.
     - [Encryption/decryption](#encryptiondecryption)
     - [Signing](#signing)
   - [SSH](#ssh)
-    - [Update configuration](#create-configuration)
+    - [Update configuration](#update-configuration)
     - [Replace ssh-agent with gpg-agent](#replace-ssh-agent-with-gpg-agent)
     - [Copy public key to server](#copy-public-key-to-server)
     - [Connect with public key authentication](#connect-with-public-key-authentication)
@@ -679,7 +679,7 @@ Type `key 1` again to deselect and switch to the next key.
 
 ## Check your work
 
-    gpg --list-secret-keys
+    $ gpg --list-secret-keys
     /tmp/tmp.eBbMfyVDDt/secring.gpg
     -------------------------------
     sec   4096R/0x47FE984F98EE7407 2016-01-30
@@ -799,7 +799,7 @@ Type `key 1` again to deselect and switch to the next key.
 
 ### Create configuration 
 
-    $ cat > ~/gpg.conf
+    $ cat > ~/.gnupg/gpg.conf
     use-agent
     personal-cipher-preferences AES256 AES192 AES CAST5
     personal-digest-preferences SHA512 SHA384 SHA256 SHA224
@@ -844,11 +844,8 @@ Type `key 1` again to deselect and switch to the next key.
 
 ### Update configuration
 
-    $ cat >> ~/.gnupg/gpg-agent.conf
-    enable-ssh-support
-    ^D (Press Control-D)
-    
     $ cat > ~/.gnupg/gpg-agent.conf
+    enable-ssh-support
     pinentry-program /usr/bin/pinentry-curses
     default-cache-ttl 60
     max-cache-ttl 120
