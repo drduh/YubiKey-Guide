@@ -151,7 +151,7 @@ Consider purchasing a pair and programming both in case of loss or damage.
 
 ## Create revocation certificate
 
-    $ gpg --gen-revoke 0x47FE984F98EE7407 --output $GNUPGHOME/revoke.txt
+    $ gpg --gen-revoke 0x47FE984F98EE7407 > $GNUPGHOME/revoke.txt
 
     sec  4096R/0x47FE984F98EE7407 2016-01-30 Doctor Duh <drduh@users.noreply.github.com>
 
