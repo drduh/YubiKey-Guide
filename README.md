@@ -8,7 +8,7 @@ Instructions written on Debian GNU/Linux 8 (jessie) using YubiKey 4 in OTP+CCID 
 
 Debian live install images are available from [here](https://www.debian.org/CD/live/) and are suitable for writing to USB keys.
 
-If you have a comment or suggestion, please open an issue on GitHub.
+If you have a comment or suggestion, please open an [issue](https://github.com/drduh/YubiKey-Guide/issues) on GitHub.
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Install required software](#install-required-software)
@@ -59,7 +59,7 @@ https://www.yubico.com/store/
 
 https://www.amazon.com/Yubico/b/ref=bl_dp_s_web_10358012011?ie=UTF8&node=10358012011
 
-Consider purchasing a pair and programming both in case of loss or damage.
+Consider purchasing a pair and programming both in case of loss or damage to oneof them.
 
 # Install required software
 
@@ -94,9 +94,6 @@ Consider purchasing a pair and programming both in case of loss or damage.
 ## Create master key
 
     $ gpg --gen-key
-    gpg (GnuPG) 1.4.18; Copyright (C) 2014 Free Software Foundation, Inc.
-    This is free software: you are free to change and redistribute it.
-    There is NO WARRANTY, to the extent permitted by law.
 
     Please select what kind of key you want:
        (1) RSA and RSA (default)
@@ -190,10 +187,6 @@ Consider purchasing a pair and programming both in case of loss or damage.
 ## Create subkeys
 
     $ gpg --expert --edit-key 0x47FE984F98EE7407
-
-    gpg (GnuPG) 1.4.18; Copyright (C) 2014 Free Software Foundation, Inc.
-    This is free software: you are free to change and redistribute it.
-    There is NO WARRANTY, to the extent permitted by law.
 
     Secret key is available.
 
@@ -404,9 +397,108 @@ Consider purchasing a pair and programming both in case of loss or damage.
     
 ## Back up everything
 
-Once keys are moved to hardware, they cannot be extracted again (otherwise, what would be the point?), so make sure you have made a backup before proceeding.
+Once keys are moved to hardware, they cannot be extracted again (otherwise, what would be the point?), so make sure you have made an *encrypted* backup before proceeding.
 
-    $ cp -avi $GNUPGHOME /mnt/offline-encrypted-usb/backup/
+To use a USB drive, attach it and check its label:
+
+    $ dmesg | tail
+    [ 7667.607011] scsi8 : usb-storage 2-1:1.0
+    [ 7667.608766] usbcore: registered new interface driver usb-storage
+    [ 7668.874016] scsi 8:0:0:0: USB 0: 0 ANSI: 6
+    [ 7668.874242] sd 8:0:0:0: Attached scsi generic sg4 type 0
+    [ 7668.874682] sd 8:0:0:0: [sde] 62980096 512-byte logical blocks: (32.2 GB/30.0 GiB)
+    [ 7668.875022] sd 8:0:0:0: [sde] Write Protect is off
+    [ 7668.875023] sd 8:0:0:0: [sde] Mode Sense: 43 00 00 00
+    [ 7668.877939]  sde: sde1
+    [ 7668.879514] sd 8:0:0:0: [sde] Attached SCSI removable disk
+
+Check the size to make sure it's the right drive:
+
+    $ sudo fdisk -l | grep /dev/sde
+    Disk /dev/sde: 30 GiB, 32245809152 bytes, 62980096 sectors
+    /dev/sde1        2048 62980095 62978048  30G  6 FAT16
+
+Erase and create a new partition table:
+
+    $ sudo fdisk /dev/sde
+    
+    Welcome to fdisk (util-linux 2.25.2).
+    Changes will remain in memory only, until you decide to write them.
+    Be careful before using the write command.
+    
+    Command (m for help): o
+    Created a new DOS disklabel with disk identifier 0xeac7ee35.
+    
+    Command (m for help): w
+    The partition table has been altered.
+    Calling ioctl() to re-read partition table.
+    Syncing disks.
+
+Remove and reinsert the USB drive, then create a new partition:
+
+    $ sudo fdisk /dev/sde
+    
+    Welcome to fdisk (util-linux 2.25.2).
+    Changes will remain in memory only, until you decide to write them.
+    Be careful before using the write command.
+    
+    Command (m for help): n
+    Partition type
+       p   primary (0 primary, 0 extended, 4 free)
+       e   extended (container for logical partitions)
+    Select (default p): p
+    Partition number (1-4, default 1): 1
+    First sector (2048-62980095, default 2048):
+    Last sector, +sectors or +size{K,M,G,T,P} (2048-62980095, default 62980095):
+    
+    Created a new partition 1 of type 'Linux' and of size 30 GiB.
+    Command (m for help): w
+    The partition table has been altered.
+    Calling ioctl() to re-read partition table.
+    Syncing disks.
+
+Use LUKS to encrypt the new partition:
+
+    $ sudo cryptsetup luksFormat /dev/sde1
+    
+    WARNING!
+    ========
+    This will overwrite data on /dev/sde1 irrevocably.
+    
+    Are you sure? (Type uppercase yes): YES
+    Enter passphrase:
+    Verify passphrase:
+
+Mount the partition and create a filesystem:
+
+    $ sudo cryptsetup luksOpen /dev/sde1 encrypted-usb
+    Enter passphrase for /dev/sde1:
+    
+    $ sudo mkfs.ext4 /dev/mapper/encrypted-usb -L encrypted-usb
+    mke2fs 1.42.12 (29-Aug-2014)
+    Creating filesystem with 7871744 4k blocks and 1970416 inodes
+    Superblock backups stored on blocks:
+            32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+            4096000
+    
+    Allocating group tables: done
+    Writing inode tables: done
+    Creating journal (32768 blocks): done
+    Writing superblocks and filesystem accounting information: done
+
+Mount the filesystem:
+
+    $ sudo mkdir /mnt/usb
+    $ sudo mount /dev/mapper/encrypted-usb /mnt/usb
+
+Finally, copy files to it:
+
+    $ sudo cp -avi $GNUPGHOME /mnt/usb
+
+Make sure the files were copied, then disconnected the USB drive:
+
+    $ sudo umount /mnt/usb
+    $ sudo cryptsetup luksClose encrypted-usb
 
 ## Configure YubiKey
 
@@ -417,7 +509,7 @@ Once keys are moved to hardware, they cannot be extracted again (otherwise, what
 
     Commit? (y/n) [n]: y
 
->The -m option is the mode command. To see the different modes, enter ykpersonalize –help. Mode 82 (in hex) enables the YubiKey NEO as a composite USB device (HID + CCID) and allows OTPs to be emitted while in use as a smart card.  Once you have changed the mode, you need to re-boot the YubiKey – so remove and re-insert it.
+> The -m option is the mode command. To see the different modes, enter ykpersonalize –help. Mode 82 (in hex) enables the YubiKey NEO as a composite USB device (HID + CCID) and allows OTPs to be emitted while in use as a smart card.  Once you have changed the mode, you need to re-boot the YubiKey – so remove and re-insert it.
 
 https://www.yubico.com/2012/12/yubikey-neo-openpgp/
 
@@ -448,7 +540,7 @@ https://www.yubico.com/2012/12/yubikey-neo-openpgp/
 
 ### Change PINs
 
-The default PIN codes are `12345678` and `123456`.
+The default PIN codes are `12345678` and `123456`
 
     gpg/card> admin
     Admin commands are allowed
@@ -526,12 +618,9 @@ The default PIN codes are `12345678` and `123456`.
 
 ## Transfer keys
 
-This is a one-way operation only. Make sure you've made a backup before proceeding!
+Transfering keys to YubiKey is a one-way operation only: make sure you've made a backup before proceeding!
 
     $ gpg --edit-key 0x47FE984F98EE7407
-    gpg (GnuPG) 1.4.18; Copyright (C) 2014 Free Software Foundation, Inc.
-    This is free software: you are free to change and redistribute it.
-    There is NO WARRANTY, to the extent permitted by law.
 
     Secret key is available.
 
@@ -588,7 +677,7 @@ This is a one-way operation only. Make sure you've made a backup before proceedi
 
 ### Encryption key
 
-Type `key 1` again to deselect and switch to the next key.
+Type `key 1` again to deselect and `key 2` to switch to the next key.
 
     gpg> key 1
 
@@ -738,9 +827,6 @@ Type `key 1` again to deselect and switch to the next key.
 ## Trust master key
 
     $ gpg --edit-key 0x47FE984F98EE7407
-    gpg (GnuPG) 1.4.18; Copyright (C) 2014 Free Software Foundation, Inc.
-    This is free software: you are free to change and redistribute it.
-    There is NO WARRANTY, to the extent permitted by law.
 
     Secret key is available.
 
@@ -818,7 +904,7 @@ Type `key 1` again to deselect and switch to the next key.
 
 ### Encryption/decryption
 
-    $ echo "$(uname -a)" | gpg --encrypt --armor -r 0x47FE984F98EE7407 | gpg --debug --decrypt --armor
+    $ echo "$(uname -a)" | gpg --encrypt --armor -r 0x47FE984F98EE7407 | gpg --decrypt --armor
 
     Please enter the PIN
     gpg: encrypted with 4096-bit RSA key, ID 0x39988E0390CB4B0C, created 2016-01-30
@@ -889,8 +975,9 @@ Type `key 1` again to deselect and switch to the next key.
 
 - Don't write to drduh@users.noreply.github.com, open an issue on GitHub instead.
 - Programming YubiKey for GPG keys still lets you use its two slots - OTP and static password modes, for example.
+- If you encounter problems, simply try unplugging and re-inserting your YubiKey, and restarting the `gpg-agent` process.
 - ECC may be preferred to RSA 4096, but the 1.4.x branch of GnuPG does not support it.
-- If you encounter problems, try unplugging and re-inserting your YubiKey. Also try installing and using GnuPG 2.x (`sudo apt-get install gnupg2` and `gpg2`)
+- Try installing and using the newer, more feature-rich [GnuPG 2.x](https://superuser.com/questions/655246/are-gnupg-1-and-gnupg-2-compatible-with-each-other) with `sudo apt-get install gnupg2`
 
 # References
 
