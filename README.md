@@ -16,6 +16,7 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
   - [Create temporary working directory for GPG](#create-temporary-working-directory-for-gpg)
   - [Create configuration](#create-configuration)
   - [Create master key](#create-master-key)
+  - [Save Key ID](#save-key-id)
   - [Create revocation certificate](#create-revocation-certificate)
   - [Back up master key](#back-up-master-key)
   - [Create subkeys](#create-subkeys)
@@ -146,9 +147,13 @@ Consider purchasing a pair and programming both in case of loss or damage to one
     Note that this key cannot be used for encryption.  You may want to use
     the command "--edit-key" to generate a subkey for this purpose.
 
+## Save Key ID
+
+    $ KEYID=0x47FE984F98EE7407
+
 ## Create revocation certificate
 
-    $ gpg --gen-revoke 0x47FE984F98EE7407 > $GNUPGHOME/revoke.txt
+    $ gpg --gen-revoke $KEYID > $GNUPGHOME/revoke.txt
 
     sec  4096R/0x47FE984F98EE7407 2016-01-30 Doctor Duh <drduh@users.noreply.github.com>
 
@@ -182,11 +187,11 @@ Consider purchasing a pair and programming both in case of loss or damage to one
 
 ## Back up master key
 
-    $ gpg --armor --export-secret-keys 0x47FE984F98EE7407 > $GNUPGHOME/master.key
+    $ gpg --armor --export-secret-keys $KEYID > $GNUPGHOME/master.key
 
 ## Create subkeys
 
-    $ gpg --expert --edit-key 0x47FE984F98EE7407
+    $ gpg --expert --edit-key $KEYID
 
     Secret key is available.
 
@@ -391,9 +396,9 @@ Consider purchasing a pair and programming both in case of loss or damage to one
 
 ## Export subkeys
 
-    $ gpg --armor --export-secret-keys 0x47FE984F98EE7407 > $GNUPGHOME/mastersub.key
+    $ gpg --armor --export-secret-keys $KEYID > $GNUPGHOME/mastersub.key
 
-    $ gpg --armor --export-secret-subkeys 0x47FE984F98EE7407 > $GNUPGHOME/sub.key
+    $ gpg --armor --export-secret-subkeys $KEYID > $GNUPGHOME/sub.key
     
 ## Back up everything
 
@@ -620,7 +625,7 @@ The default PIN codes are `12345678` and `123456`
 
 Transfering keys to YubiKey is a one-way operation only: make sure you've made a backup before proceeding!
 
-    $ gpg --edit-key 0x47FE984F98EE7407
+    $ gpg --edit-key $KEYID
 
     Secret key is available.
 
@@ -782,7 +787,7 @@ Type `key 1` again to deselect and `key 2` to switch to the next key.
 
 ## Export public key
 
-    $ gpg --armor --export 0x47FE984F98EE7407 > /mnt/public-usb-key/
+    $ gpg --armor --export $KEYID > /mnt/public-usb-key/
 
 # Using keys
 
@@ -826,7 +831,7 @@ Type `key 1` again to deselect and `key 2` to switch to the next key.
 
 ## Trust master key
 
-    $ gpg --edit-key 0x47FE984F98EE7407
+    $ gpg --edit-key $KEYID
 
     Secret key is available.
 
@@ -904,7 +909,7 @@ Type `key 1` again to deselect and `key 2` to switch to the next key.
 
 ### Encryption/decryption
 
-    $ echo "$(uname -a)" | gpg --encrypt --armor -r 0x47FE984F98EE7407 | gpg --decrypt --armor
+    $ echo "$(uname -a)" | gpg --encrypt --armor -r $KEYID | gpg --decrypt --armor
 
     Please enter the PIN
     gpg: encrypted with 4096-bit RSA key, ID 0x39988E0390CB4B0C, created 2016-01-30
@@ -913,7 +918,7 @@ Type `key 1` again to deselect and `key 2` to switch to the next key.
 
 ### Signing
 
-    $ echo "$(uname -a)" | gpg --encrypt --armor --sign -r 0x47FE984F98EE7407
+    $ echo "$(uname -a)" | gpg --encrypt --armor --sign -r $KEYID
     gpg: signatures created so far: 0
 
     Please enter the PIN
