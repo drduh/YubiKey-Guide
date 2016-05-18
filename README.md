@@ -787,7 +787,7 @@ Type `key 1` again to deselect and `key 2` to switch to the next key.
 
 ## Export public key
 
-    $ gpg --armor --export $KEYID > /mnt/public-usb-key/
+    $ gpg --armor --export $KEYID > /mnt/public-usb-key/pubkey.asc
 
 # Using keys
 
