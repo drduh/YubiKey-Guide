@@ -66,6 +66,10 @@ Consider purchasing a pair and programming both in case of loss or damage to one
 
     $ sudo apt-get install gnupg-agent pinentry-curses scdaemon pcscd yubikey-personalization
 
+If on Tails, you also need to install libykpers-1-1 from the testing repository. This is a temporary fix suggested on  [securedrop issues page](https://github.com/freedomofpress/securedrop/issues/1035).
+
+    $ sudo apt-get install -t testing libykpers-1-1
+
 # Creating keys
 
 ## Create temporary working directory for GPG
