@@ -1189,6 +1189,8 @@ Paste the following text into a terminal window to create a [recommended](https:
     use-standard-socket
     EOF
 
+If you are using Linux on the desktop, you may want to use `/usr/bin/pinentry-gnome3` to use a GUI manager.
+
 ### Replace ssh-agent with gpg-agent
 
     $ pkill ssh-agent ; pkill gpg-agent ; \
