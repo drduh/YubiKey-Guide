@@ -1253,7 +1253,7 @@ Copy and paste the following output to the server authorized keys file:
 
 <https://trmm.net/Yubikey>
 
-<https://rnorth.org/8/gpg-and-ssh-with-yubikey-for-mac>
+<https://rnorth.org/gpg-and-ssh-with-yubikey-for-mac>
 
 <https://jclement.ca/articles/2015/gpg-smartcard/>
 
