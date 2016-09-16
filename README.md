@@ -1197,7 +1197,7 @@ Paste the following text into a terminal window to create a [recommended](https:
 
 ### Copy public key to server
 
-Copy and paste the following output to the server authorized keys file:
+There is a `-L` option of `ssh-add` that lists public key parameters of all identities currently represented by the agent.  Copy and paste the following output to the server authorized_keys file:
 
     $ ssh-add -L
     ssh-rsa AAAAB4NzaC1yc2EAAAADAQABAAACAz[...]zreOKM+HwpkHzcy9DQcVG2Nw== cardno:000605553211
