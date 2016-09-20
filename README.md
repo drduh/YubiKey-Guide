@@ -481,8 +481,8 @@ Verify with OpenPGP key checks:
 Use the automated [key best practice checker](https://riseup.net/en/security/message-security/openpgp/best-practices#openpgp-key-checks):
 
 ```
-sudo apt-get install hopenpgp-tools
-hkt export-pubkeys $KEYID | hokey lint
+$ sudo apt-get install hopenpgp-tools
+$ hkt export-pubkeys $KEYID | hokey lint
 ```
 
 The output will display any problems with your key in red text. If everything is green, your key passes each of the tests below. If it is red, your key has failed one of the tests.
