@@ -1239,6 +1239,8 @@ There is a `-L` option of `ssh-add` that lists public key parameters of all iden
 
 - If you receive the error, `Key does not match the card's capability` - you likely need to use 2048 bit RSA key sizes.
 
+- If you receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - you probably have ssh-agent running.  Make sure you replaced ssh-agent with gpg-agent as noted above.
+
 - If you totally screw up, you can [reset the card](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html).
 
 # References
