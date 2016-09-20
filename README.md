@@ -476,6 +476,17 @@ List your new secret keys:
     ssb   4096R/0x5912A795E90DD2CF 2016-05-24
     ssb   4096R/0x3F29127E79649A3D 2016-05-24
 
+Verify with OpenPGP key checks:
+
+Use the automated [key best practice checker](https://riseup.net/en/security/message-security/openpgp/best-practices#openpgp-key-checks):
+
+```
+sudo apt-get install hopenpgp-tools
+hkt export-pubkeys $KEYID | hokey lint
+```
+
+The output will display any problems with your key in red text. If everything is green, your key passes each of the tests below. If it is red, your key has failed one of the tests.
+
 ## Export subkeys
 
 Save a copy of your subkeys:
