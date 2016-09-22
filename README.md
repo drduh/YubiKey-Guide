@@ -973,6 +973,12 @@ Or download from a keyserver:
     gpg: Total number processed: 1
     gpg:               imported: 1  (RSA: 1)
 
+You may get an error `gpgkeys: HTTP fetch error 1: unsupported protocol` -- this means you need to install a special version of curl which supports gnupg:
+
+```
+$ sudo apt-get install gnupg-curl
+```
+
 ## Insert YubiKey
 
 Check the card's status:
