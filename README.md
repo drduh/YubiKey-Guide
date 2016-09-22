@@ -976,7 +976,7 @@ Or download from a keyserver:
 You may get an error `gpgkeys: HTTP fetch error 1: unsupported protocol` -- this means you need to install a special version of curl which supports gnupg:
 
 ```
-sudo apt-get install gnupg-curl
+$ sudo apt-get install gnupg-curl
 ```
 
 ## Insert YubiKey
