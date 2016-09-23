@@ -1121,9 +1121,9 @@ Decrypt the sample text by pasting it:
 
 ### Signing
 
-Sign some sample text:
+Sign some sample text using the signing subkey:
 
-    $ echo "$(uname -a)" | gpg --armor --clearsign --default-key 0xFF3E7D88647EBCDB
+    $ echo "$(uname -a)" | gpg --armor --clearsign --default-key 0xBECFA3C1AE191D15
     -----BEGIN PGP SIGNED MESSAGE-----
     Hash: SHA512
 
