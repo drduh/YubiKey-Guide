@@ -951,6 +951,7 @@ Paste the following text into a terminal window to create a [recommended](https:
     verify-options show-uid-validity
     with-fingerprint
     use-agent
+    require-cross-certification
     EOF
 
 To install the keyservers CA file:
