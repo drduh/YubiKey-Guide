@@ -159,6 +159,7 @@ Paste the following [text](https://stackoverflow.com/questions/2500436/how-does-
     default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
     cert-digest-algo SHA512
     s2k-digest-algo SHA512
+    s2k-cipher-algo AES256
     charset utf-8
     fixed-list-mode
     no-comments
@@ -939,6 +940,7 @@ Paste the following text into a terminal window to create a [recommended](https:
     personal-digest-preferences SHA512 SHA384 SHA256 SHA224
     default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
     cert-digest-algo SHA512
+    s2k-cipher-algo AES256
     s2k-digest-algo SHA512
     charset utf-8
     fixed-list-mode
