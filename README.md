@@ -1252,7 +1252,9 @@ There is a `-L` option of `ssh-add` that lists public key parameters of all iden
 
 - If you receive the error, `gpg: decryption failed: secret key not available` - you likely need to install GnuPG version 2.x.
 
-- If you receive the error, `Yubikey core error: no yubikey present` - you likely need to install newer versions of yubikey-personalize as outlined in [Install required software](#install-required-software).
+- If you receive the error, `Yubikey core error: no yubikey present` - make sure the YubiKey is inserted correctly. It should blink once when plugged in.
+
+- If you still receive the error, `Yubikey core error: no yubikey present` - you likely need to install newer versions of yubikey-personalize as outlined in [Install required software](#install-required-software).
 
 - If you receive the error, `Yubikey core error: write error` - YubiKey is likely locked. Install and run yubikey-personalization-gui to unlock it.
 
