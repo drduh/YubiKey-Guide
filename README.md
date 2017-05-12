@@ -627,7 +627,10 @@ Plug in your YubiKey and configure it:
 
 > The -m option is the mode command. To see the different modes, enter ykpersonalize –help. Mode 82 (in hex) enables the YubiKey NEO as a composite USB device (HID + CCID) and allows OTPs to be emitted while in use as a smart card.  Once you have changed the mode, you need to re-boot the YubiKey – so remove and re-insert it.
 
+> On YubiKey NEO with firmware version 3.3 or higher you can enable composite USB device with -m86 instead of -m82.
+
 https://www.yubico.com/2012/12/yubikey-neo-openpgp/
+https://www.yubico.com/2012/12/yubikey-neo-composite-device/
 
 ## Configure smartcard
 
