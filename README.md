@@ -483,7 +483,7 @@ Use the automated [key best practice checker](https://riseup.net/en/security/mes
 
 ```
 $ sudo apt-get install hopenpgp-tools
-$ hkt export-pubkeys $KEYID --keyring=$GNUPGHOME/pubring.gpg | hokey lint
+$ gpg --export $KEYID | hokey lint
 ```
 
 The output will display any problems with your key in red text. If everything is green, your key passes each of the tests below. If it is red, your key has failed one of the tests.
