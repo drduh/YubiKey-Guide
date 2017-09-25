@@ -1219,6 +1219,14 @@ If you are using Linux on the desktop, you may want to use `/usr/bin/pinentry-gn
     $ pkill ssh-agent ; pkill gpg-agent ; \
       eval $(gpg-agent --daemon --enable-ssh-support --use-standard-socket \
       --log-file ~/.gnupg/gpg-agent.log --write-env-file)
+      
+Zsh note - if you're using zsh, add gpg-agent to your .zshrc plugins:
+
+    # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
+    # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
+    # Example format: plugins=(rails git textmate ruby lighthouse)
+    # Add wisely, as too many plugins slow down shell startup.
+    plugins=(git gpg-agent)
 
 ### Copy public key to server
 
