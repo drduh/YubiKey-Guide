@@ -174,8 +174,8 @@ Paste the following [text](https://stackoverflow.com/questions/2500436/how-does-
 
 Generate a new key with GPG, selecting RSA (sign only) and the appropriate keysize, optionally specifying an expiry:
 
-    $ gpg --gen-key
-
+    $ gpg --full-generate-key
+    
     Please select what kind of key you want:
        (1) RSA and RSA (default)
        (2) DSA and Elgamal
