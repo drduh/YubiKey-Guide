@@ -202,13 +202,13 @@ Generate a new key with GPG, selecting RSA (sign only) and the appropriate keysi
     Your selection? 4
     RSA keys may be between 1024 and 4096 bits long.
     What keysize do you want? (2048) 4096
-    Requested keysize is 4096 bits       
+    Requested keysize is 4096 bits
     Please specify how long the key should be valid.
-            0 = key does not expire
-        <n>  = key expires in n days
-        <n>w = key expires in n weeks
-        <n>m = key expires in n months
-        <n>y = key expires in n years
+             0 = key does not expire
+          <n>  = key expires in n days
+          <n>w = key expires in n weeks
+          <n>m = key expires in n months
+          <n>y = key expires in n years
     Key is valid for? (0) 0
     Key does not expire at all
     Is this correct? (y/N) y
@@ -239,7 +239,7 @@ as you'll need it throughout.*
     Note that this key cannot be used for encryption.  You may want to use
     the command "--edit-key" to generate a subkey for this purpose.
     pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [SC]
-        Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
+          Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
     uid                              Dr Duh <doc@duh.to>
 
 Note that as of [v2.1](https://www.gnupg.org/faq/whats-new-in-2.1.html#autorev), gpg automatically generates a revocation certificate.
@@ -326,17 +326,17 @@ Next, create an [encryption key](https://www.cs.cornell.edu/courses/cs5430/2015s
     Your selection? 6
     RSA keys may be between 1024 and 4096 bits long.
     What keysize do you want? (2048) 4096
-    Requested keysize is 4096 bits       
+    Requested keysize is 4096 bits
     Please specify how long the key should be valid.
-            0 = key does not expire
-        <n>  = key expires in n days
-        <n>w = key expires in n weeks
-        <n>m = key expires in n months
-        <n>y = key expires in n years
+             0 = key does not expire
+          <n>  = key expires in n days
+          <n>w = key expires in n weeks
+          <n>m = key expires in n months
+          <n>y = key expires in n years
     Key is valid for? (0) 0
     Key does not expire at all
     Is this correct? (y/N) y
-    Really create? (y/N) y  
+    Really create? (y/N) y
     We need to generate a lot of random bytes. It is a good idea to perform
     some other action (type on the keyboard, move the mouse, utilize the
     disks) during the prime generation; this gives the random number
@@ -370,59 +370,59 @@ GPG doesn't provide a 'RSA (authenticate only)' key type out of the box, so sele
       (12) ECC (encrypt only)
       (13) Existing key
     Your selection? 8
-                    
+    
     Possible actions for a RSA key: Sign Encrypt Authenticate 
     Current allowed actions: Sign Encrypt 
-
-    (S) Toggle the sign capability
-    (E) Toggle the encrypt capability
-    (A) Toggle the authenticate capability
-    (Q) Finished
-
+    
+       (S) Toggle the sign capability
+       (E) Toggle the encrypt capability
+       (A) Toggle the authenticate capability
+       (Q) Finished
+    
     Your selection? S
-                    
+    
     Possible actions for a RSA key: Sign Encrypt Authenticate 
     Current allowed actions: Encrypt 
-
-    (S) Toggle the sign capability
-    (E) Toggle the encrypt capability
-    (A) Toggle the authenticate capability
-    (Q) Finished
-
+    
+       (S) Toggle the sign capability
+       (E) Toggle the encrypt capability
+       (A) Toggle the authenticate capability
+       (Q) Finished
+    
     Your selection? E
-                    
+    
     Possible actions for a RSA key: Sign Encrypt Authenticate 
     Current allowed actions: 
-
-    (S) Toggle the sign capability
-    (E) Toggle the encrypt capability
-    (A) Toggle the authenticate capability
-    (Q) Finished
-
+    
+       (S) Toggle the sign capability
+       (E) Toggle the encrypt capability
+       (A) Toggle the authenticate capability
+       (Q) Finished
+    
     Your selection? A
-                    
+    
     Possible actions for a RSA key: Sign Encrypt Authenticate 
     Current allowed actions: Authenticate 
-
-    (S) Toggle the sign capability
-    (E) Toggle the encrypt capability
-    (A) Toggle the authenticate capability
-    (Q) Finished
-
+    
+       (S) Toggle the sign capability
+       (E) Toggle the encrypt capability
+       (A) Toggle the authenticate capability
+       (Q) Finished
+    
     Your selection? q
     RSA keys may be between 1024 and 4096 bits long.
     What keysize do you want? (2048) 4096
-    Requested keysize is 4096 bits       
+    Requested keysize is 4096 bits
     Please specify how long the key should be valid.
-            0 = key does not expire
-        <n>  = key expires in n days
-        <n>w = key expires in n weeks
-        <n>m = key expires in n months
-        <n>y = key expires in n years
+             0 = key does not expire
+          <n>  = key expires in n days
+          <n>w = key expires in n weeks
+          <n>m = key expires in n months
+          <n>y = key expires in n years
     Key is valid for? (0) 0
     Key does not expire at all
     Is this correct? (y/N) y
-    Really create? (y/N) y  
+    Really create? (y/N) y
     We need to generate a lot of random bytes. It is a good idea to perform
     some other action (type on the keyboard, move the mouse, utilize the
     disks) during the prime generation; this gives the random number
@@ -450,7 +450,7 @@ List your new secret keys:
     /tmp.FLZC0xcM/pubring.kbx
     -------------------------------------------------------------------------
     sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [SC]
-        Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
+          Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
     uid                            Dr Duh <doc@duh.to>
     ssb   rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S]
     ssb   rsa4096/0x5912A795E90DD2CF 2017-10-09 [E]
@@ -729,7 +729,7 @@ Some fields are optional:
 
 Transferring keys to YubiKey hardware is a one-way operation only, so make sure you've made a backup before proceeding. Previous gpg versions required the 'toggle' command before selecting keys. The currently selected key(s) are indicated with an `*`. When moving keys only one key should be selected at a time.
 
-    % gpg --edit-key $KEYID         
+    % gpg --edit-key $KEYID
 
     Secret key is available.
 
