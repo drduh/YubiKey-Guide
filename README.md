@@ -248,7 +248,7 @@ Note that as of [v2.1](https://www.gnupg.org/faq/whats-new-in-2.1.html#autorev),
 
 Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) for use throughout:
 
-    $ KEYID=0xFF3E7D88647EBCDB
+    $ export KEYID=0xFF3E7D88647EBCDB
 
 ## Create subkeys
 
