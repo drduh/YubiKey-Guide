@@ -4,7 +4,7 @@ An authentication key can also be created for SSH and used with [gpg-agent](http
 
 Keys stored on a smartcard like YubiKey seem more difficult to steal than ones stored on disk, and are convenient for everyday use.
 
-Instructions written for Debian GNU/Linux 8 (jessie) using YubiKey 4 in OTP+CCID mode, updated to GPG version 2.2.1. Some notes are included for macOS as well. Note, older YubiKeys are limited to 2048 bit RSA keys.
+Instructions written for Debian GNU/Linux 8 (jessie) using YubiKey 4 - with support for **4096 bit** RSA keys - in OTP+CCID mode, updated to GPG version 2.2.1. Some notes are included for macOS as well. Note, older YubiKeys like the Neo are limited to **2048 bit** RSA keys. Please see a comparison of the different YubiKeys [here](https://www.yubico.com/products/yubikey-hardware/compare-yubikeys/).
 
 Debian live install images are available from [here](https://www.debian.org/CD/live/) and are suitable for writing to USB drives.
 
@@ -251,6 +251,8 @@ Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/de
     $ export KEYID=0xFF3E7D88647EBCDB
 
 ## Create subkeys
+
+Note: If using a Yubikey 4, please use **4096 bit** as the size for the subkeys; if using a YubiKey Neo, please use **2048 bit** as the size for the subkeys.
 
 Edit the key to add subkeys:
 
