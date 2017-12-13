@@ -189,7 +189,7 @@ Paste the following [text](https://stackoverflow.com/questions/2500436/how-does-
 
 Generate a new key with GPG, selecting RSA (sign only) and the appropriate keysize:
 
-    % gpg --full-generate-key
+    % gpg --full-gen-key
     gpg (GnuPG) 2.2.1; Copyright (C) 2017 Free Software Foundation, Inc.
     This is free software: you are free to change and redistribute it.
     There is NO WARRANTY, to the extent permitted by law.
