@@ -14,49 +14,50 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Install required software](#install-required-software)
-  - [Install - Linux](#install---linux)
-  - [Install - macOS](#install---macos)
+    - [Install - Linux](#install---linux)
+    - [Install - macOS](#install---macos)
 - [Creating keys](#creating-keys)
-  - [Create temporary working directory for GPG](#create-temporary-working-directory-for-gpg)
-  - [Create configuration](#create-configuration)
-  - [Create master key](#create-master-key)
-  - [Save Key ID](#save-key-id)
-  - [Create subkeys](#create-subkeys)
-    - [Signing key](#signing-key)
-    - [Encryption key](#encryption-key)
-    - [Authentication key](#authentication-key)
-  - [Check your work](#check-your-work)
-  - [Export keys](#export-keys)
-  - [Back up everything](#back-up-everything)
-  - [Configure YubiKey](#configure-yubikey)
-  - [Configure smartcard](#configure-smartcard)
-    - [Change PINs](#change-pins)
-    - [Set card information](#set-card-information)
-  - [Transfer keys](#transfer-keys)
-    - [Signature key](#signature-key)
-    - [Encryption key](#encryption-key-1)
-    - [Authentication key](#authentication-key-1)
-  - [Check your work](#check-your-work-1)
-  - [Export public key](#export-public-key)
-  - [Finish](#finish)
+    - [Create temporary working directory for GPG](#create-temporary-working-directory-for-gpg)
+    - [Create configuration](#create-configuration)
+    - [Create master key](#create-master-key)
+    - [Save Key ID](#save-key-id)
+    - [Create subkeys](#create-subkeys)
+        - [Signing key](#signing-key)
+        - [Encryption key](#encryption-key)
+        - [Authentication key](#authentication-key)
+    - [Check your work](#check-your-work)
+    - [Export keys](#export-keys)
+    - [Back up everything](#back-up-everything)
+    - [Configure YubiKey](#configure-yubikey)
+    - [Configure smartcard](#configure-smartcard)
+        - [Change PINs](#change-pins)
+        - [Set card information](#set-card-information)
+    - [Transfer keys](#transfer-keys)
+        - [Signature key](#signature-key)
+        - [Encryption key](#encryption-key)
+        - [Authentication key](#authentication-key)
+    - [Check your work](#check-your-work)
+    - [Export public key](#export-public-key)
+    - [Finish](#finish)
 - [Using keys](#using-keys)
-  - [Create GPG configuration](#create-gpg-configuration)
-  - [Import public key](#import-public-key)
-  - [Insert YubiKey](#insert-yubikey)
-  - [GnuPG](#gnupg)
-    - [Trust master key](#trust-master-key)
-    - [Encryption](#encryption)
-    - [Decryption](#decryption)
-    - [Signing](#signing)
-    - [Verifying signature](#verifying-signature)
-  - [SSH](#ssh)
-    - [Update configuration](#update-configuration)
-    - [Replace ssh-agent with gpg-agent](#replace-ssh-agent-with-gpg-agent)
-    - [Copy public key to server](#copy-public-key-to-server)
-    - [Connect with public key authentication](#connect-with-public-key-authentication)
-  - [Requiring touch to authenticate](#requiring-touch-to-authenticate)
+    - [Create GPG configuration](#create-gpg-configuration)
+    - [Import public key](#import-public-key)
+    - [Insert YubiKey](#insert-yubikey)
+    - [GnuPG](#gnupg)
+        - [Trust master key](#trust-master-key)
+        - [Encryption](#encryption)
+        - [Decryption](#decryption)
+        - [Signing](#signing)
+        - [Verifying signature](#verifying-signature)
+    - [SSH](#ssh)
+        - [Update configuration](#update-configuration)
+        - [Replace ssh-agent with gpg-agent](#replace-ssh-agent-with-gpg-agent)
+        - [Copy public key to server](#copy-public-key-to-server)
+        - [Connect with public key authentication](#connect-with-public-key-authentication)
+    - [Requiring touch to authenticate](#requiring-touch-to-authenticate)
+    - [Using multiple Yubikeys for same GPG-keyset](#using-multiple-yubikeys-for-same-gpg-keyset)
 - [Troubleshooting](#troubleshooting)
-  - [Yubikey OTP Mode and cccccccc....](#yubikey-otp-mode-and-cccccccc)
+    - [Yubikey OTP Mode and cccccccc....](#yubikey-otp-mode-and-cccccccc)
 - [References](#references)
 
 # Purchase YubiKey
@@ -150,7 +151,9 @@ You will need to install the following software:
 1. [Homebrew](https://brew.sh/) package manager
 2. The following brew packages:
 
-    $ brew install gnupg yubikey-personalization
+```
+$ brew install gnupg yubikey-personalization
+```
 
 # Creating keys
 
@@ -1202,6 +1205,27 @@ To require a touch for the signing and encrypting keys as well:
     ykman openpgp touch enc on
 
 The Yubikey will blink when it's waiting for the touch.
+
+## Using multiple Yubikeys for same GPG-keyset
+
+To use multiple Yubikeys (backup etc.) with same GPG-keyset repeat part [Transfer keys](#transfer-keys) for each additional key.
+When executing `gpg --card-status` the inserted Yubikeys serial number will be associated to the secret keys and form stub keys. (This can be shown by running `gpg -K`, the # in sec# and the > in ssb> indicate keys are stubs and are stored on a smartcard.) If another Yubikey with different serial number is used after that this error will be shown:
+
+`Please insert the car with serial number: [Assosiated serial number]`
+
+The way around this is to remove the old association by deleting the files holding it and run `gpg --card-status` again. To make this handy use the script below when connecting a new Yubikey. The script needs to be **modified** to match your specific keys and having correct path to the `gpg` executable. The key filenames can be found by using `gpg --with-keygrip -K`, look for "keygrip =" and compare it to files found in `~/.gnupg/private-keys-v1.d/`
+
+```
+#!/bin/bash
+{
+    rm -f $HOME/.gnupg/private-keys-v1.d/REPLACE_WITH_YOUR_KEYGRIP_VALUE.key
+    rm -f $HOME/.gnupg/private-keys-v1.d/ANOTHER_KEY.key
+    rm -f $HOME/.gnupg/private-keys-v1.d/REPETE_UNTIL_ALL_KEYGRIP_VALUES_ARE_COVERED.key
+    killall ssh-agent gpg-agent
+    /usr/local/bin/gpg --card-status
+    ssh-add -L
+} &> log.txt
+```
 
 # Troubleshooting
 
