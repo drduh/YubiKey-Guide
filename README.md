@@ -1194,6 +1194,8 @@ There is a `-L` option of `ssh-add` that lists public key parameters of all iden
     debug1: Authentication succeeded (publickey).
     [...]
 
+**Note** To make multiple connections or securely transfer many files, consider using the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) ssh option. Also see [drduh/config/ssh_config](https://github.com/drduh/config/blob/master/ssh_config).
+
 ## Requiring touch to authenticate
 
 By default the Yubikey will perform key operations without requiring a touch from the user. To require a touch for every SSH connection, use the [Yubikey Manager](https://developers.yubico.com/yubikey-manager/) (you'll need the Admin PIN):
