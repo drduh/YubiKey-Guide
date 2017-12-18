@@ -27,7 +27,7 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
     - [Authentication key](#authentication-key)
   - [Check your work](#check-your-work)
   - [Export keys](#export-keys)
-  - [Back up everything](#back-up-everything)
+  - [Backup everything](#backup-everything)
   - [Configure YubiKey](#configure-yubikey)
   - [Configure smartcard](#configure-smartcard)
     - [Change PINs](#change-pins)
@@ -485,9 +485,11 @@ In addition to the backup below, you might want to keep a separate copy of the
 revocation certificate in a safe place:
 `$GNUPGHOME/openpgp-revocs.d/<key fingerprint>.rev`
 
-## Back up everything
+## Backup everything
 
 Once keys are moved to hardware, they cannot be extracted again (otherwise, what would be the point?), so make sure you have made an *encrypted* backup before proceeding.
+
+Also consider using a [paper copy](http://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup measure.
 
 To create an encrypted USB drive, first attach it and check its label:
 
