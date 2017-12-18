@@ -960,6 +960,8 @@ Unplug and replug the Yubikey. Check the card's status:
 
 `sec#` indicates master key is not available (as it should be stored encrypted offline).
 
+**Note** If you see `General key info..: [none]` in the output instead, first import your public key using the previous step.
+
 ## GnuPG
 
 ### Trust master key
