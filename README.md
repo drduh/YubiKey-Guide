@@ -1164,6 +1164,12 @@ Depending on how your environment is set up, you might need to add these to your
     export GPG_TTY="$(tty)"
     export SSH_AUTH_SOCK="${HOME}/.gnupg/S.gpg-agent.ssh"
     gpgconf --launch gpg-agent
+    
+**Note : ** On some systems, for example Archlinux based distros, you need to replace the second and the third line by 
+```
+export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
+gpg-connect-agent updatestartuptty /bye
+```
 
 
 ### Copy public key to server
