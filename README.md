@@ -1165,7 +1165,8 @@ Depending on how your environment is set up, you might need to add these to your
     export SSH_AUTH_SOCK="${HOME}/.gnupg/S.gpg-agent.ssh"
     gpgconf --launch gpg-agent
     
-**Note : ** On some systems, for example Archlinux based distros, you need to replace the second and the third line by 
+**Note** On some systems, for example Arch Linux-based distributions, you may need to replace the second and the third line with:
+
 ```
 export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 gpg-connect-agent updatestartuptty /bye
