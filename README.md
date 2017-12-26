@@ -4,7 +4,7 @@ An authentication key can also be created for SSH and used with [gpg-agent](http
 
 Keys stored on a smartcard like YubiKey seem more difficult to steal than ones stored on disk, and are convenient for everyday use.
 
-Instructions written for Debian GNU/Linux 8 (jessie) using YubiKey 4 in OTP+CCID mode, updated to GPG version 2.2.1. Some notes are included for macOS as well. Note, older YubiKeys are limited to 2048 bit RSA keys.
+Instructions written for Debian GNU/Linux 8 (jessie) using YubiKey 4 - with support for **4096 bit** RSA keys - in OTP+CCID mode, updated to GPG version 2.2.1. Some notes are included for macOS as well. Note, older YubiKeys like the Neo are limited to **2048 bit** RSA keys. Please see a comparison of the different YubiKeys [here](https://www.yubico.com/products/yubikey-hardware/compare-yubikeys/).
 
 Debian live install images are available from [here](https://www.debian.org/CD/live/) and are suitable for writing to USB drives.
 
@@ -27,7 +27,7 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
     - [Authentication key](#authentication-key)
   - [Check your work](#check-your-work)
   - [Export keys](#export-keys)
-  - [Back up everything](#back-up-everything)
+  - [Backup everything](#backup-everything)
   - [Configure YubiKey](#configure-yubikey)
   - [Configure smartcard](#configure-smartcard)
     - [Change PINs](#change-pins)
@@ -251,6 +251,8 @@ Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/de
     $ export KEYID=0xFF3E7D88647EBCDB
 
 ## Create subkeys
+
+Note: If using a Yubikey 4, please use **4096 bit** as the size for the subkeys; if using a YubiKey Neo, please use **2048 bit** as the size for the subkeys.
 
 Edit the key to add subkeys:
 
@@ -483,9 +485,11 @@ In addition to the backup below, you might want to keep a separate copy of the
 revocation certificate in a safe place:
 `$GNUPGHOME/openpgp-revocs.d/<key fingerprint>.rev`
 
-## Back up everything
+## Backup everything
 
 Once keys are moved to hardware, they cannot be extracted again (otherwise, what would be the point?), so make sure you have made an *encrypted* backup before proceeding.
+
+Also consider using a [paper copy](http://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup measure.
 
 To create an encrypted USB drive, first attach it and check its label:
 
@@ -956,6 +960,8 @@ Unplug and replug the Yubikey. Check the card's status:
 
 `sec#` indicates master key is not available (as it should be stored encrypted offline).
 
+**Note** If you see `General key info..: [none]` in the output instead, first import your public key using the previous step.
+
 ## GnuPG
 
 ### Trust master key
@@ -1158,6 +1164,13 @@ Depending on how your environment is set up, you might need to add these to your
     export GPG_TTY="$(tty)"
     export SSH_AUTH_SOCK="${HOME}/.gnupg/S.gpg-agent.ssh"
     gpgconf --launch gpg-agent
+    
+**Note** On some systems, for example Arch Linux-based distributions, you may need to replace the second and the third line with:
+
+```
+export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
+gpg-connect-agent updatestartuptty /bye
+```
 
 
 ### Copy public key to server
@@ -1187,6 +1200,8 @@ There is a `-L` option of `ssh-add` that lists public key parameters of all iden
     debug3: sign_and_send_pubkey: RSA e5:de:a5:74:b1:3e:96:9b:85:46:e7:28:53:b4:82:c3
     debug1: Authentication succeeded (publickey).
     [...]
+
+**Note** To make multiple connections or securely transfer many files, consider using the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) ssh option. Also see [drduh/config/ssh_config](https://github.com/drduh/config/blob/master/ssh_config).
 
 ## Requiring touch to authenticate
 
@@ -1218,6 +1233,10 @@ The Yubikey will blink when it's waiting for the touch.
 - If you receive the error, `Key does not match the card's capability` - you likely need to use 2048 bit RSA key sizes.
 
 - If you receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - you probably have ssh-agent running.  Make sure you replaced ssh-agent with gpg-agent as noted above.
+
+- If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - On Debian, [try](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=835394) `gpg-connect-agent updatestartuptty /bye`
+
+- If you receive the error, `Error connecting to agent: No such file or directory` from `ssh-add -L`, the UNIX file socket that the agent uses for communication with other processes may not be set up correctly. On Debian, try `export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"`
 
 - If you totally screw up, you can [reset the card](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html).
 
