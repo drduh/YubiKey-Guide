@@ -145,10 +145,7 @@ If on [Tails](https://tails.boum.org/), you also need to install libykpers-1-1 f
 
 ## Install - macOS
 
-You will need to install the following software:
-
-1. [Homebrew](https://brew.sh/) package manager
-2. The following brew packages:
+You will need to install [Homebrew](https://brew.sh/) and the following brew packages:
 
     $ brew install gnupg yubikey-personalization
 
