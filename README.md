@@ -1147,7 +1147,6 @@ Paste the following text into a terminal window to create a [recommended](https:
     default-cache-ttl 60
     max-cache-ttl 120
     write-env-file
-    use-standard-socket
     EOF
 
 If you are using Linux on the desktop, you may want to use `/usr/bin/pinentry-gnome3` to use a GUI manager. For macOS, try `brew install pinentry-mac`, and adjust the `pinentry-program` setting to suit.
