@@ -871,7 +871,6 @@ Paste the following text into a terminal window to create a [recommended](https:
     auto-key-locate keyserver
     keyserver hkps://hkps.pool.sks-keyservers.net
     keyserver-options no-honor-keyserver-url
-    keyserver-options ca-cert-file=/etc/sks-keyservers.netCA.pem
     keyserver-options no-honor-keyserver-url
     keyserver-options debug
     keyserver-options verbose
@@ -892,10 +891,6 @@ Paste the following text into a terminal window to create a [recommended](https:
     use-agent
     require-cross-certification
     EOF
-
-To install the keyservers CA file:
-
-    $ sudo curl -s "https://sks-keyservers.net/sks-keyservers.netCA.pem" -o /etc/sks-keyservers.netCA.pem
 
 ## Import public key
 
