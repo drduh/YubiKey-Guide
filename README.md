@@ -1153,7 +1153,7 @@ If you are using Linux on the desktop, you may want to use `/usr/bin/pinentry-gn
 Depending on how your environment is set up, you might need to add these to your shell `rc` file:
 
     export GPG_TTY="$(tty)"
-    export SSH_AUTH_SOCK="${HOME}/.gnupg/S.gpg-agent.ssh"
+    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
     gpgconf --launch gpg-agent
     
 **Note** On some systems, for example Arch Linux-based distributions, you may need to replace the second and the third line with:
