@@ -892,6 +892,10 @@ Paste the following text into a terminal window to create a [recommended](https:
     require-cross-certification
     EOF
 
+Ensure you change to correct rights of that file to at least avoid a warning message about incorrect file rights
+
+    chmod 600 ~/.gnupg/gpg.conf
+
 ## Import public key
 
 Import it from a file:
