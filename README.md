@@ -147,7 +147,7 @@ If on [Tails](https://tails.boum.org/), you also need to install libykpers-1-1 f
 
 You will need to install [Homebrew](https://brew.sh/) and the following brew packages:
 
-    $ brew install gnupg yubikey-personalization
+    $ brew install gnupg yubikey-personalization hopenpgp-tools
 
 # Creating keys
 
