@@ -1167,13 +1167,27 @@ export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 gpg-connect-agent updatestartuptty /bye
 ```
 
-
 ### Copy public key to server
 
 There is a `-L` option of `ssh-add` that lists public key parameters of all identities currently represented by the agent.  Copy and paste the following output to the server authorized_keys file:
 
     $ ssh-add -L
     ssh-rsa AAAAB4NzaC1yc2EAAAADAQABAAACAz[...]zreOKM+HwpkHzcy9DQcVG2Nw== cardno:000605553211
+
+#### (Optional) Save public key for identity file configuration
+
+If `IdentitiesOnly yes` is used in your `.ssh/config` (for example [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/)), `ssh` will not automatically enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
+
+In the case of Yubikey usage, you do not have access to the private key, and `identity_file` can be pointed to the public key (`.pub`).
+
+    $ ssh-add -L | grep "cardno:000605553211" > ~/.ssh/id_rsa_yubikey.pub
+
+Then, you can explicitly associate this Yubikey-stored key for used with the domain `github.com` (for example) as follows:
+
+    $ cat << EOF >> ~/.ssh/config
+    Host github.com
+        IdentityFile ~/.ssh/id_rsa_yubikey.pub
+    EOF
 
 ### Connect with public key authentication
 
