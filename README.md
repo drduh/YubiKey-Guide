@@ -872,8 +872,6 @@ Paste the following text into a terminal window to create a [recommended](https:
     keyserver hkps://hkps.pool.sks-keyservers.net
     keyserver-options no-honor-keyserver-url
     keyserver-options no-honor-keyserver-url
-    keyserver-options debug
-    keyserver-options verbose
     personal-cipher-preferences AES256 AES192 AES CAST5
     personal-digest-preferences SHA512 SHA384 SHA256 SHA224
     default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
