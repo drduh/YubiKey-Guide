@@ -145,12 +145,9 @@ If on [Tails](https://tails.boum.org/), you also need to install libykpers-1-1 f
 
 ## Install - macOS
 
-You will need to install the following software:
+You will need to install [Homebrew](https://brew.sh/) and the following brew packages:
 
-1. [Homebrew](https://brew.sh/) package manager
-2. The following brew packages:
-
-    $ brew install gnupg yubikey-personalization
+    $ brew install gnupg yubikey-personalization hopenpgp-tools
 
 # Creating keys
 
@@ -874,10 +871,7 @@ Paste the following text into a terminal window to create a [recommended](https:
     auto-key-locate keyserver
     keyserver hkps://hkps.pool.sks-keyservers.net
     keyserver-options no-honor-keyserver-url
-    keyserver-options ca-cert-file=/etc/sks-keyservers.netCA.pem
     keyserver-options no-honor-keyserver-url
-    keyserver-options debug
-    keyserver-options verbose
     personal-cipher-preferences AES256 AES192 AES CAST5
     personal-digest-preferences SHA512 SHA384 SHA256 SHA224
     default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
@@ -896,9 +890,9 @@ Paste the following text into a terminal window to create a [recommended](https:
     require-cross-certification
     EOF
 
-To install the keyservers CA file:
+Ensure you change to correct rights of that file to at least avoid a warning message about incorrect file rights
 
-    $ sudo curl -s "https://sks-keyservers.net/sks-keyservers.netCA.pem" -o /etc/sks-keyservers.netCA.pem
+    chmod 600 ~/.gnupg/gpg.conf
 
 ## Import public key
 
@@ -1150,7 +1144,6 @@ Paste the following text into a terminal window to create a [recommended](https:
     default-cache-ttl 60
     max-cache-ttl 120
     write-env-file
-    use-standard-socket
     EOF
 
 If you are using Linux on the desktop, you may want to use `/usr/bin/pinentry-gnome3` to use a GUI manager. For macOS, try `brew install pinentry-mac`, and adjust the `pinentry-program` setting to suit.
@@ -1162,7 +1155,7 @@ If you are using Linux on the desktop, you may want to use `/usr/bin/pinentry-gn
 Depending on how your environment is set up, you might need to add these to your shell `rc` file:
 
     export GPG_TTY="$(tty)"
-    export SSH_AUTH_SOCK="${HOME}/.gnupg/S.gpg-agent.ssh"
+    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
     gpgconf --launch gpg-agent
     
 **Note** On some systems, for example Arch Linux-based distributions, you may need to replace the second and the third line with:
@@ -1172,13 +1165,27 @@ export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 gpg-connect-agent updatestartuptty /bye
 ```
 
-
 ### Copy public key to server
 
 There is a `-L` option of `ssh-add` that lists public key parameters of all identities currently represented by the agent.  Copy and paste the following output to the server authorized_keys file:
 
     $ ssh-add -L
     ssh-rsa AAAAB4NzaC1yc2EAAAADAQABAAACAz[...]zreOKM+HwpkHzcy9DQcVG2Nw== cardno:000605553211
+
+#### (Optional) Save public key for identity file configuration
+
+If `IdentitiesOnly yes` is used in your `.ssh/config` (for example [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/)), `ssh` will not automatically enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
+
+In the case of Yubikey usage, you do not have access to the private key, and `identity_file` can be pointed to the public key (`.pub`).
+
+    $ ssh-add -L | grep "cardno:000605553211" > ~/.ssh/id_rsa_yubikey.pub
+
+Then, you can explicitly associate this Yubikey-stored key for used with the domain `github.com` (for example) as follows:
+
+    $ cat << EOF >> ~/.ssh/config
+    Host github.com
+        IdentityFile ~/.ssh/id_rsa_yubikey.pub
+    EOF
 
 ### Connect with public key authentication
 
