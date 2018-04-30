@@ -598,7 +598,7 @@ Finally, copy files to it:
     ‘/tmp/tmp.aaiTTovYgo/pubring.gpg~’ -> ‘/mnt/usb/tmp.aaiTTovYgo/pubring.gpg~’
     ‘/tmp/tmp.aaiTTovYgo/pubring.gpg’ -> ‘/mnt/usb/tmp.aaiTTovYgo/pubring.gpg’
 
-Make sure the correct files were copied, then unmount and disconnected the encrypted USB drive:
+Keep the backup mounted if you plan on setting up two or more keys (as `keytocard` will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy on save), otherwise unmount and disconnected the encrypted USB drive:
 
     $ sudo umount /mnt/usb
     $ sudo cryptsetup luksClose encrypted-usb
@@ -729,7 +729,9 @@ Some fields are optional:
 
 ## Transfer keys
 
-Transferring keys to YubiKey hardware is a one-way operation only, so make sure you've made a backup before proceeding. Previous gpg versions required the 'toggle' command before selecting keys. The currently selected key(s) are indicated with an `*`. When moving keys only one key should be selected at a time.
+Transferring keys to YubiKey hardware using `keytocard` is a one-way operation only, so make sure you've made a backup before proceeding.
+
+Previous gpg versions required the `toggle` command before selecting keys. The currently selected key(s) are indicated with an `*`. When moving keys only one key should be selected at a time.
 
     % gpg --edit-key $KEYID
 
