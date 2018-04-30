@@ -1144,7 +1144,6 @@ Paste the following text into a terminal window to create a [recommended](https:
     pinentry-program /usr/bin/pinentry-curses
     default-cache-ttl 60
     max-cache-ttl 120
-    write-env-file
     EOF
 
 If you are using Linux on the desktop, you may want to use `/usr/bin/pinentry-gnome3` to use a GUI manager. For macOS, try `brew install pinentry-mac`, and adjust the `pinentry-program` setting to suit.
@@ -1250,7 +1249,7 @@ On OpenBSD, you will need to install `pcsc-tools` and enable with `sudo rcctl en
 
 - If you receive the error, `Error connecting to agent: No such file or directory` from `ssh-add -L`, the UNIX file socket that the agent uses for communication with other processes may not be set up correctly. On Debian, try `export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"`
 
-- If you receive the error, `Permission denied (publickey)`, increase ssh verbosity with the `-v` flag and ensure the public key from the card is being offered: `Offering public key: RSA SHA256:abcdefg... cardno:00060123456`. If it is, ensure you are connecting as the right user on the target system, rather than as the user on the local system.
+- If you receive the error, `Permission denied (publickey)`, increase ssh verbosity with the `-v` flag and ensure the public key from the card is being offered: `Offering public key: RSA SHA256:abcdefg... cardno:00060123456`. If it is, ensure you are connecting as the right user on the target system, rather than as the user on the local system. Otherwise, be sure `IdentitiesOnly` is not [enabled](https://github.com/FiloSottile/whosthere#how-do-i-stop-it) for this host.
 
 - If you totally screw up, you can [reset the card](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html).
 
