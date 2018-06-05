@@ -381,7 +381,6 @@ Finally, create an [authentication key](https://superuser.com/questions/390265/w
 
 GPG doesn't provide a 'RSA (authenticate only)' key type out of the box, so select 'RSA (set your own capabilities)' and toggle the required capabilities to end up with an Authenticate-only key:
 
-```
     gpg> addkey
     Please select what kind of key you want:
        (3) DSA (sign only)
@@ -467,7 +466,6 @@ GPG doesn't provide a 'RSA (authenticate only)' key type out of the box, so sele
 
     gpg> save
 
-
 ## 3.6 Check your work
 
 List your new secret keys:
@@ -502,7 +500,6 @@ Save a copy of your keys:
 
     $ gpg --armor --export-secret-keys $KEYID > $GNUPGHOME/mastersub.key
     $ gpg --armor --export-secret-subkeys $KEYID > $GNUPGHOME/sub.key
-
 
 The exported (primary) key will still have the passphrase in place.
 
@@ -616,12 +613,13 @@ Create a filesystem:
     Writing superblocks and filesystem accounting information: done
 
 Mount the filesystem:
+
     $ sudo mkdir /mnt/usb
     $ sudo mount /dev/mapper/encrypted-usb /mnt/usb
 
 Finally, copy files to it:
 
-	$ sudo cp -avi $GNUPGHOME /mnt/usb
+    $ sudo cp -avi $GNUPGHOME /mnt/usb
     ‘/tmp/tmp.aaiTTovYgo’ -> ‘/mnt/usb/tmp.aaiTTovYgo’
     ‘/tmp/tmp.aaiTTovYgo/revoke.txt’ -> ‘/mnt/usb/tmp.aaiTTovYgo/revoke.txt’
     ‘/tmp/tmp.aaiTTovYgo/gpg.conf’ -> ‘/mnt/usb/tmp.aaiTTovYgo/gpg.conf’
@@ -635,6 +633,7 @@ Finally, copy files to it:
     ‘/tmp/tmp.aaiTTovYgo/pubring.gpg’ -> ‘/mnt/usb/tmp.aaiTTovYgo/pubring.gpg’
 
 Keep the backup mounted if you plan on setting up two or more keys (as `keytocard` will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy on save), otherwise unmount and disconnected the encrypted USB drive:
+
     $ sudo umount /mnt/usb
     $ sudo cryptsetup luksClose encrypted-usb
 
@@ -651,6 +650,7 @@ YubiKey NEOs shipped after November 2015 have [all modes enabled](https://www.yu
 Older versions of the YubiKey NEO may need to be reconfigured as a composite USB device (HID + CCID) which allows OTPs to be emitted while in use as a smart card.
 
 Plug in your YubiKey and configure it:
+
     $ ykpersonalize -m82
     Firmware version 4.2.7 Touch level 527 Program sequence 4
 
@@ -672,8 +672,8 @@ Use the [YubiKey NEO Manager](https://www.yubico.com/products/services-software/
 ## 3.10 Configure smartcard
 
 Use GPG to configure YubiKey as a smartcard:
-    $ gpg --card-edit
 
+    $ gpg --card-edit
     Reader ...........: Yubico Yubikey 4 OTP U2F CCID
     Application ID ...: D2760001240102010006055532110000
     Version ..........: 2.1
