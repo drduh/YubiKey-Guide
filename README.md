@@ -540,6 +540,7 @@ To create an encrypted USB drive, first attach it and check its label:
     [ 7668.879514] sd 8:0:0:0: [sde] Attached SCSI removable disk
 
 Check the size to make sure it's the right drive:
+
     $ sudo fdisk -l | grep /dev/sde
     Disk /dev/sde: 30 GiB, 32245809152 bytes, 62980096 sectors
     /dev/sde1        2048 62980095 62978048  30G  6 FAT16
@@ -562,6 +563,7 @@ Erase and create a new partition table:
     Syncing disks.
 
 Remove and reinsert the USB drive, then create a new partition, selecting defaults:
+
     $ sudo fdisk /dev/sde
 
     Welcome to fdisk (util-linux 2.25.2).
@@ -596,10 +598,12 @@ Use [LUKS](https://askubuntu.com/questions/97196/how-secure-is-an-encrypted-luks
     Verify passphrase:
 
 Mount the partition:
+
     $ sudo cryptsetup luksOpen /dev/sde1 encrypted-usb
     Enter passphrase for /dev/sde1:
 
 Create a filesystem:
+
     $ sudo mkfs.ext4 /dev/mapper/encrypted-usb -L encrypted-usb
     mke2fs 1.42.12 (29-Aug-2014)
     Creating filesystem with 7871744 4k blocks and 1970416 inodes
