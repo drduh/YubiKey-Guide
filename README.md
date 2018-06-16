@@ -4,8 +4,6 @@ An authentication key can also be created for SSH and used with [gpg-agent](http
 
 Keys stored on a smartcard like YubiKey are non-exportable (as opposed to keys that are stored on disk) and are convenient for everyday use. Instead of having to remember and enter passphrases to unlock SSH/GPG keys, YubiKey needs only a physical touch after being unlocked with a PIN code - and all signing and encryption operations happen on the card, rather than in OS memory.
 
-These instructions are current to Debian 9 using YubiKey 4 - with support for **4096 bit** RSA keys - in OTP+CCID mode, using GPG version 2.2. Note, older YubiKeys like the Neo are [limited](https://www.yubico.com/products/yubikey-hardware/compare-yubikeys/) to **2048 bit** RSA keys. Debian live install images are available from [here](https://www.debian.org/CD/live/) and are suitable for writing to USB drives.
-
 Programming YubiKey for GPG keys still lets you use its two slots - [OTP](https://www.yubico.com/faq/what-is-a-one-time-password-otp/) and [static password](https://www.yubico.com/products/services-software/personalization-tools/static-password/) modes, for example.
 
 **New!** [Purse](https://github.com/drduh/Purse) is a password manager which can integrate with GPG on YubiKey.
@@ -67,7 +65,7 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
   4.8 [OpenBSD](#48-openbsd)  
 5. [Troubleshooting](#5-troubleshooting)  
   5.1 [Yubikey OTP Mode and cccccccc....](#51-yubikey-otp-mode-and-cccccccc)  
-6. [References](#6-references)  
+6. [References and other work](#6-references-and-other-work)  
 
 # 1. Purchase YubiKey
 
@@ -77,11 +75,16 @@ Consider purchasing a pair (or more) and programming both in case of loss or dam
 
 # 2. Install required software
 
+These instructions are current to Debian 9 using YubiKey 4 - with support for **4096 bit** RSA keys - in OTP+CCID mode, using GPG version 2.2. Note, older YubiKeys like the Neo are [limited](https://www.yubico.com/products/yubikey-hardware/compare-yubikeys/) to **2048 bit** RSA keys.
+
+For improved security, use a live GNU/Linux distribution like [Tails](https://tails.boum.org/index.en.html) or [Debian Live](https://www.debian.org/CD/live/) - with no connection to outgoing Internet.
+
 ## 2.1 Install - Linux
 
 You will need to install the following software:
 
-    $ sudo apt-get install -y gnupg2 gnupg-agent pinentry-curses scdaemon pcscd yubikey-personalization libusb-1.0-0-dev
+    $ sudo apt-get install -y \
+        gnupg2 gnupg-agent pinentry-curses scdaemon pcscd yubikey-personalization libusb-1.0-0-dev
 
 You may also need to download and install more recent versions of [yubikey-personalization](https://developers.yubico.com/yubikey-personalization/Releases/) and [yubico-c](https://developers.yubico.com/yubico-c/Releases/):
 
@@ -376,7 +379,6 @@ Next, create an [encryption key](https://www.cs.cornell.edu/courses/cs5430/2015s
         created: 2017-10-09  expires: never       usage: E   
     [ultimate] (1). Dr Duh <doc@duh.to>
 
-
 ### 3.5c Authentication key
 
 Finally, create an [authentication key](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for).
@@ -509,8 +511,7 @@ $ gpg --armor --export-secret-subkeys $KEYID > $GNUPGHOME/sub.key
 The exported (primary) key will still have the passphrase in place.
 
 In addition to the backup below, you might want to keep a separate copy of the
-revocation certificate in a safe place:
-`$GNUPGHOME/openpgp-revocs.d/<key fingerprint>.rev`
+revocation certificate in a safe place - `$GNUPGHOME/openpgp-revocs.d/<key fingerprint>.rev`
 
 ### 3.7b Windows
 
@@ -529,11 +530,11 @@ In addition to the back up detailed in the next step, you should note the locati
 
 ### 3.8a Linux/macOS
 
-Once keys are moved to hardware, they cannot be extracted again (otherwise, what would be the point?), so make sure you have made an *encrypted* backup before proceeding.
+Once keys are moved to hardware, they cannot be extracted again, so make sure you have made an **encrypted** backup before proceeding.
 
 Also consider using a [paper copy](http://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup measure.
 
-To create an encrypted USB drive, first attach it and check its label:
+To format and encrypt a USB drive on Linux, first attach it and check its label:
 
     $ dmesg | tail
     [ 7667.607011] scsi8 : usb-storage 2-1:1.0
@@ -551,7 +552,6 @@ Check the size to make sure it's the right drive:
     $ sudo fdisk -l | grep /dev/sde
     Disk /dev/sde: 30 GiB, 32245809152 bytes, 62980096 sectors
     /dev/sde1        2048 62980095 62978048  30G  6 FAT16
-
 
 Erase and create a new partition table:
 
@@ -628,7 +628,7 @@ Mount the filesystem:
     $ sudo mkdir /mnt/usb
     $ sudo mount /dev/mapper/encrypted-usb /mnt/usb
 
-Finally, copy files to it:
+Copy files to it:
 
     $ sudo cp -avi $GNUPGHOME /mnt/usb
     ‘/tmp/tmp.aaiTTovYgo’ -> ‘/mnt/usb/tmp.aaiTTovYgo’
@@ -643,14 +643,16 @@ Finally, copy files to it:
     ‘/tmp/tmp.aaiTTovYgo/pubring.gpg~’ -> ‘/mnt/usb/tmp.aaiTTovYgo/pubring.gpg~’
     ‘/tmp/tmp.aaiTTovYgo/pubring.gpg’ -> ‘/mnt/usb/tmp.aaiTTovYgo/pubring.gpg’
 
-Keep the backup mounted if you plan on setting up two or more keys (as `keytocard` will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy on save), otherwise unmount and disconnected the encrypted USB drive:
+Keep the backup mounted if you plan on setting up two or more keys (as `keytocard` will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy on save).
+
+Otherwise unmount and disconnected the encrypted USB drive:
 
     $ sudo umount /mnt/usb
     $ sudo cryptsetup luksClose encrypted-usb
 
 ### 3.8b Windows
 
-I recommend creating an encrypted flash drive or container using [VeraCrypt](https://www.veracrypt.fr/en/Downloads.html). Store your encrypted container on multiple flash drives/hard drives. You should also consider making a [paper copy](http://www.jabberwocky.com/software/paperkey/) of your keys.
+An encrypted flash drive or container can be made using [VeraCrypt](https://www.veracrypt.fr/en/Downloads.html).
 
 ## 3.9 Configure YubiKey
 
