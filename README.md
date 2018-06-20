@@ -1319,7 +1319,7 @@ Run the following commands:
 You can then change your repository url to:
 `git@github.com:USERNAME/repository`. Any authenticated commands will be authorized by your YubiKey.
 
-**Note:** If you encounter the error `gpg: signing failed: No secret key`, run `gpg --card-status` with your YubiKey plugged in and try the git command again.
+**Note:** If you encounter the error `gpg: signing failed: No secret key`, run `gpg --card-status` with your YubiKey plugged in and try the git command again.  If you don't have it already, install [plink](https://linux.die.net/man/1/plink) using `sudo apt-get install plink`
 
 ## 4.7 Requiring touch to authenticate
 
