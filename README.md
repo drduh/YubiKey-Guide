@@ -92,7 +92,7 @@ You may also need to download and install more recent versions of [yubikey-perso
     $ curl -LfsOv https://developers.yubico.com/yubikey-personalization/Releases/ykpers-1.19.0.tar.gz
 
     $ !!.sig
-    curl -LfsOv https://developers.yubico.com/yubikey-personalization/Releases/ykpers-1.19.0.tar.gz
+    curl -LfsOv https://developers.yubico.com/yubikey-personalization/Releases/ykpers-1.19.0.tar.gz.sig
 
     $ gpg yk*sig
     gpg: assuming signed data in 'ykpers-1.19.0.tar.gz'
