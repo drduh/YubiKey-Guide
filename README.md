@@ -1314,7 +1314,7 @@ Now, to sign commits or tags simply use the `-S` option. GPG will automatically 
 
 #### Authentication
 
-Run the following commands:
+Run the following commands **(only for Windows)**:
 
 	> git config --global core.sshcommand 'plink -agent'
 
