@@ -534,6 +534,8 @@ Once keys are moved to hardware, they cannot be extracted again, so make sure yo
 
 Also consider using a [paper copy](http://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup measure.
 
+You can also use the pre-compiled executables available at [veracrypt.fr](https://www.veracrypt.fr/en/Downloads.html)
+
 To format and encrypt a USB drive on Linux, first attach it and check its label:
 
     $ dmesg | tail
@@ -1312,7 +1314,7 @@ Now, to sign commits or tags simply use the `-S` option. GPG will automatically 
 
 #### Authentication
 
-Run the following commands:
+Run the following commands **(only for Windows)**:
 
 	> git config --global core.sshcommand 'plink -agent'
 
