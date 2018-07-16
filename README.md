@@ -1306,7 +1306,7 @@ Log into GitHub and upload your SSH and PGP public keys.
 
 Then run the following commands:
 
-	> git config --global user.singingkey $KEYID
+	> git config --global user.signingkey $KEYID
 
 Make sure your user.email option matches the email associated with your PGP identity.
 
