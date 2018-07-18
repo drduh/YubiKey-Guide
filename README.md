@@ -55,10 +55,12 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
     4.4d [Signing](#44d-signing)  
     4.4e [Verifying signature](#44e-verifying-signature)  
   4.5 [SSH - Linux/Mac](#45-ssh---linuxmacos)  
-    4.5a [Update configuration](#45a-update-configuration)  
-    4.5b [Replace ssh-agent with gpg-agent](#45b-replace-ssh-agent-with-gpg-agent)  
-    4.5c [Copy public key to server](#45c-copy-public-key-to-server)  
-    4.5d [Connect with public key authentication](#45d-connect-with-public-key-authentication)  
+    4.5a [A Note on GPG Agent's SSH Agent](#45a-a-note-on-gpg-agents-ssh-agent)  
+    4.5b [Update configuration](#45b-update-configuration)  
+    4.5c [Replace ssh-agent with gpg-agent](#45c-replace-ssh-agent-with-gpg-agent)  
+    4.5d [Copy public key to server](#45d-copy-public-key-to-server)  
+    4.5e [Connect with public key authentication](#45e-connect-with-public-key-authentication)  
+    4.5f [(Optional) Import SSH Keys to `gpg-agent`](#45f-optional-import-ssh-keys-to-gpg-agent)  
   4.6 [SSH - Windows](#46-ssh---windows)  
     4.6a [GitHub](#46a-github)  
   4.7 [Requiring touch to authenticate](#47-requiring-touch-to-authenticate)  
@@ -1198,9 +1200,11 @@ Verify the previous signature:
 
 ### 4.5a A Note on GPG Agent's SSH Agent
 
-[gpg-agent](https://wiki.archlinux.org/index.php/GnuPG#SSH_agent) supports the OpenSSH ssh-agent protocol, as well as Putty's Pageant on Windows.  This means it can be used instead of the traditional ssh-agent / pageant. There are some differences from ssh-agent, notably that gpg-agent does not _cache_ keys rather it converts, encrypts and stores them - persistently - as GPG keys and then makes them available to ssh clients. Any existing ssh private keys that you'd like to keep in `gpg-agent` should be deleted once they've been imported to the GPG agent. When importing the key to `gpg-agent`, you'll be prompted for a passphrase to protect that key within GPG's key store - you may want to use the same passphrase as the original's ssh version. GPG can both cache passphrases for a determined period (ref. `gpg-agent`'s various `cache-ttl` options), and since version 2.1 can store and fetch passphrases via the macOS keychain. Note than when removing the old private key after importing to `gpg-agent`, keep the `.pub` key file around for use in specifying ssh identities (e.g. `ssh -i /path/to/identity.pub`).
+[gpg-agent](https://wiki.archlinux.org/index.php/GnuPG#SSH_agent) supports the OpenSSH ssh-agent protocol (`enable-ssh-support`), as well as Putty's Pageant on Windows (`enable-putty-support`). This means it can be used instead of the traditional ssh-agent / pageant. There are some differences from ssh-agent, notably that gpg-agent does not _cache_ keys rather it converts, encrypts and stores them - persistently - as GPG keys and then makes them available to ssh clients. Any existing ssh private keys that you'd like to keep in `gpg-agent` should be deleted after they've been imported to the GPG agent.
 
-Probably the biggest thing missing from `gpg-agent`'s ssh agent support is being able to remove keys. `ssh-add -d/-D` have no affect. Instead, you need to use the `gpg-connect-agent` utility to lookup a key's keygrip, match that with the desired ssh key fingerprint (as an MD5) and then delete that keygrip. The [gnupg-users mailing list](https://lists.gnupg.org/pipermail/gnupg-users/2016-August/056499.html) has more information.
+When importing the key to `gpg-agent`, you'll be prompted for a passphrase to protect that key within GPG's key store - you may want to use the same passphrase as the original's ssh version. GPG can both cache passphrases for a determined period (ref. `gpg-agent`'s various `cache-ttl` options), and since version 2.1 can store and fetch passphrases via the macOS keychain. Note than when removing the old private key after importing to `gpg-agent`, keep the `.pub` key file around for use in specifying ssh identities (e.g. `ssh -i /path/to/identity.pub`).
+
+Probably the biggest thing missing from `gpg-agent`'s ssh agent support is being able to remove keys. `ssh-add -d/-D` have no effect. Instead, you need to use the `gpg-connect-agent` utility to lookup a key's keygrip, match that with the desired ssh key fingerprint (as an MD5) and then delete that keygrip. The [gnupg-users mailing list](https://lists.gnupg.org/pipermail/gnupg-users/2016-August/056499.html) has more information.
 
 ### 4.5b Update configuration
 
