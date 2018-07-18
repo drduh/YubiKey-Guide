@@ -1304,7 +1304,7 @@ The migrated key should be listed in `ssh-add -l`:
 Or to show the keys with MD5 fingerprints, as used by `gpg-connect-agent`'s `KEYINFO` and `DELETE_KEY` commands:
 
     $ ssh-add -E md5 -l
-    4096 MD5:... cardno:000606900360 (RSA)
+    4096 MD5:... cardno:00060123456 (RSA)
     2048 MD5:... /Users/username/.ssh/id_rsa (RSA)
 
 When using the key `pinentry` will be invoked to request the key's passphrase. The passphrase will be cached for up to 10 minutes idle time between uses, to a maximum of 2 hours.
