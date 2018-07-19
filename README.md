@@ -1247,7 +1247,7 @@ ssh-rsa AAAAB4NzaC1yc2EAAAADAQABAAACAz[...]zreOKM+HwpkHzcy9DQcVG2Nw== cardno:000
 
 #### (Optional) Save public key for identity file configuration
 
-By default `ssh` attempts to use all the identies available via the ssh agent. It's often a good idea to be manage exactly which key(s) `ssh` will use to connect to a server, for example to separate different roles or [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/). To do this you'll need to use the `ssh` command line argument `-l [identity_file]` or the `IdentityFile` and `IdentitiesOnly` options in `.ssh/config`.
+By default `ssh` attempts to use all the identities available via the ssh agent. It's often a good idea to manage exactly which key(s) `ssh` will use to connect to a server, for example to separate different roles or [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/). To do this you'll need to use the `ssh` command line argument `-l [identity_file]` or the `IdentityFile` and `IdentitiesOnly` options in `.ssh/config`.
 
 The argument provided to `IdentityFile` is traditionally the path to the _private_ key file (for example `IdentityFile ~/.ssh/id_rsa`). For the Yubikey - indeed, in general for keys stored in an ssh agent - `IdentityFile` should point to the _public_ key file, `ssh` will select the appropriate private key from those available via the ssh agent. To prevent `ssh` from trying all keys in the agent use the `IdentitiesOnly yes` option along with one or more `-i` or `IdentityFile` options for the target host.
 
