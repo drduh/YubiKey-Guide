@@ -1247,16 +1247,21 @@ ssh-rsa AAAAB4NzaC1yc2EAAAADAQABAAACAz[...]zreOKM+HwpkHzcy9DQcVG2Nw== cardno:000
 
 #### (Optional) Save public key for identity file configuration
 
-If `IdentitiesOnly yes` is used in your `.ssh/config` (for example [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/)), `ssh` will not automatically enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
+By default `ssh` attempts to use all the identies available via the ssh agent. It's often a good idea to be manage exactly which key(s) `ssh` will use to connect to a server, for example to separate different roles or [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/). To do this you'll need to use the `ssh` command line argument `-l [identity_file]` or the `IdentityFile` and `IdentitiesOnly` options in `.ssh/config`.
 
-In the case of Yubikey usage, you do not have access to the private key, and `identity_file` can be pointed to the public key (`.pub`).
+The argument provided to `IdentityFile` is traditionally the path to the _private_ key file (for example `IdentityFile ~/.ssh/id_rsa`). For the Yubikey - indeed, in general for keys stored in an ssh agent - `IdentityFile` should point to the _public_ key file, `ssh` will select the appropriate private key from those available via the ssh agent. To prevent `ssh` from trying all keys in the agent use the `IdentitiesOnly yes` option along with one or more `-i` or `IdentityFile` options for the target host.
+
+To reiterate, with `IdentitiesOnly yes`, `ssh` will not automatically enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
+
+In the case of Yubikey usage, to extract the public key from the ssh agent:
 
     $ ssh-add -L | grep "cardno:000605553211" > ~/.ssh/id_rsa_yubikey.pub
 
-Then, you can explicitly associate this Yubikey-stored key for used with the domain `github.com` (for example) as follows:
+Then you can explicitly associate this Yubikey-stored key for used with a host, `github.com` for example, as follows:
 
     $ cat << EOF >> ~/.ssh/config
     Host github.com
+        IdentitiesOnly yes
         IdentityFile ~/.ssh/id_rsa_yubikey.pub
     EOF
 
