@@ -55,10 +55,12 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
     4.4d [Signing](#44d-signing)  
     4.4e [Verifying signature](#44e-verifying-signature)  
   4.5 [SSH - Linux/Mac](#45-ssh---linuxmacos)  
-    4.5a [Update configuration](#45a-update-configuration)  
-    4.5b [Replace ssh-agent with gpg-agent](#45b-replace-ssh-agent-with-gpg-agent)  
-    4.5c [Copy public key to server](#45c-copy-public-key-to-server)  
-    4.5d [Connect with public key authentication](#45d-connect-with-public-key-authentication)  
+    4.5a [A Note on GPG Agent's SSH Agent](#45a-a-note-on-gpg-agents-ssh-agent)  
+    4.5b [Update configuration](#45b-update-configuration)  
+    4.5c [Replace ssh-agent with gpg-agent](#45c-replace-ssh-agent-with-gpg-agent)  
+    4.5d [Copy public key to server](#45d-copy-public-key-to-server)  
+    4.5e [Connect with public key authentication](#45e-connect-with-public-key-authentication)  
+    4.5f [(Optional) Import SSH Keys to `gpg-agent`](#45f-optional-import-ssh-keys-to-gpg-agent)  
   4.6 [SSH - Windows](#46-ssh---windows)  
     4.6a [GitHub](#46a-github)  
   4.7 [Requiring touch to authenticate](#47-requiring-touch-to-authenticate)  
@@ -1196,7 +1198,15 @@ Verify the previous signature:
 
 ## 4.5 SSH - Linux/macOS
 
-### 4.5a Update configuration
+### 4.5a A Note on GPG Agent's SSH Agent
+
+[gpg-agent](https://wiki.archlinux.org/index.php/GnuPG#SSH_agent) supports the OpenSSH ssh-agent protocol (`enable-ssh-support`), as well as Putty's Pageant on Windows (`enable-putty-support`). This means it can be used instead of the traditional ssh-agent / pageant. There are some differences from ssh-agent, notably that gpg-agent does not _cache_ keys rather it converts, encrypts and stores them - persistently - as GPG keys and then makes them available to ssh clients. Any existing ssh private keys that you'd like to keep in `gpg-agent` should be deleted after they've been imported to the GPG agent.
+
+When importing the key to `gpg-agent`, you'll be prompted for a passphrase to protect that key within GPG's key store - you may want to use the same passphrase as the original's ssh version. GPG can both cache passphrases for a determined period (ref. `gpg-agent`'s various `cache-ttl` options), and since version 2.1 can store and fetch passphrases via the macOS keychain. Note than when removing the old private key after importing to `gpg-agent`, keep the `.pub` key file around for use in specifying ssh identities (e.g. `ssh -i /path/to/identity.pub`).
+
+Probably the biggest thing missing from `gpg-agent`'s ssh agent support is being able to remove keys. `ssh-add -d/-D` have no effect. Instead, you need to use the `gpg-connect-agent` utility to lookup a key's keygrip, match that with the desired ssh key fingerprint (as an MD5) and then delete that keygrip. The [gnupg-users mailing list](https://lists.gnupg.org/pipermail/gnupg-users/2016-August/056499.html) has more information.
+
+### 4.5b Update configuration
 
 Paste the following text into a terminal window to create a [recommended](https://github.com/drduh/config/blob/master/gpg-agent.conf) GPG agent configuration:
 
@@ -1209,9 +1219,9 @@ Paste the following text into a terminal window to create a [recommended](https:
 
 If you are using Linux on the desktop, you may want to use `/usr/bin/pinentry-gnome3` to use a GUI manager. For macOS, try `brew install pinentry-mac`, and adjust the `pinentry-program` setting to suit.
 
-### 4.5b Replace ssh-agent with gpg-agent
+### 4.5c Replace ssh-agent with gpg-agent
 
-[gpg-agent](https://wiki.archlinux.org/index.php/GnuPG#SSH_agent) provides OpenSSH agent emulation. To launch the agent for use by ssh use the `gpg-connect-agent /bye` or `gpgconf --launch gpg-agent` commands.
+To launch `gpg-agent` for use by ssh use the `gpg-connect-agent /bye` or `gpgconf --launch gpg-agent` commands.
 
 Depending on how your environment is set up, you might need to add these to your shell `rc` file:
 
@@ -1226,7 +1236,7 @@ export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 gpg-connect-agent updatestartuptty /bye
 ```
 
-### 4.5c Copy public key to server
+### 4.5d Copy public key to server
 
 There is a `-L` option of `ssh-add` that lists public key parameters of all identities currently represented by the agent.  Copy and paste the following output to the server authorized_keys file:
 
@@ -1237,21 +1247,26 @@ ssh-rsa AAAAB4NzaC1yc2EAAAADAQABAAACAz[...]zreOKM+HwpkHzcy9DQcVG2Nw== cardno:000
 
 #### (Optional) Save public key for identity file configuration
 
-If `IdentitiesOnly yes` is used in your `.ssh/config` (for example [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/)), `ssh` will not automatically enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
+By default `ssh` attempts to use all the identities available via the ssh agent. It's often a good idea to manage exactly which key(s) `ssh` will use to connect to a server, for example to separate different roles or [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/). To do this you'll need to use the `ssh` command line argument `-l [identity_file]` or the `IdentityFile` and `IdentitiesOnly` options in `.ssh/config`.
 
-In the case of Yubikey usage, you do not have access to the private key, and `identity_file` can be pointed to the public key (`.pub`).
+The argument provided to `IdentityFile` is traditionally the path to the _private_ key file (for example `IdentityFile ~/.ssh/id_rsa`). For the Yubikey - indeed, in general for keys stored in an ssh agent - `IdentityFile` should point to the _public_ key file, `ssh` will select the appropriate private key from those available via the ssh agent. To prevent `ssh` from trying all keys in the agent use the `IdentitiesOnly yes` option along with one or more `-i` or `IdentityFile` options for the target host.
+
+To reiterate, with `IdentitiesOnly yes`, `ssh` will not automatically enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
+
+In the case of Yubikey usage, to extract the public key from the ssh agent:
 
     $ ssh-add -L | grep "cardno:000605553211" > ~/.ssh/id_rsa_yubikey.pub
 
-Then, you can explicitly associate this Yubikey-stored key for used with the domain `github.com` (for example) as follows:
+Then you can explicitly associate this Yubikey-stored key for used with a host, `github.com` for example, as follows:
 
     $ cat << EOF >> ~/.ssh/config
     Host github.com
+        IdentitiesOnly yes
         IdentityFile ~/.ssh/id_rsa_yubikey.pub
     EOF
 
 
-### 4.5d Connect with public key authentication
+### 4.5e Connect with public key authentication
 
     $ ssh git@github.com -vvv
     [...]
@@ -1274,6 +1289,30 @@ Then, you can explicitly associate this Yubikey-stored key for used with the dom
 
 
 **Note** To make multiple connections or securely transfer many files, consider using the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) ssh option. Also see [drduh/config/ssh_config](https://github.com/drduh/config/blob/master/ssh_config).
+
+### 4.5f (Optional) Import SSH Keys to `gpg-agent`
+
+If you have existing ssh keys that you wish to make available via `gpg-agent` you'll need to import them. You should then remove the original private keys. When importing the key, `gpg-agent` uses the key's filename as the key's label; this makes it easier to follow where the key originated from. In this example, we're starting with just the Yubikey's key in place and importing `~/.ssh/id_rsa`:
+
+    $ ssh-add -l
+    4096 SHA256:... cardno:00060123456 (RSA)
+    $ ssh-add ~/.ssh/id_rsa && rm ~/.ssh/id_rsa
+
+When invoking `ssh-add`, it will prompt for the ssh key's passphrase if present, then the `pinentry` program will prompt and confirm for a new passphrase to use to encrypt the converted key within the gpg key store.
+
+The migrated key should be listed in `ssh-add -l`:
+
+    $ ssh-add -l
+    4096 SHA256:... cardno:00060123456 (RSA)
+    2048 SHA256:... /Users/username/.ssh/id_rsa (RSA)
+
+Or to show the keys with MD5 fingerprints, as used by `gpg-connect-agent`'s `KEYINFO` and `DELETE_KEY` commands:
+
+    $ ssh-add -E md5 -l
+    4096 MD5:... cardno:00060123456 (RSA)
+    2048 MD5:... /Users/username/.ssh/id_rsa (RSA)
+
+When using the key `pinentry` will be invoked to request the key's passphrase. The passphrase will be cached for up to 10 minutes idle time between uses, to a maximum of 2 hours.
 
 ## 4.6 SSH - Windows
 
