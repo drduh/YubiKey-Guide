@@ -416,6 +416,17 @@ Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/de
 $ export KEYID=0xFF3E7D88647EBCDB
 ```
 
+# Sign with an existing key (if you have one)
+
+Export your existing key to move it to the working keyring.  From a different terminal do:
+
+   $ gpg --export-secret-keys --armor --output /tmp/new.sec
+
+and then
+
+   $ gpg  --default-key $OLDKEY --sign-key $KEYID
+
+
 # Sub-keys
 
 Edit the master key to add sub-keys:
