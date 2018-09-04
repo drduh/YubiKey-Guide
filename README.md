@@ -115,6 +115,11 @@ $ sudo apt-get install -y \
 $ sudo pacman -Syu gnupg2 pcsclite ccid yubikey-personalization
 ```
 
+**RHEL7**
+```console
+$ sudo yum install -y gnupg2 pinentry-curses pcsc-lite pcsc-lite-libs gnupg2-smime
+```
+
 You may also need more recent versions of [yubikey-personalization](https://developers.yubico.com/yubikey-personalization/Releases/) and [yubico-c](https://developers.yubico.com/yubico-c/Releases/).
 
 **macOS** Download and install [Homebrew](https://brew.sh/) and the following Brew packages - `gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac`
