@@ -72,7 +72,7 @@ $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/S
 
 $ !!.sign
 
-$ gpg SHA512SUMS.sign
+$ gpg --verify SHA512SUMS.sign SHA512SUMS
 [...]
 gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>" [unknown]
 [...]
