@@ -101,7 +101,9 @@ $ sudo apt-get update
 $ sudo apt-get install -y \
      curl gnupg2 gnupg-agent \
      cryptsetup scdaemon pcscd \
-     yubikey-personalization
+     yubikey-personalization \
+     dirmngr \
+     secure-delete
 ```
 
 You may also need more recent versions of [yubikey-personalization](https://developers.yubico.com/yubikey-personalization/Releases/) and [yubico-c](https://developers.yubico.com/yubico-c/Releases/).
