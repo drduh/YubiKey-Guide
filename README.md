@@ -675,7 +675,7 @@ The -m option is the mode command. To see the different modes, enter `ykpersonal
 Use GPG to configure YubiKey as a smartcard:
 
 ```
-$ gpg --edit-card
+$ gpg --card-edit
 Reader ...........: Yubico Yubikey 4 OTP U2F CCID
 Application ID ...: D2760001240102010006055532110000
 Version ..........: 2.1
