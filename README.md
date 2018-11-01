@@ -903,7 +903,9 @@ ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 
 # Export public key
 
-Mount another USB drive to copy the public key, or save it somewhere where you can easily access later.
+Mount another USB drive to copy the *public* key, or save it somewhere where you can easily access later.
+
+**Note** Without the *public* key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use the YubiKey for SSH.
 
 ```
 $ gpg --armor --export $KEYID > /mnt/public-usb-key/pubkey.txt
@@ -1053,8 +1055,6 @@ sub  4096R/0xBECFA3C1AE191D15  created: 2017-10-09  expires: 2018-10-09  usage: 
 sub  4096R/0x5912A795E90DD2CF  created: 2017-10-09  expires: 2018-10-09  usage: E
 sub  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09  usage: A
 [ unknown] (1). Dr Duh <doc@duh.to>
-Please note that the shown key validity is not necessarily correct
-unless you restart the program.
 
 gpg> save
 ```
@@ -1259,6 +1259,8 @@ gpg-connect-agent updatestartuptty /bye
 ```
 
 ## Copy public key
+
+**Note** It is *not* necessary to import the corresponding GPG public key in order to use SSH.
 
 Copy and paste the output from `ssh-add` to the server's `authorized_keys` file:
 
