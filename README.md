@@ -156,7 +156,7 @@ $ cat /proc/sys/kernel/random/entropy_avail
 
 # Creating keys
 
-Create a tempotary directory which won't survive a [reboot](https://serverfault.com/questions/377348/when-does-tmp-get-cleared):
+Create a temporary directory which won't survive a [reboot](https://serverfault.com/questions/377348/when-does-tmp-get-cleared):
 
 ```
 $ export GNUPGHOME=$(mktemp -d) ; echo $GNUPGHOME
