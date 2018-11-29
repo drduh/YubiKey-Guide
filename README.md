@@ -1,8 +1,8 @@
-This is a guide to using [YubiKey](https://www.yubico.com/faq/yubikey/) as a [SmartCard](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for storing GPG encryption, signing and authentication keys, which can be used for SSH.
+This is a guide to using [YubiKey](https://www.yubico.com/products/yubikey-hardware/) as a [SmartCard](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for storing GPG encryption, signing and authentication keys, which can also be used for SSH.
 
 Keys stored on YubiKey are non-exportable (as opposed to file-based keys that are stored on disk) and are convenient for everyday use. Instead of having to remember and enter passphrases to unlock SSH/GPG keys, YubiKey needs only a physical touch after being unlocked with a PIN code. All signing and encryption operations happen on the card, rather than in OS memory.
 
-**New!** [Purse](https://github.com/drduh/Purse) is a password manager which can integrate with GPG on YubiKey.
+**New!** [Purse](https://github.com/drduh/Purse) is a password manager which uses GPG and YubiKey.
 
 If you have a comment or suggestion, please open an [issue](https://github.com/drduh/YubiKey-Guide/issues) on GitHub.
 
@@ -55,22 +55,20 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
 
 # Purchase YubiKey
 
-YubiKey 4 has support for **4096 bit** RSA keys in OTP+CCID mode, whereas NEO are [limited](https://www.yubico.com/products/yubikey-hardware/compare-yubikeys/) to **2048 bit** RSA keys.
+All YubiKeys except the blue "security key" model are compatible with this guide. NEO models are limited to 2048-bit RSA keys. See [Compare YubiKeys](https://www.yubico.com/products/yubikey-hardware/compare-yubikeys/).
 
-Consider purchasing a pair of keys and programming both in case of loss or damage to one of them.
+Consider purchasing a pair of YubiKeys, programming both, and storing one in a safe secondary location, in case of loss or damage to the first key.
 
 # Live image
 
-It is recommended to generate cryptographic keys and configure YubiKey from a secure environment. One way to do is by downloading and booting to a [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html) image loaded from a USB drive into memory.
+It is recommended to generate cryptographic keys and configure YubiKey from a secure environment. One way to do that is by downloading and booting to a [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html) image loaded from a USB drive into memory.
 
 Download the latest image and verify its integrity:
 
 ```
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-9.6.0-amd64-xfce.iso
-
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS
-
-$ !!.sign
+$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS.sign
 
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
 [...]
@@ -85,19 +83,19 @@ Mount a USB drive and copy the image over to it:
 
 ```
 $ sudo dd if=debian-live-9.6.0-amd64-xfce.iso of=/dev/sdc bs=4M
-
 $ sync
 ```
 
-Shut down the computer and disconnect hard drives and any unnecessary peripherals.
+Shut down the computer and disconnect any hard drives and unnecessary peripherals.
 
 Plug in the USB drive and boot to the live image. Configure networking to continue.
 
 # Required software
 
+Install several packages required for the following steps:
+
 ```
 $ sudo apt-get update
-
 $ sudo apt-get install -y \
      curl gnupg2 gnupg-agent \
      cryptsetup scdaemon pcscd \
@@ -121,7 +119,7 @@ $ cat /proc/sys/kernel/random/entropy_avail
 849
 ```
 
-A hardware random number generator like [OneRNG](http://onerng.info/onerng/) will increase the speed of entropy generation and possibly its quality. To install and configure OneRNG:
+**Optional** A hardware random number generator like [OneRNG](http://onerng.info/onerng/) will increase the speed of entropy generation and possibly its quality. To install and configure OneRNG:
 
 ```
 $ sudo apt-get install -y rng-tools at python-gnupg openssl
@@ -156,7 +154,7 @@ $ cat /proc/sys/kernel/random/entropy_avail
 
 # Creating keys
 
-Create a temporary directory which won't survive a [reboot](https://serverfault.com/questions/377348/when-does-tmp-get-cleared):
+Create a temporary directory which will be deleted on [reboot](https://serverfault.com/questions/377348/when-does-tmp-get-cleared):
 
 ```
 $ export GNUPGHOME=$(mktemp -d) ; echo $GNUPGHOME
@@ -192,7 +190,7 @@ Disable networking for the remainder of the setup.
 
 # Master key
 
-The first key to generate is the master key. It will be used for certification only - to issue sub-keys that are used for encryption, signing and authentication. This master key should be kept offline at all times.
+The first key to generate is the master key. It will be used for certification only - to issue sub-keys that are used for encryption, signing and authentication. This master key should be kept offline at all times and only accessed to revoke or issue new sub-keys.
 
 You'll be prompted to enter and verify a passphrase - keep it handy as you'll need it throughout. To generate a strong passphrase which could be written down in a hidden or secure place; or memorized:
 
@@ -201,7 +199,7 @@ $ gpg --gen-random -a 0 24
 ydOmByxmDe63u7gqx2XI9eDgpvJwibNH
 ```
 
-Generate a new key with GPG, selecting `(4) RSA (sign only)` and `4096` bit keysize - do not set the key to expire (see Note #3).
+Generate a new key with GPG, selecting `(4) RSA (sign only)` and `4096` bit keysize. Do not set the key to expire - see [Note #3](#notes).
 
 ```
 $ gpg --full-generate-key
@@ -252,7 +250,7 @@ pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [SC]
 uid                              Dr Duh <doc@duh.to>
 ```
 
-Note that as of GPG [version 2.1](https://www.gnupg.org/faq/whats-new-in-2.1.html#autorev) a revocation certificate is automatically generated.
+As of GPG [version 2.1](https://www.gnupg.org/faq/whats-new-in-2.1.html#autorev), a revocation certificate is automatically generated at this time.
 
 Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) for use later:
 
@@ -275,9 +273,9 @@ sec  rsa4096/0xEA5DE91459B80592
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
 
-Use 4096-bit keysize on YubiKey 4 and 2048-bit on NEO.
+Use 4096-bit keysize - or 2048-bit on NEO.
 
-Use a 1 year expiration - it can always be renewed using the previous offline Master key.
+Use a 1 year expiration - it can always be renewed using the offline Master certification key.
 
 ## Signing
 
@@ -630,15 +628,6 @@ Backup all GPG files to it:
 
 ```
 $ sudo cp -avi $GNUPGHOME /mnt
-[...]
-‘/tmp/tmp.aaiTTovYgo/revoke.txt’ -> ‘/mnt/tmp.aaiTTovYgo/revoke.txt’
-‘/tmp/tmp.aaiTTovYgo/gpg.conf’ -> ‘/mnt/tmp.aaiTTovYgo/gpg.conf’
-‘/tmp/tmp.aaiTTovYgo/master.key’ -> ‘/mnt/tmp.aaiTTovYgo/master.key’
-‘/tmp/tmp.aaiTTovYgo/secring.gpg’ -> ‘/mnt/tmp.aaiTTovYgo/secring.gpg’
-‘/tmp/tmp.aaiTTovYgo/mastersub.key’ -> ‘/mnt/tmp.aaiTTovYgo/mastersub.key’
-‘/tmp/tmp.aaiTTovYgo/sub.key’ -> ‘/mnt/tmp.aaiTTovYgo/sub.key’
-‘/tmp/tmp.aaiTTovYgo/pubring.gpg’ -> ‘/mnt/tmp.aaiTTovYgo/pubring.gpg’
-[...]
 ```
 
 Keep the backup mounted if you plan on setting up two or more keys as `keytocard` will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy on save.
@@ -699,7 +688,7 @@ General key info..: [none]
 
 ## Change PIN
 
-The default PIN codes are `12345678` for the Admin PIN (aka PUK) and `123456` for the PIN. The CCID-mode PINs can be up to 127 ASCII characters long.
+The default PIN is `123456` and default Admin PIN (PUK) is `12345678`. CCID-mode PINs can be up to 127 ASCII characters long.
 
 The Admin PIN is required for some card operations and to unblock a PIN that has been entered incorrectly more than three times. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for details.
 
@@ -802,7 +791,7 @@ ssb  rsa4096/0x3F29127E79649A3D
 
 ## Signing
 
-Select and move the signature key. You will be prompted for the key passphrase and admin PIN).
+Select and move the signature key. You will be prompted for the key passphrase and Admin PIN.
 
 ```
 gpg> key 1
@@ -905,7 +894,7 @@ ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 
 Mount another USB drive to copy the *public* key, or save it somewhere where you can easily access later.
 
-**Note** Without the *public* key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use the YubiKey for SSH.
+**Important** Without the *public* key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use the YubiKey for SSH.
 
 ```
 $ gpg --armor --export $KEYID > /mnt/public-usb-key/pubkey.txt
@@ -931,13 +920,14 @@ After some time, the public key will to propagate to [other](https://pgp.key-ser
 
 Ensure you have:
 
+* Saved the Encryption, Signing and Authentication sub-keys to YubiKey.
+* Saved the YubiKey PINs which you changed from defaults.
 * Saved the password to the Master key.
-* Saved a copy of the Master key, subkeys and revocation certificates on encrypted offline storage.
+* Saved a copy of the Master key, sub-keys and revocation certificates on an encrypted volume stored offline.
 * Saved the password to that encrypted volume in a separate location.
 * Saved a copy of the public key somewhere easily accessible later.
-* Moved the Encryption, Signing and Authentication subkeys to YubiKey.
 
-Then reboot or [securely delete](http://srm.sourceforge.net/) `$GNUPGHOME` and remove the secret keys from the GPG keyring:
+Reboot or [securely delete](http://srm.sourceforge.net/) `$GNUPGHOME` and remove the secret keys from the GPG keyring:
 
 ```
 $ sudo srm -r $GNUPGHOME || sudo rm -rf $GNUPGHOME
@@ -945,7 +935,7 @@ $ sudo srm -r $GNUPGHOME || sudo rm -rf $GNUPGHOME
 $ gpg --delete-secret-key $KEYID
 ```
 
-Make sure you have securely erased keys, including revocation certificates, if a Live image was not used!
+**Important** Make sure you have securely erased all generated keys and revocation certificates if a Live image was not used!
 
 # Using keys
 
@@ -1320,7 +1310,7 @@ debug1: Authentication succeeded (publickey).
 
 ## Touch to authenticate
 
-**Note** This is only possible on the Yubikey 4 line.
+**Note** This is not possible on Yubikey NEO.
 
 By default, YubiKey will perform key operations without requiring a touch from the user. To require a touch for every SSH connection, use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and Admin PIN:
 
@@ -1344,7 +1334,7 @@ $ ssh-add -l
 $ ssh-add ~/.ssh/id_rsa && rm ~/.ssh/id_rsa
 ```
 
-When invoking `ssh-add`, it will prompt for the ssh key's passphrase if present, then the `pinentry` program will prompt and confirm for a new passphrase to use to encrypt the converted key within the gpg key store.
+When invoking `ssh-add`, it will prompt for the SSH key's passphrase if present, then the `pinentry` program will prompt and confirm for a new passphrase to use to encrypt the converted key within the GPG key store.
 
 The migrated key should be listed in `ssh-add -l`:
 
@@ -1368,42 +1358,41 @@ When using the key `pinentry` will be invoked to request the key's passphrase. T
 
 You can use YubiKey to sign GitHub commits and tags. It can also be used for GitHub SSH authentication, allowing you to push, pull, and commit without a password.
 
-Log into GitHub and upload SSH and PGP public keys in Settings.
+Login to GitHub and upload SSH and PGP public keys in Settings.
 
-To sign:
+To configure a signing key:
 
 	> git config --global user.signingkey $KEYID
 
-Make sure your user.email option matches the email associated with your PGP identity.
+Make sure the user.email option matches the email address associated with the PGP identity.
 
 Now, to sign commits or tags simply use the `-S` option. GPG will automatically query your YubiKey and prompt you for your PIN.
 
 To authenticate:
 
-Run the following commands **(only for Windows)**:
+**Windows** Run the following command:
 
 	> git config --global core.sshcommand 'plink -agent'
 
-You can then change your repository url to:
-`git@github.com:USERNAME/repository`. Any authenticated commands will be authorized by your YubiKey.
+You can then change your repository url to `git@github.com:USERNAME/repository` and any authenticated commands will be authorized by your YubiKey.
 
 **Note** If you encounter the error `gpg: signing failed: No secret key` - run `gpg --card-status` with YubiKey plugged in and try the git command again.
 
 ## OpenBSD
 
-Install `pcsc-tools` and enable with `sudo rcctl enable pcscd`, then reboot in order to recognize YubiKey.
+Install `pcsc-tools` and enable with `doas rcctl enable pcscd`, then reboot in order to recognize YubiKey.
 
 ## Windows
 
-Begin by exporting the SSH key from GPG:
+Export the SSH key from GPG:
 
 ```
 $ gpg --export-ssh-key $USERID
 ```
 
-Copy this key to a file and keep it for later use. It represents the public SSH key corresponding to the secret key on your YubiKey. You can upload this key to any server you wish to SSH into.
+Copy this key to a file for later use. It represents the public SSH key corresponding to the secret key on your YubiKey. You can upload this key to any server you wish to SSH into.
 
-To authenticate SSH sessions via our YubiKey we need to enable Gpg4Win's PuTTY integration. Create a file named `gpg-agent.conf` and place it in the directory `C:\%APPDATA%\gnupg`.
+To authenticate SSH sessions via YubiKey, enable Gpg4Win's PuTTY integration. Create a file named `gpg-agent.conf` and place it in the directory `C:\%APPDATA%\gnupg`.
 The file should contain the line `enable-putty-support`.
 
 Then, open a terminal and run the following commands:
@@ -1427,7 +1416,7 @@ Now you can use PuTTY for public key SSH authentication. When the server asks fo
 
 - If you receive the error, `Yubikey core error: no yubikey present` - make sure the YubiKey is inserted correctly. It should blink once when plugged in.
 
-- If you still receive the error, `Yubikey core error: no yubikey present` - you likely need to install newer versions of yubikey-personalize as outlined in [Install required software](#install-required-software).
+- If you still receive the error, `Yubikey core error: no yubikey present` - you likely need to install newer versions of yubikey-personalize as outlined in [Required software](#required-software).
 
 - If you receive the error, `Yubikey core error: write error` - YubiKey is likely locked. Install and run yubikey-personalization-gui to unlock it.
 
