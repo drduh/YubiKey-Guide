@@ -66,7 +66,7 @@ It is recommended to generate cryptographic keys and configure YubiKey from a se
 Download the latest image and verify its integrity:
 
 ```
-$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-9.5.0-amd64-xfce.iso
+$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-9.6.0-amd64-xfce.iso
 
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS
 
@@ -77,14 +77,14 @@ $ gpg --verify SHA512SUMS.sign SHA512SUMS
 gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>" [unknown]
 [...]
 
-$ grep $(sha512sum debian-live-9.5.0-amd64-xfce.iso) SHA512SUMS
-d2b0fe266ef809943f24b71f6a7c1c7a1645a2ee0b51e71bb05625ca84f16904a8889287d580fcb5d8ff1152785f90ffdb1621733bbb148431155478b0006114  debian-live-9.5.0-amd64-xfce.iso
+$ grep $(sha512sum debian-live-9.6.0-amd64-xfce.iso) SHA512SUMS
+e35dd65fe1b078f71fcf04fa749a05bfefe4aa11a9e80f116ceec0566d65636a4ac84a9aff22aa3f7a8eeb10289d0c2f54dfe7c599d8aa16663e4f9a74f3eec5 debian-live-9.6.0-amd64-xfce.iso
 ```
 
 Mount a USB drive and copy the image over to it:
 
 ```
-$ sudo dd if=debian-live-9.5.0-amd64-xfce.iso of=/dev/sdc bs=4M
+$ sudo dd if=debian-live-9.6.0-amd64-xfce.iso of=/dev/sdc bs=4M
 
 $ sync
 ```
