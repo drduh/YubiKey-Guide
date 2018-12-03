@@ -1425,7 +1425,7 @@ enable-ssh-support
 ```
 - Open Kleopatra, go to Smartcard, plug your Yubikey, press F5. You should see your key's information.
 - Go back to the main screen, go to Import..., select your public key file.
-- Open a command console
+- Open a command console.
 
 # Troubleshooting
 
