@@ -1408,7 +1408,23 @@ Create a shortcut that points to `gpg-connect-agent /bye` and place it in your s
 Now you can use PuTTY for public key SSH authentication. When the server asks for public key verification, PuTTY will forward the request to GPG, which will prompt you for your PIN and authorize the login using your YubiKey.
 
 ## WSL
-plouf
+The goal here is to make the SSH client inside WSL work together with the Windows agent you are using (gpg-agent.exe in our case). Here is what we are going to achieve:
+![WSL agent architecture](media/schema_gpg.png)
+**Note** this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See the weasel-agent site for further information.
+
+### Prerequisites
+- Install Ubuntu >16.04 for WSL
+- Install Kleopatra
+
+### Windows configuration
+- In %APPDATA%/gnupg/scdaemon.conf, add `reader-port Yubico YubiKey OTP+FIDO+CCID 0`
+- In %APPDATA%/gnupg/gpg-agent.conf, add
+```
+enable-putty-support
+enable-ssh-support
+```
+- Open Kleopatra, go to Smartcard, plug your Yubikey, press F5. You should see your key's information.
+- Go back to the main screen, go to Import..., select your public key file.
 
 # Troubleshooting
 
