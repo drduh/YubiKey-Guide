@@ -49,6 +49,7 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
   - [GitHub](#github)
   - [OpenBSD](#openbsd)
   - [Windows](#windows)
+  - [Windows Subsystem for Linux (WSL)](#wsl)
 - [Troubleshooting](#troubleshooting)
 - [Notes](#notes)
 - [Similar work](#similar-work)
@@ -1405,6 +1406,9 @@ Then, open a terminal and run the following commands:
 Create a shortcut that points to `gpg-connect-agent /bye` and place it in your startup folder to make sure the agent starts after a system shutdown.
 
 Now you can use PuTTY for public key SSH authentication. When the server asks for public key verification, PuTTY will forward the request to GPG, which will prompt you for your PIN and authorize the login using your YubiKey.
+
+## WSL
+plouf
 
 # Troubleshooting
 
