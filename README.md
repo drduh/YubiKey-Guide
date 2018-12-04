@@ -1385,25 +1385,29 @@ Install `pcsc-tools` and enable with `doas rcctl enable pcscd`, then reboot in o
 
 ## Windows
 
-Export the SSH key from GPG:
+Windows can already have some virtual smartcard readers installed, like the one provided for Windows Hello. To ensure your Yubikey is the correct one used by scdaemon, you should add it to its configuration. You will need your device's full name. To find out what is your device's full name, plug your Yubikey, open the Device Manager, select "View->Show hidden devices". Go to the Software Devices list, you should see something like `Yubico YubiKey OTP+FIDO+CCID 0`. The name slightly differs according to the model. Thanks to [Scott Hanselman](https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx) for sharing this information.
 
+- Create or edit %APPDATA%/gnupg/scdaemon.conf, add `reader-port <your yubikey device's full name>`.
+- In %APPDATA%/gnupg/gpg-agent.conf, add:
 ```
-$ gpg --export-ssh-key $USERID
+enable-ssh-support
+enable-putty-support
 ```
 
-Copy this key to a file for later use. It represents the public SSH key corresponding to the secret key on your YubiKey. You can upload this key to any server you wish to SSH into.
-
-To authenticate SSH sessions via YubiKey, enable Gpg4Win's PuTTY integration. Create a file named `gpg-agent.conf` and place it in the directory `C:\%APPDATA%\gnupg`.
-The file should contain the line `enable-putty-support`.
-
-Then, open a terminal and run the following commands:
-
+- Open a command console, restart the agent:
 ```
 > gpg-connect-agent killagent /bye
 > gpg-connect-agent /bye
 ```
+- Enter `> gpg --card-status`, now you should see your Yubikey's details.
+- Import your [public key](#export-public-key): `> gpg --import <path to public key file>`
+- Trust it: [Trust master key](#trust-master-key)
+- Retrieve your public key's id: `gpg --list-public-keys`
+- Export the SSH key from GPG: `> gpg --export-ssh-key <your public key's id>`
 
-Create a shortcut that points to `gpg-connect-agent /bye` and place it in your startup folder to make sure the agent starts after a system shutdown.
+Copy this key to a file for later use. It represents the public SSH key corresponding to the secret key on your YubiKey. You can upload this key to any server you wish to SSH into.
+
+- Create a shortcut that points to `gpg-connect-agent /bye` and place it in your startup folder `shell:startup` to make sure the agent starts after a system shutdown. Modify the shortcut properties so it starts in a "Minimized" window, to avoid unnecessary noise at startup.
 
 Now you can use PuTTY for public key SSH authentication. When the server asks for public key verification, PuTTY will forward the request to GPG, which will prompt you for your PIN and authorize the login using your YubiKey.
 
@@ -1416,17 +1420,6 @@ The goal here is to make the SSH client inside WSL work together with the Window
 - Install Ubuntu >16.04 for WSL
 - Install Kleopatra
 - [Windows configuration](#windows)
-
-### Windows configuration
-Windows can already have some virtual smartcard readers installed, like the one provided for Windows Hello. To ensure your Yubikey is the correct one used by scdaemon, you should add it to its configuration. You will need your device's full name. To find out what is your device's full name, open the Device Manager, select "View->Show hidden devices". Go to the Software Devices list, you should see something like `Yubico YubiKey OTP+FIDO+CCID 0`. The name slightly differs according to the model. Thanks to [Scott Hanselman](https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx) for sharing this information.
-
-- Create or edit %APPDATA%/gnupg/scdaemon.conf, add `reader-port <your yubikey device's full name>`.
-- In %APPDATA%/gnupg/gpg-agent.conf, add `enable-ssh-support`
-- Open Kleopatra, go to "Tools->Smartcard", plug your Yubikey, press F5. You should see your key's information.
-- Go back to the main screen, go to "Import...", select your [public key file](#export-public-key).
-- Open a command console
-- Type `gpg --card-status`, you should see your Yubikey's details.
-- Follow this part: [Trust master key](#trust-master-key)
 
 ### WSL configuration
 - Download or clone [weasel-pageant](https://github.com/vuori/weasel-pageant).
@@ -1443,7 +1436,11 @@ RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
 **Note**: the remote ssh socket path can be found by executing `gpgconf --list-dirs agent-ssh-socket` on the host.
 
 ### Remote host configuration
-- Add `export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)` to your .bashrc or equivalent.
+- Add to your .bashrc or equivalent:
+```
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+export GPG_TTY=$(tty)
+```
 - Edit your /etc/ssh/sshd_config and add:
 ```
 AllowAgentForwarding yes
