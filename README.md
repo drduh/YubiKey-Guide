@@ -1410,7 +1410,7 @@ Now you can use PuTTY for public key SSH authentication. When the server asks fo
 ## WSL
 The goal here is to make the SSH client inside WSL work together with the Windows agent you are using (gpg-agent.exe in our case). Here is what we are going to achieve:
 ![WSL agent architecture](media/schema_gpg.png)
-**Note** this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See the weasel-agent site for further information.
+**Note**: this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See the [weasel-pageant](https://github.com/vuori/weasel-pageant) readme for further information.
 
 ### Prerequisites
 - Install Ubuntu >16.04 for WSL
@@ -1418,21 +1418,24 @@ The goal here is to make the SSH client inside WSL work together with the Window
 - [Windows configuration](#windows)
 
 ### Windows configuration
-- In %APPDATA%/gnupg/scdaemon.conf, add `reader-port Yubico YubiKey OTP+FIDO+CCID 0`
+Windows can already have some virtual smartcard readers installed, like the one provided for Windows Hello. To ensure your Yubikey is the correct one used by scdaemon, you should add it to its configuration. You will need your device's full name. To find out what is your device's full name, open the Device Manager, select "View->Show hidden devices". Go to the Software Devices list, you should see something like `Yubico YubiKey OTP+FIDO+CCID 0`. The name slightly differs according to the model. Thanks to [Scott Hanselman](https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx) for sharing this information.
+
+- Create or edit %APPDATA%/gnupg/scdaemon.conf, add `reader-port <your yubikey device's full name>`.
 - In %APPDATA%/gnupg/gpg-agent.conf, add `enable-ssh-support`
-- Open Kleopatra, go to Smartcard, plug your Yubikey, press F5. You should see your key's information.
-- Go back to the main screen, go to Import..., select your public key file.
+- Open Kleopatra, go to "Tools->Smartcard", plug your Yubikey, press F5. You should see your key's information.
+- Go back to the main screen, go to "Import...", select your [public key file](#export-public-key).
 - Open a command console
 - Type `gpg --card-status`, you should see your Yubikey's details.
 - Follow this part: [Trust master key](#trust-master-key)
 
 ### WSL configuration
-- Download or clone [weasel-pageant](https://github.com/vuori/weasel-pageant)
-- Add `eval $(/mnt/c/<path of extraction>/weasel-pageant -r -a /tmp/S.weasel-pageant)` to your .bashrc or equivalent
-- Source it `. ~/.bashrc`
-- You should be able to see your SSH key with `ssh-add -l`
-- Edit your `~/.ssh/config` file
-- For each host you want to use agent forwarding, add
+- Download or clone [weasel-pageant](https://github.com/vuori/weasel-pageant).
+- Add `eval $(/mnt/c/<path of extraction>/weasel-pageant -r -a /tmp/S.weasel-pageant)` to your .bashrc or equivalent.
+**Note**: we use a named socket here so we can use it in the RemoteForward directive of the .ssh/config file.
+- Source it `. ~/.bashrc`.
+- You should be able to see your SSH key with `ssh-add -l`.
+- Edit your `~/.ssh/config` file.
+- For each host you want to use agent forwarding, add:
 ```
 ForwardAgent yes
 RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
@@ -1440,12 +1443,13 @@ RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
 **Note**: the remote ssh socket path can be found by executing `gpgconf --list-dirs agent-ssh-socket` on the host.
 
 ### Remote host configuration
-- Add `export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)` to your .bashrc or equivalent
+- Add `export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)` to your .bashrc or equivalent.
 - Edit your /etc/ssh/sshd_config and add:
 ```
 AllowAgentForwarding yes
 StreamLocalBindUnlink yes
 ```
+- Reload the ssh daemon (e.g. `sudo service sshd reload`).
 
 ### Final test
 - Unplug your Yubikey, reboot.
@@ -1506,3 +1510,4 @@ StreamLocalBindUnlink yes
 * https://alexcabal.com/creating-the-perfect-gpg-keypair/
 * https://www.void.gr/kargig/blog/2013/12/02/creating-a-new-gpg-key-with-subkeys/
 * https://evilmartians.com/chronicles/stick-with-security-yubikey-ssh-gnupg-macos
+* https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx
