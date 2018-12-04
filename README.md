@@ -1402,7 +1402,7 @@ enable-putty-support
 - Enter `> gpg --card-status`, now you should see your Yubikey's details.
 - Import your [public key](#export-public-key): `> gpg --import <path to public key file>`
 - Trust it: [Trust master key](#trust-master-key)
-- Retrieve your public key's id: `gpg --list-public-keys`
+- Retrieve your public key's id: `> gpg --list-public-keys`
 - Export the SSH key from GPG: `> gpg --export-ssh-key <your public key's id>`
 
 Copy this key to a file for later use. It represents the public SSH key corresponding to the secret key on your YubiKey. You can upload this key to any server you wish to SSH into.
@@ -1425,15 +1425,15 @@ The goal here is to make the SSH client inside WSL work together with the Window
 - Download or clone [weasel-pageant](https://github.com/vuori/weasel-pageant).
 - Add `eval $(/mnt/c/<path of extraction>/weasel-pageant -r -a /tmp/S.weasel-pageant)` to your .bashrc or equivalent.
 **Note**: we use a named socket here so we can use it in the RemoteForward directive of the .ssh/config file.
-- Source it `. ~/.bashrc`.
-- You should be able to see your SSH key with `ssh-add -l`.
+- Source it `$ . ~/.bashrc`.
+- You should be able to see your SSH key with `$ ssh-add -l`.
 - Edit your `~/.ssh/config` file.
 - For each host you want to use agent forwarding, add:
 ```
 ForwardAgent yes
 RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
 ```
-**Note**: the remote ssh socket path can be found by executing `gpgconf --list-dirs agent-ssh-socket` on the host.
+**Note**: the remote ssh socket path can be found by executing `$ gpgconf --list-dirs agent-ssh-socket` on the host.
 
 ### Remote host configuration
 - Add to your .bashrc or equivalent:
@@ -1446,18 +1446,16 @@ export GPG_TTY=$(tty)
 AllowAgentForwarding yes
 StreamLocalBindUnlink yes
 ```
-- Reload the ssh daemon (e.g. `sudo service sshd reload`).
+- Reload the ssh daemon (e.g. `$ sudo service sshd reload`).
 
 ### Final test
-- Unplug your Yubikey, reboot.
-- Log back on Windows, open a WSL console and enter `ssh-add -l`, you should see nothing.
+- Unplug your Yubikey, disconnect or reboot.
+- Log back on Windows, open a WSL console and enter `$ ssh-add -l`, you should see nothing.
 - Plug your Yubikey, enter the same command, you should see your ssh key.
 - Log in to your remote host, you should have the pinentry popup/window asking for your Yubikey pin.
-- On your remote host, type `ssh-add -l`. If should see your ssh key, that means your forwarding works !
+- On your remote host, type `$ ssh-add -l`. If you see your ssh key, that means your forwarding works !
 
 **Note**: you can chain the agent forwarding through multiple hosts, you just have to follow the same [protocol](#remote-host-configuration) to configure each host.
-
-
 
 # Troubleshooting
 
