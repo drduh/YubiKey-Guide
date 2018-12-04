@@ -1415,17 +1415,48 @@ The goal here is to make the SSH client inside WSL work together with the Window
 ### Prerequisites
 - Install Ubuntu >16.04 for WSL
 - Install Kleopatra
+- [Windows configuration](#windows)
 
 ### Windows configuration
 - In %APPDATA%/gnupg/scdaemon.conf, add `reader-port Yubico YubiKey OTP+FIDO+CCID 0`
-- In %APPDATA%/gnupg/gpg-agent.conf, add
-```
-enable-putty-support
-enable-ssh-support
-```
+- In %APPDATA%/gnupg/gpg-agent.conf, add `enable-ssh-support`
 - Open Kleopatra, go to Smartcard, plug your Yubikey, press F5. You should see your key's information.
 - Go back to the main screen, go to Import..., select your public key file.
 - Open a command console
+- Type `gpg --card-status`, you should see your Yubikey's details.
+- Follow this part: [Trust master key](#trust-master-key)
+
+### WSL configuration
+- Download or clone [weasel-pageant](https://github.com/vuori/weasel-pageant)
+- Add `eval $(/mnt/c/<path of extraction>/weasel-pageant -r -a /tmp/S.weasel-pageant)` to your .bashrc or equivalent
+- Source it `. ~/.bashrc`
+- You should be able to see your SSH key with `ssh-add -l`
+- Edit your `~/.ssh/config` file
+- For each host you want to use agent forwarding, add
+```
+ForwardAgent yes
+RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
+```
+**Note**: the remote ssh socket path can be found by executing `gpgconf --list-dirs agent-ssh-socket` on the host.
+
+### Remote host configuration
+- Add `export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)` to your .bashrc or equivalent
+- Edit your /etc/ssh/sshd_config and add:
+```
+AllowAgentForwarding yes
+StreamLocalBindUnlink yes
+```
+
+### Final test
+- Unplug your Yubikey, reboot.
+- Log back on Windows, open a WSL console and enter `ssh-add -l`, you should see nothing.
+- Plug your Yubikey, enter the same command, you should see your ssh key.
+- Log in to your remote host, you should have the pinentry popup/window asking for your Yubikey pin.
+- On your remote host, type `ssh-add -l`. If should see your ssh key, that means your forwarding works !
+
+**Note**: you can chain the agent forwarding through multiple hosts, you just have to follow the same [protocol](#remote-host-configuration) to configure each host.
+
+
 
 # Troubleshooting
 
