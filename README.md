@@ -1457,6 +1457,25 @@ StreamLocalBindUnlink yes
 
 **Note**: you can chain the agent forwarding through multiple hosts, you just have to follow the same [protocol](#remote-host-configuration) to configure each host.
 
+# Remote Machines (agent forwarding)
+
+If you want to use your Yubikey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  Assuming that you have your Yubikey setup on your host machine.
+
+To forward your agent, ssh using the `-a` flag
+
+```
+ssh -A user@remote 
+```
+
+Or add the following to your ssh config file:
+
+```
+Host remote
+  ForwardAgent yes
+```
+
+You should then be able to use your Yubikey as if it were connected to the remote machine.
+
 # Troubleshooting
 
 - If you don't understand some option - read `man gpg`.
