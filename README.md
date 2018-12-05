@@ -1406,6 +1406,25 @@ Create a shortcut that points to `gpg-connect-agent /bye` and place it in your s
 
 Now you can use PuTTY for public key SSH authentication. When the server asks for public key verification, PuTTY will forward the request to GPG, which will prompt you for your PIN and authorize the login using your YubiKey.
 
+# Remote Machines (agent forwarding)
+
+If you want to use your Yubikey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  Assuming that you have your Yubikey setup on your host machine.
+
+To forward your agent, ssh using the `-a` flag
+
+```
+ssh -A user@remote 
+```
+
+Or add the following to your ssh config file:
+
+```
+Host remote
+  ForwardAgent yes
+```
+
+You should then be able to use your Yubikey as if it were connected to the remote machine.
+
 # Troubleshooting
 
 - If you don't understand some option - read `man gpg`.
