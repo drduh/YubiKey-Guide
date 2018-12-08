@@ -1,5 +1,7 @@
 This is a guide to using [YubiKey](https://www.yubico.com/products/yubikey-hardware/) as a [SmartCard](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for storing GPG encryption, signing and authentication keys, which can also be used for SSH.
 
+**Hint** Many of the principles in this document are applicable to other smart card devices.
+
 Keys stored on YubiKey are non-exportable (as opposed to file-based keys that are stored on disk) and are convenient for everyday use. Instead of having to remember and enter passphrases to unlock SSH/GPG keys, YubiKey needs only a physical touch after being unlocked with a PIN code. All signing and encryption operations happen on the card, rather than in OS memory.
 
 **New!** [Purse](https://github.com/drduh/Purse) is a password manager which uses GPG and YubiKey.
@@ -253,7 +255,7 @@ uid                              Dr Duh <doc@duh.to>
 
 As of GPG [version 2.1](https://www.gnupg.org/faq/whats-new-in-2.1.html#autorev), a revocation certificate is automatically generated at this time.
 
-Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) for use later:
+Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) (`KEYID`) for use later:
 
 ```
 $ export KEYID=0xFF3E7D88647EBCDB
@@ -631,7 +633,7 @@ Backup all GPG files to it:
 $ sudo cp -avi $GNUPGHOME /mnt
 ```
 
-Keep the backup mounted if you plan on setting up two or more keys as `keytocard` will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy on save.
+Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
 
 Otherwise, unmount and disconnected the encrypted USB drive:
 
@@ -769,7 +771,7 @@ gpg/card> quit
 
 # Transfer keys
 
-Transferring keys to YubiKey using `keytocard` is a one-way operation only, so make sure you've made a backup before proceeding.
+**Important** Transferring keys to YubiKey using `keytocard` is a destructive, one-way operation only. Make sure you've made a backup before proceeding: `keytocard` converts the local, on-disk key into a stub, which means the on-disk copy is no longer usable to transfer to subsequent security key devices or mint additional keys.
 
 Previous GPG versions required the `toggle` command before selecting keys. The currently selected key(s) are indicated with an `*`. When moving keys only one key should be selected at a time.
 
@@ -996,7 +998,7 @@ gpg:               imported: 1
 To download the public key from a keyserver:
 
 ```
-$ gpg --recv 0xFF3E7D88647EBCDB
+$ gpg --recv $KEYID
 gpg: requesting key 0xFF3E7D88647EBCDB from hkps server hkps.pool.sks-keyservers.net
 [...]
 gpg: key 0xFF3E7D88647EBCDB: public key "Dr Duh <doc@duh.to>" imported
@@ -1015,7 +1017,7 @@ $ sudo apt-get install -y gnupg-curl
 Edit the Master key to assign it ultimate trust by selecting `trust` then option `5`:
 
 ```
-$ gpg --edit-key 0xFF3E7D88647EBCDB
+$ gpg --edit-key $KEYID
 
 Secret key is available.
 
@@ -1052,7 +1054,7 @@ gpg> save
 
 # Insert YubiKey
 
-Re-connect Yubikey and check the status:
+Re-connect YubiKey and check the status:
 
 ```
 $ gpg --card-status
@@ -1093,7 +1095,7 @@ ssb>  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09
 # Encryption
 
 ```
-$ echo "test message string" | gpg --encrypt --armor --recipient 0xFF3E7D88647EBCDB
+$ echo "test message string" | gpg --encrypt --armor --recipient $KEYID 
 -----BEGIN PGP MESSAGE-----
 
 hQIMA1kSp5XpDdLPAQ/+JyYfLaUS/+llEzQaKDb5mWhG4HlUgD99dNJUXakm085h
@@ -1264,7 +1266,7 @@ ssh-rsa AAAAB4NzaC1yc2EAAAADAQABAAACAz[...]zreOKM+HwpkHzcy9DQcVG2Nw== cardno:000
 
 By default, SSH attempts to use all the identities available via the agent. It's often a good idea to manage exactly which keys SSH will use to connect to a server, for example to separate different roles or [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/). To do this you'll need to use the command line argument `-l [identity_file]` or the `IdentityFile` and `IdentitiesOnly` options in `.ssh/config`.
 
-The argument provided to `IdentityFile` is traditionally the path to the _private_ key file (for example `IdentityFile ~/.ssh/id_rsa`). For the Yubikey - indeed, in general for keys stored in an ssh agent - `IdentityFile` should point to the _public_ key file, `ssh` will select the appropriate private key from those available via the ssh agent. To prevent `ssh` from trying all keys in the agent use the `IdentitiesOnly yes` option along with one or more `-i` or `IdentityFile` options for the target host.
+The argument provided to `IdentityFile` is traditionally the path to the _private_ key file (for example `IdentityFile ~/.ssh/id_rsa`). For the YubiKey - indeed, in general for keys stored in an ssh agent - `IdentityFile` should point to the _public_ key file, `ssh` will select the appropriate private key from those available via the ssh agent. To prevent `ssh` from trying all keys in the agent use the `IdentitiesOnly yes` option along with one or more `-i` or `IdentityFile` options for the target host.
 
 To reiterate, with `IdentitiesOnly yes`, `ssh` will not automatically enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
 
@@ -1274,7 +1276,7 @@ In the case of YubiKey usage, to extract the public key from the ssh agent:
 $ ssh-add -L | grep "cardno:000605553211" > ~/.ssh/id_rsa_yubikey.pub
 ```
 
-Then you can explicitly associate this Yubikey-stored key for used with a host, `github.com` for example, as follows:
+Then you can explicitly associate this YubiKey-stored key for used with a host, `github.com` for example, as follows:
 
 ```
 $ cat << EOF >> ~/.ssh/config
@@ -1311,7 +1313,7 @@ debug1: Authentication succeeded (publickey).
 
 ## Touch to authenticate
 
-**Note** This is not possible on Yubikey NEO.
+**Note** This is not possible on YubiKey NEO.
 
 By default, YubiKey will perform key operations without requiring a touch from the user. To require a touch for every SSH connection, use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and Admin PIN:
 
@@ -1385,7 +1387,7 @@ Install `pcsc-tools` and enable with `doas rcctl enable pcscd`, then reboot in o
 
 ## Windows
 
-Windows can already have some virtual smartcard readers installed, like the one provided for Windows Hello. To ensure your Yubikey is the correct one used by scdaemon, you should add it to its configuration. You will need your device's full name. To find out what is your device's full name, plug your Yubikey, open the Device Manager, select "View->Show hidden devices". Go to the Software Devices list, you should see something like `Yubico YubiKey OTP+FIDO+CCID 0`. The name slightly differs according to the model. Thanks to [Scott Hanselman](https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx) for sharing this information.
+Windows can already have some virtual smartcard readers installed, like the one provided for Windows Hello. To ensure your YubiKey is the correct one used by scdaemon, you should add it to its configuration. You will need your device's full name. To find out what is your device's full name, plug your YubiKey, open the Device Manager, select "View->Show hidden devices". Go to the Software Devices list, you should see something like `Yubico YubiKey OTP+FIDO+CCID 0`. The name slightly differs according to the model. Thanks to [Scott Hanselman](https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx) for sharing this information.
 
 - Create or edit %APPDATA%/gnupg/scdaemon.conf, add `reader-port <your yubikey device's full name>`.
 - In %APPDATA%/gnupg/gpg-agent.conf, add:
@@ -1399,7 +1401,7 @@ enable-putty-support
 > gpg-connect-agent killagent /bye
 > gpg-connect-agent /bye
 ```
-- Enter `> gpg --card-status`, now you should see your Yubikey's details.
+- Enter `> gpg --card-status`, now you should see your YubiKey's details.
 - Import your [public key](#export-public-key): `> gpg --import <path to public key file>`
 - Trust it: [Trust master key](#trust-master-key)
 - Retrieve your public key's id: `> gpg --list-public-keys`
@@ -1449,17 +1451,17 @@ StreamLocalBindUnlink yes
 - Reload the ssh daemon (e.g. `$ sudo service sshd reload`).
 
 ### Final test
-- Unplug your Yubikey, disconnect or reboot.
+- Unplug your YubiKey, disconnect or reboot.
 - Log back on Windows, open a WSL console and enter `$ ssh-add -l`, you should see nothing.
-- Plug your Yubikey, enter the same command, you should see your ssh key.
-- Log in to your remote host, you should have the pinentry popup/window asking for your Yubikey pin.
+- Plug your YubiKey, enter the same command, you should see your ssh key.
+- Log in to your remote host, you should have the pinentry popup/window asking for your YubiKey pin.
 - On your remote host, type `$ ssh-add -l`. If you see your ssh key, that means your forwarding works !
 
 **Note**: you can chain the agent forwarding through multiple hosts, you just have to follow the same [protocol](#remote-host-configuration) to configure each host.
 
 # Remote Machines (agent forwarding)
 
-If you want to use your Yubikey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  Assuming that you have your Yubikey setup on your host machine.
+If you want to use your YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  Assuming that you have your YubiKey setup on your host machine.
 
 To forward your agent, ssh using the `-a` flag
 
@@ -1474,7 +1476,7 @@ Host remote
   ForwardAgent yes
 ```
 
-You should then be able to use your Yubikey as if it were connected to the remote machine.
+You should then be able to use your YubiKey as if it were connected to the remote machine.
 
 # Troubleshooting
 
@@ -1504,7 +1506,7 @@ You should then be able to use your Yubikey as if it were connected to the remot
 
 # Notes
 
-1. YubiKey has two configurations: one invoked with a short press, and the other with a long press. By default, the short-press mode is configured for HID OTP - a brief touch will emit an OTP string starting with `cccccccc`. If you rarely use the OTP mode, you can swap it to the second configuration via the Yubikey Personalization tool. If you *never* use OTP, you can disable it entirely using the [Yubikey Manager](https://developers.yubico.com/yubikey-manager) application (note, this not the similarly named Yubikey NEO Manager).
+1. YubiKey has two configurations: one invoked with a short press, and the other with a long press. By default, the short-press mode is configured for HID OTP - a brief touch will emit an OTP string starting with `cccccccc`. If you rarely use the OTP mode, you can swap it to the second configuration via the YubiKey Personalization tool. If you *never* use OTP, you can disable it entirely using the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this not the similarly named YubiKey NEO Manager).
 1. Programming YubiKey for GPG keys still lets you use its two configurations - [OTP](https://www.yubico.com/faq/what-is-a-one-time-password-otp/) and [static password](https://www.yubico.com/products/services-software/personalization-tools/static-password/) modes, for example.
 1. Setting an expiry essentially forces you to manage your subkeys and announces to the rest of the world that you are doing so. Setting an expiry on a primary key is ineffective for protecting the key from loss - whoever has the primary key can simply extend its expiry period. Revocation certificates are [better suited](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) for this purpose. It may be appropriate for your use case to set expiry dates on subkeys.
 
