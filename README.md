@@ -14,7 +14,7 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
   - [Entropy](#entropy)
 - [Creating keys](#creating-keys)
 - [Master key](#master-key)
-- [Sub-keys](#sub-keys)
+- [Subkeys](#subkeys)
   - [Signing](#signing)
   - [Encryption](#encryption)
   - [Authentication](#authentication)
@@ -54,7 +54,7 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
   - [Windows Subsystem for Linux (WSL)](#wsl)
 - [Troubleshooting](#troubleshooting)
 - [Notes](#notes)
-- [Similar work](#similar-work)
+- [Links](#links)
 
 # Purchase YubiKey
 
@@ -64,7 +64,7 @@ Consider purchasing a pair of YubiKeys, programming both, and storing one in a s
 
 # Live image
 
-It is recommended to generate cryptographic keys and configure YubiKey from a secure environment. One way to do that is by downloading and booting to a [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html) image loaded from a USB drive into memory.
+It is recommended to generate cryptographic keys and configure YubiKey from a secure environment to minimize exposure. One way to do that is by downloading and booting to a [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html) image loaded from a USB drive into memory.
 
 Download the latest image and verify its integrity:
 
@@ -85,8 +85,7 @@ e35dd65fe1b078f71fcf04fa749a05bfefe4aa11a9e80f116ceec0566d65636a4ac84a9aff22aa3f
 Mount a USB drive and copy the image over to it:
 
 ```
-$ sudo dd if=debian-live-9.6.0-amd64-xfce.iso of=/dev/sdc bs=4M
-$ sync
+$ sudo dd if=debian-live-9.6.0-amd64-xfce.iso of=/dev/sdc bs=4M && sync
 ```
 
 Shut down the computer and disconnect any hard drives and unnecessary peripherals.
@@ -155,6 +154,8 @@ $ cat /proc/sys/kernel/random/entropy_avail
 3049
 ```
 
+An entropy pool value greater than 3000 is sufficient.
+
 # Creating keys
 
 Create a temporary directory which will be deleted on [reboot](https://serverfault.com/questions/377348/when-does-tmp-get-cleared):
@@ -170,9 +171,10 @@ Create a hardened configuration for GPG with the following options or by downloa
 $ curl -Lfo $GNUPGHOME/gpg.conf https://raw.githubusercontent.com/drduh/config/master/gpg.conf
 
 $ cat $GNUPGHOME/gpg.conf
-personal-cipher-preferences AES256 AES192 AES CAST5
-personal-digest-preferences SHA512 SHA384 SHA256 SHA224
-default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
+personal-cipher-preferences AES256 AES192 AES
+personal-digest-preferences SHA512 SHA384 SHA256
+personal-compress-preferences ZLIB BZIP2 ZIP Uncompressed
+default-preference-list SHA512 SHA384 SHA256 AES256 AES192 AES ZLIB BZIP2 ZIP Uncompressed
 cert-digest-algo SHA512
 s2k-digest-algo SHA512
 s2k-cipher-algo AES256
@@ -184,7 +186,10 @@ keyid-format 0xlong
 list-options show-uid-validity
 verify-options show-uid-validity
 with-fingerprint
+with-key-origin
 require-cross-certification
+no-symkey-cache
+throw-keyids
 use-agent
 ```
 
@@ -193,7 +198,7 @@ Disable networking for the remainder of the setup.
 
 # Master key
 
-The first key to generate is the master key. It will be used for certification only - to issue sub-keys that are used for encryption, signing and authentication. This master key should be kept offline at all times and only accessed to revoke or issue new sub-keys.
+The first key to generate is the master key. It will be used for certification only - to issue subkeys that are used for encryption, signing and authentication. This master key should be kept offline at all times and only accessed to revoke or issue new subkeys.
 
 You'll be prompted to enter and verify a passphrase - keep it handy as you'll need it throughout. To generate a strong passphrase which could be written down in a hidden or secure place; or memorized:
 
@@ -230,7 +235,7 @@ GnuPG needs to construct a user ID to identify your key.
 
 Real name: Dr Duh
 Email address: doc@duh.to
-Comment:
+Comment: [Optional - leave blank]
 You selected this USER-ID:
     "Dr Duh <doc@duh.to>"
 
@@ -261,9 +266,9 @@ Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/de
 $ export KEYID=0xFF3E7D88647EBCDB
 ```
 
-# Sub-keys
+# Subkeys
 
-Edit the Master key to add sub-keys:
+Edit the Master key to add subkeys:
 
 ```
 $ gpg --expert --edit-key $KEYID
@@ -478,7 +483,9 @@ uid                            Dr Duh <doc@duh.to>
 ssb   rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
 ssb   rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
 ssb   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
-```    
+```
+
+**Optional** Add any additional identities or email addresses now using the `adduid` command.
 
 To verify with OpenPGP key checks, use the automated [key best practice checker](https://riseup.net/en/security/message-security/openpgp/best-practices#openpgp-key-checks):
 
@@ -493,7 +500,7 @@ The output will display any problems with your key in red text. If everything is
 
 # Export keys
 
-The Master and sub-keys will be encrypted with your passphrase when exported.
+The Master and subkeys will be encrypted with your passphrase when exported.
 
 Save a copy of your keys:
 
@@ -528,7 +535,6 @@ sd 8:0:0:0: Attached scsi generic sg4 type 0
 sd 8:0:0:0: [sde] 62980096 512-byte logical blocks: (32.2 GB/30.0 GiB)
 sd 8:0:0:0: [sde] Write Protect is off
 sd 8:0:0:0: [sde] Mode Sense: 43 00 00 00
- sde: sde1
 sd 8:0:0:0: [sde] Attached SCSI removable disk
 ```
 
@@ -544,10 +550,7 @@ Erase and create a new partition table:
 
 ```
 $ sudo fdisk /dev/sde
-
 Welcome to fdisk (util-linux 2.25.2).
-Changes will remain in memory only, until you decide to write them.
-Be careful before using the write command.
 
 Command (m for help): o
 Created a new DOS disklabel with disk identifier 0xeac7ee35.
@@ -562,10 +565,7 @@ Remove and reinsert the USB drive, then create a new partition, selecting defaul
 
 ```
 $ sudo fdisk /dev/sde
-
 Welcome to fdisk (util-linux 2.25.2).
-Changes will remain in memory only, until you decide to write them.
-Be careful before using the write command.
 
 Command (m for help): n
 Partition type
@@ -879,7 +879,7 @@ gpg> save
 
 # Verify card
 
-Verify the sub-keys have moved to YubiKey as indicated by `ssb>`:
+Verify the subkeys have moved to YubiKey as indicated by `ssb>`:
 
 ```
 $ gpg --list-secret-keys
@@ -909,12 +909,12 @@ On Windows:
 $ gpg --armor --export $KEYID -o \path\to\dir\pubkey.gpg
 ```
 
-Optionally, the public key may be uploaded to a [public keyserver](https://debian-administration.org/article/451/Submitting_your_GPG_key_to_a_keyserver):
+**Optional** The public key may be uploaded to a [public keyserver](https://debian-administration.org/article/451/Submitting_your_GPG_key_to_a_keyserver):
 
 ```
 $ gpg --send-key $KEYID
-gpg: sending key 0xFF3E7D88647EBCDB to hkps server hkps.pool.sks-keyservers.net
-[...]
+$ gpg --send-key $KEYID --keyserver pgp.mit.edu
+$ gpg --send-key $KEYID --keyserver keys.gnupg.net
 ```
 
 After some time, the public key will to propagate to [other](https://pgp.key-server.io/pks/lookup?search=doc%40duh.to&fingerprint=on&op=vindex) [servers](https://pgp.mit.edu/pks/lookup?search=doc%40duh.to&op=index).
@@ -923,10 +923,10 @@ After some time, the public key will to propagate to [other](https://pgp.key-ser
 
 Ensure you have:
 
-* Saved the Encryption, Signing and Authentication sub-keys to YubiKey.
+* Saved the Encryption, Signing and Authentication subkeys to YubiKey.
 * Saved the YubiKey PINs which you changed from defaults.
 * Saved the password to the Master key.
-* Saved a copy of the Master key, sub-keys and revocation certificates on an encrypted volume stored offline.
+* Saved a copy of the Master key, subkeys and revocation certificates on an encrypted volume stored offline.
 * Saved the password to that encrypted volume in a separate location.
 * Saved a copy of the public key somewhere easily accessible later.
 
@@ -934,7 +934,6 @@ Reboot or [securely delete](http://srm.sourceforge.net/) `$GNUPGHOME` and remove
 
 ```
 $ sudo srm -r $GNUPGHOME || sudo rm -rf $GNUPGHOME
-
 $ gpg --delete-secret-key $KEYID
 ```
 
@@ -1315,11 +1314,11 @@ debug1: Authentication succeeded (publickey).
 
 **Note** This is not possible on YubiKey NEO.
 
-By default, YubiKey will perform key operations without requiring a touch from the user. To require a touch for every SSH connection, use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and Admin PIN:
+By default, YubiKey will perform key operations without requiring a touch from the user. To require a touch for every SSH authentication, use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and Admin PIN:
 
     ykman openpgp touch aut on
 
-To require a touch for the signing and encrypting keys as well:
+To require a touch for signing and encryption operations:
 
     ykman openpgp touch sig on
     ykman openpgp touch enc on
@@ -1416,7 +1415,8 @@ Now you can use PuTTY for public key SSH authentication. When the server asks fo
 ## WSL
 The goal here is to make the SSH client inside WSL work together with the Windows agent you are using (gpg-agent.exe in our case). Here is what we are going to achieve:
 ![WSL agent architecture](media/schema_gpg.png)
-**Note**: this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See the [weasel-pageant](https://github.com/vuori/weasel-pageant) readme for further information.
+
+**Note** this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See the [weasel-pageant](https://github.com/vuori/weasel-pageant) readme for further information.
 
 ### Prerequisites
 - Install Ubuntu >16.04 for WSL
@@ -1425,48 +1425,54 @@ The goal here is to make the SSH client inside WSL work together with the Window
 
 ### WSL configuration
 - Download or clone [weasel-pageant](https://github.com/vuori/weasel-pageant).
-- Add `eval $(/mnt/c/<path of extraction>/weasel-pageant -r -a /tmp/S.weasel-pageant)` to your .bashrc or equivalent.
-**Note**: we use a named socket here so we can use it in the RemoteForward directive of the .ssh/config file.
-- Source it `$ . ~/.bashrc`.
+- Add `eval $(/mnt/c/<path of extraction>/weasel-pageant -r -a /tmp/S.weasel-pageant)` to your .bashrc or equivalent. Use a named socket here so it can be used in the RemoteForward directive of the .ssh/config file.
+- Source it with `source ~/.bashrc`.
 - You should be able to see your SSH key with `$ ssh-add -l`.
-- Edit your `~/.ssh/config` file.
-- For each host you want to use agent forwarding, add:
+- Edit `~/.ssh/config` - for each host you want to use agent forwarding, add:
+
 ```
 ForwardAgent yes
 RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
 ```
-**Note**: the remote ssh socket path can be found by executing `$ gpgconf --list-dirs agent-ssh-socket` on the host.
+
+**Note** The remote ssh socket path can be found by executing `$ gpgconf --list-dirs agent-ssh-socket` on the host.
 
 ### Remote host configuration
-- Add to your .bashrc or equivalent:
+
+- Add to .bashrc or equivalent:
+
 ```
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 export GPG_TTY=$(tty)
 ```
-- Edit your /etc/ssh/sshd_config and add:
+
+- Add to /etc/ssh/sshd_config:
+
 ```
 AllowAgentForwarding yes
 StreamLocalBindUnlink yes
 ```
-- Reload the ssh daemon (e.g. `$ sudo service sshd reload`).
+
+- Reload the ssh daemon (e.g., `sudo service sshd reload`).
 
 ### Final test
-- Unplug your YubiKey, disconnect or reboot.
-- Log back on Windows, open a WSL console and enter `$ ssh-add -l`, you should see nothing.
-- Plug your YubiKey, enter the same command, you should see your ssh key.
-- Log in to your remote host, you should have the pinentry popup/window asking for your YubiKey pin.
-- On your remote host, type `$ ssh-add -l`. If you see your ssh key, that means your forwarding works !
 
-**Note**: you can chain the agent forwarding through multiple hosts, you just have to follow the same [protocol](#remote-host-configuration) to configure each host.
+- Unplug YubiKey, disconnect or reboot.
+- Log back in to Windows, open a WSL console and enter `ssh-add -l` - you should see nothing.
+- Plug in YubiKey, enter the same command, you should see your ssh key.
+- Log in to your remote host, you should have the pinentry dialog asking for the YubiKey pin.
+- On your remote host, type `ssh-add -l` - if you see your ssh key, that means forwarding works!
+
+**Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
 
 # Remote Machines (agent forwarding)
 
 If you want to use your YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  Assuming that you have your YubiKey setup on your host machine.
 
-To forward your agent, ssh using the `-a` flag
+To enable agent forwarding, ssh using the `-A` flag:
 
 ```
-ssh -A user@remote 
+$ ssh -A user@remote 
 ```
 
 Or add the following to your ssh config file:
@@ -1510,20 +1516,26 @@ You should then be able to use your YubiKey as if it were connected to the remot
 1. Programming YubiKey for GPG keys still lets you use its two configurations - [OTP](https://www.yubico.com/faq/what-is-a-one-time-password-otp/) and [static password](https://www.yubico.com/products/services-software/personalization-tools/static-password/) modes, for example.
 1. Setting an expiry essentially forces you to manage your subkeys and announces to the rest of the world that you are doing so. Setting an expiry on a primary key is ineffective for protecting the key from loss - whoever has the primary key can simply extend its expiry period. Revocation certificates are [better suited](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) for this purpose. It may be appropriate for your use case to set expiry dates on subkeys.
 
-# Similar work
+# Links
 
-* https://developers.yubico.com/yubikey-personalization/
-* https://developers.yubico.com/PGP/Card_edit.html
-* https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/
-* https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/
-* https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO
-* https://trmm.net/Yubikey
-* https://rnorth.org/gpg-and-ssh-with-yubikey-for-mac
-* https://jclement.ca/articles/2015/gpg-smartcard/
-* https://github.com/herlo/ssh-gpg-smartcard-config
 * http://www.bootc.net/archives/2013/06/09/my-perfect-gnupg-ssh-agent-setup/
-* https://help.riseup.net/en/security/message-security/openpgp/best-practices
 * https://alexcabal.com/creating-the-perfect-gpg-keypair/
-* https://www.void.gr/kargig/blog/2013/12/02/creating-a-new-gpg-key-with-subkeys/
+* https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO
+* https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/
+* https://developers.yubico.com/PGP/Card_edit.html
+* https://developers.yubico.com/PIV/Introduction/Admin_access.html
+* https://developers.yubico.com/yubico-piv-tool/YubiKey_PIV_introduction.html
+* https://developers.yubico.com/yubikey-personalization/
+* https://developers.yubico.com/yubikey-piv-manager/PIN_and_Management_Key.html
 * https://evilmartians.com/chronicles/stick-with-security-yubikey-ssh-gnupg-macos
+* https://gist.github.com/ageis/14adc308087859e199912b4c79c4aaa4
+* https://github.com/herlo/ssh-gpg-smartcard-config
+* https://github.com/tomlowenthal/documentation/blob/master/gpg/smartcard-keygen.md
+* https://help.riseup.net/en/security/message-security/openpgp/best-practices
+* https://jclement.ca/articles/2015/gpg-smartcard/
+* https://rnorth.org/gpg-and-ssh-with-yubikey-for-mac
+* https://trmm.net/Yubikey
+* https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/
 * https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx
+* https://www.void.gr/kargig/blog/2013/12/02/creating-a-new-gpg-key-with-subkeys/
+
