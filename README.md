@@ -90,7 +90,7 @@ $ sudo dd if=debian-live-9.6.0-amd64-xfce.iso of=/dev/sdc bs=4M && sync
 
 Shut down the computer and disconnect any hard drives and unnecessary peripherals.
 
-Plug in the USB drive and boot to the live image. Configure networking to continue.
+Plug in the USB drive and boot to the live image. Configure networking to continue. If the screen locks, unlock with user/live.
 
 # Required software
 
