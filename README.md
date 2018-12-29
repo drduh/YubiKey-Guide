@@ -186,7 +186,6 @@ keyid-format 0xlong
 list-options show-uid-validity
 verify-options show-uid-validity
 with-fingerprint
-with-key-origin
 require-cross-certification
 no-symkey-cache
 throw-keyids
