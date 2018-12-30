@@ -158,7 +158,7 @@ An entropy pool value greater than 3000 is sufficient.
 
 # Creating keys
 
-Create a temporary directory which will be deleted on [reboot](https://serverfault.com/questions/377348/when-does-tmp-get-cleared):
+Create a temporary directory which will be deleted on [reboot](https://en.wikipedia.org/wiki/Tmpfs):
 
 ```
 $ export GNUPGHOME=$(mktemp -d) ; echo $GNUPGHOME
