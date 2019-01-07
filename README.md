@@ -1485,11 +1485,17 @@ $ gpgconf --list-dirs agent-socket
 
 This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`.
 
-- On your remote machine, edit the file `/etc/ssh/sshd_config`, so that option `StreamLocalBindUnlink` is set to `StreamLocalBindUnlink yes yes`
+- On your remote machine, edit the file `/etc/ssh/sshd_config`, so that option `StreamLocalBindUnlink` is set to `StreamLocalBindUnlink yes`
 
-- Agent forwarding should now be possible.
+- _(optional)_If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket on the remote machine before forwarding works.  For example, `rm /run/user/1000/gnupg/S.gpg-agent`.  Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
 
-- To enable agent forwarding, add the following to your ssh config file (your agent sockets may be different):
+- On your local machine, you need to copy your public keyring to your remote machine
+
+```
+$ scp .gnupg/pubring.kbx remote:~/.gnupg/
+```
+
+- Finally, to enable agent forwarding for a given machine, add the following to your ssh config file (your agent sockets may be different):
 
 ```
 Host remote
@@ -1499,6 +1505,16 @@ Host remote
 ```
 
 You should then be able to use your YubiKey as if it were connected to the remote machine.
+
+If you're still having problems, it may be necessary to edit your `gpg-agent.conf` file on both your remote and local machines to add the following information.
+
+```
+enable-ssh-support
+pinentry-program /usr/bin/pinentry-curses
+default-cache-ttl 60
+max-cache-ttl 120
+extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
+```
 
 # Troubleshooting
 
