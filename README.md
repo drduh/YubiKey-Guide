@@ -1467,19 +1467,35 @@ StreamLocalBindUnlink yes
 
 # Remote Machines (agent forwarding)
 
-If you want to use your YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  Assuming that you have your YubiKey setup on your host machine.
+If you want to use your YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  To do this, you need to already have shell access to your remote machime, and your YubiKey setup on your host machine.
 
-To enable agent forwarding, ssh using the `-A` flag:
+- First, on your host machine run:
 
 ```
-$ ssh -A user@remote 
+$ gpgconf --list-dirs agent-extra-socket
 ```
 
-Or add the following to your ssh config file:
+This should return a path to your agent-extra-socket, which should look similar to `/run/user/1000/gnupg/S.gpg-agent.extra`.
+
+- Next, find the agent socket on your **remote** machine:
+
+```
+$ gpgconf --list-dirs agent-socket
+```
+
+This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`.
+
+- On your remote machine, edit the file `/etc/ssh/sshd_config`, so that option `StreamLocalBindUnlink` is set to `StreamLocalBindUnlink yes yes`
+
+- Agent forwarding should now be possible.
+
+- To enable agent forwarding, add the following to your ssh config file (your agent sockets may be different):
 
 ```
 Host remote
   ForwardAgent yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra
+  # RemoteForward [remote socket] [local socket]
 ```
 
 You should then be able to use your YubiKey as if it were connected to the remote machine.
@@ -1538,4 +1554,4 @@ You should then be able to use your YubiKey as if it were connected to the remot
 * https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/
 * https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx
 * https://www.void.gr/kargig/blog/2013/12/02/creating-a-new-gpg-key-with-subkeys/
-
+* https://mlohr.com/gpg-agent-forwarding/
