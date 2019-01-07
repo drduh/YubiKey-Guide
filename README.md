@@ -913,8 +913,8 @@ $ gpg --armor --export $KEYID -o \path\to\dir\pubkey.gpg
 
 ```
 $ gpg --send-key $KEYID
-$ gpg --send-key $KEYID --keyserver pgp.mit.edu
-$ gpg --send-key $KEYID --keyserver keys.gnupg.net
+$ gpg --keyserver pgp.mit.edu --send-key $KEYID
+$ gpg --keyserver keys.gnupg.net --send-key $KEYID
 ```
 
 After some time, the public key will to propagate to [other](https://pgp.key-server.io/pks/lookup?search=doc%40duh.to&fingerprint=on&op=vindex) [servers](https://pgp.mit.edu/pks/lookup?search=doc%40duh.to&op=index).
