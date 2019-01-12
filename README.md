@@ -1358,15 +1358,17 @@ When using the key `pinentry` will be invoked to request the key's passphrase. T
 
 ## Remote Machines (agent forwarding)
 
-If you want to use your YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  To do this, you need to already have shell access to your remote machime, and your YubiKey setup on your host machine.
+If you want to use your YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  This section should help you setup GPG and SSH agent forwarding.
 
-- First, on your host machine run:
+To do this, you need to already have shell access to your remote machime, and your YubiKey setup on your host machine.
+
+- First, on your local host machine run:
 
 ```
 $ gpgconf --list-dirs agent-extra-socket
 ```
 
-This should return a path to your agent-extra-socket, which should look similar to `/run/user/1000/gnupg/S.gpg-agent.extra`.
+This should return a path to your agent-extra-socket, which should look similar to `/run/user/1000/gnupg/S.gpg-agent.extra`, though on older linux distros (and macs), it may be `/home/<user>/.gnupg/S/gpg-agent.extra`.
 
 - Next, find the agent socket on your **remote** machine:
 
@@ -1380,16 +1382,18 @@ This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`.
 
 - _(optional)_If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket on the remote machine before forwarding works.  For example, `rm /run/user/1000/gnupg/S.gpg-agent`.  Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
 
-- On your local machine, you need to copy your public keyring to your remote machine
+
+- Now you need to import your public keys to the remote machine. This can be done by fetching from a keyserver.  Here we show how to copy your public keyring.  On your local machine, you need to copy your public keyring to your remote machine
 
 ```
 $ scp .gnupg/pubring.kbx remote:~/.gnupg/
 ```
 
-- Finally, to enable agent forwarding for a given machine, add the following to your ssh config file (your agent sockets may be different):
+- Finally, to enable agent forwarding for a given machine, add the following to your local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
 
 ```
-Host remote
+Host 
+  Hostname your-domain
   ForwardAgent yes
   RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra
   # RemoteForward [remote socket] [local socket]
@@ -1402,8 +1406,6 @@ If you're still having problems, it may be necessary to edit your `gpg-agent.con
 ```
 enable-ssh-support
 pinentry-program /usr/bin/pinentry-curses
-default-cache-ttl 60
-max-cache-ttl 120
 extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
 ```
 
