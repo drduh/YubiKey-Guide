@@ -1356,6 +1356,59 @@ $ ssh-add -E md5 -l
 
 When using the key `pinentry` will be invoked to request the key's passphrase. The passphrase will be cached for up to 10 minutes idle time between uses, to a maximum of 2 hours.
 
+## Remote Machines (agent forwarding)
+
+If you want to use your YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  This section should help you setup GPG and SSH agent forwarding.
+
+To do this, you need to already have shell access to your remote machime, and your YubiKey setup on your host machine.
+
+- First, on your local host machine run:
+
+```
+$ gpgconf --list-dirs agent-extra-socket
+```
+
+This should return a path to your agent-extra-socket, which should look similar to `/run/user/1000/gnupg/S.gpg-agent.extra`, though on older linux distros (and macs), it may be `/home/<user>/.gnupg/S/gpg-agent.extra`.
+
+- Next, find the agent socket on your **remote** machine:
+
+```
+$ gpgconf --list-dirs agent-socket
+```
+
+This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`.
+
+- On your remote machine, edit the file `/etc/ssh/sshd_config`, so that option `StreamLocalBindUnlink` is set to `StreamLocalBindUnlink yes`
+
+- _(optional)_If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket on the remote machine before forwarding works.  For example, `rm /run/user/1000/gnupg/S.gpg-agent`.  Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
+
+
+- Now you need to import your public keys to the remote machine. This can be done by fetching from a keyserver.  Here we show how to copy your public keyring.  On your local machine, you need to copy your public keyring to your remote machine
+
+```
+$ scp .gnupg/pubring.kbx remote:~/.gnupg/
+```
+
+- Finally, to enable agent forwarding for a given machine, add the following to your local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
+
+```
+Host 
+  Hostname your-domain
+  ForwardAgent yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra
+  # RemoteForward [remote socket] [local socket]
+```
+
+You should then be able to use your YubiKey as if it were connected to the remote machine.
+
+If you're still having problems, it may be necessary to edit your `gpg-agent.conf` file on both your remote and local machines to add the following information.
+
+```
+enable-ssh-support
+pinentry-program /usr/bin/pinentry-curses
+extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
+```
+
 ## GitHub
 
 You can use YubiKey to sign GitHub commits and tags. It can also be used for GitHub SSH authentication, allowing you to push, pull, and commit without a password.
@@ -1465,24 +1518,6 @@ StreamLocalBindUnlink yes
 
 **Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
 
-# Remote Machines (agent forwarding)
-
-If you want to use your YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  Assuming that you have your YubiKey setup on your host machine.
-
-To enable agent forwarding, ssh using the `-A` flag:
-
-```
-$ ssh -A user@remote 
-```
-
-Or add the following to your ssh config file:
-
-```
-Host remote
-  ForwardAgent yes
-```
-
-You should then be able to use your YubiKey as if it were connected to the remote machine.
 
 # Troubleshooting
 
@@ -1538,4 +1573,4 @@ You should then be able to use your YubiKey as if it were connected to the remot
 * https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/
 * https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx
 * https://www.void.gr/kargig/blog/2013/12/02/creating-a-new-gpg-key-with-subkeys/
-
+* https://mlohr.com/gpg-agent-forwarding/
