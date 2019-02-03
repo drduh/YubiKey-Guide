@@ -96,6 +96,8 @@ Plug in the USB drive and boot to the live image. Configure networking to contin
 
 Install several packages required for the following steps:
 
+**debian and ubuntu**
+
 ```console
 $ sudo apt-get update
 
@@ -105,6 +107,12 @@ $ sudo apt-get install -y \
      yubikey-personalization \
      dirmngr \
      secure-delete
+```
+
+**Arch Linux**
+
+```console
+$ sudo pacman -Syu gnupg2 pcsclite ccid yubikey-personalization
 ```
 
 You may also need more recent versions of [yubikey-personalization](https://developers.yubico.com/yubikey-personalization/Releases/) and [yubico-c](https://developers.yubico.com/yubico-c/Releases/).
