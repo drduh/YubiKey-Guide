@@ -1,10 +1,8 @@
-This is a guide to using [YubiKey](https://www.yubico.com/products/yubikey-hardware/) as a [SmartCard](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for storing GPG encryption, signing and authentication keys, which can also be used for SSH.
-
-**Hint** Many of the principles in this document are applicable to other smart card devices.
+This is a guide to using [YubiKey](https://www.yubico.com/products/yubikey-hardware/) as a [SmartCard](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for storing GPG encryption, signing and authentication keys, which can also be used for SSH. Many of the principles in this document are applicable to other smart card devices.
 
 Keys stored on YubiKey are non-exportable (as opposed to file-based keys that are stored on disk) and are convenient for everyday use. Instead of having to remember and enter passphrases to unlock SSH/GPG keys, YubiKey needs only a physical touch after being unlocked with a PIN code. All signing and encryption operations happen on the card, rather than in OS memory.
 
-**New!** [Purse](https://github.com/drduh/Purse) is a password manager which uses GPG and YubiKey.
+**New!** [drduh/Purse](https://github.com/drduh/Purse) is a password manager which uses GPG and YubiKey.
 
 If you have a comment or suggestion, please open an [issue](https://github.com/drduh/YubiKey-Guide/issues) on GitHub.
 
@@ -264,7 +262,7 @@ Current allowed actions: Sign Certify Encrypt
    (A) Toggle the authenticate capability
    (Q) Finished
 
-Your selection? e
+Your selection? E
 
 Possible actions for a RSA key: Sign Certify Encrypt Authenticate
 Current allowed actions: Sign Certify
@@ -274,7 +272,7 @@ Current allowed actions: Sign Certify
    (A) Toggle the authenticate capability
    (Q) Finished
 
-Your selection? s
+Your selection? S
 
 Possible actions for a RSA key: Sign Certify Encrypt Authenticate
 Current allowed actions: Certify
@@ -284,7 +282,7 @@ Current allowed actions: Certify
    (A) Toggle the authenticate capability
    (Q) Finished
 
-Your selection? q
+Your selection? Q
 RSA keys may be between 1024 and 4096 bits long.
 What keysize do you want? (2048) 4096
 Requested keysize is 4096 bits
@@ -503,7 +501,7 @@ Current allowed actions: Authenticate
    (A) Toggle the authenticate capability
    (Q) Finished
 
-Your selection? q
+Your selection? Q
 RSA keys may be between 1024 and 4096 bits long.
 What keysize do you want? (2048) 4096
 Requested keysize is 4096 bits
@@ -588,7 +586,9 @@ $ gpg --armor --export-secret-subkeys $KEYID -o \path\to\dir\sub.gpg
 
 # Backup keys
 
-Once keys are moved to hardware, they cannot be extracted again, so make sure you have made an **encrypted** backup before proceeding. An encrypted USB drive or container can be made using [VeraCrypt](https://www.veracrypt.fr/en/Downloads.html).
+Once GPG keys are moved to YubiKey, they cannot be extracted again!
+
+Make sure you have made an **encrypted** backup before proceeding. An encrypted USB drive or container can be made using [VeraCrypt](https://www.veracrypt.fr/en/Downloads.html).
 
 Also consider using a [paper copy](https://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup measure.
 
@@ -1045,9 +1045,9 @@ ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 
 # Export public key
 
-Mount another USB disk to copy the *public* key, or save it somewhere where you can easily access later.
+Mount another USB disk to copy the *public* key, or save it somewhere where it can be easily accessed later.
 
-**Important** Without the *public* key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use the YubiKey for SSH.
+**Important** Without importing the *public* key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use YubiKey for SSH authentication.
 
 ```console
 $ gpg --armor --export $KEYID > /mnt/public-usb-key/pubkey.txt
@@ -1531,7 +1531,7 @@ This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`.
 
 * **Optional** If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket on the remote machine before forwarding works.  For example, `rm /run/user/1000/gnupg/S.gpg-agent`.  Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
 
-* Now you need to import your public keys to the remote machine. This can be done by fetching from a keyserver. On the local machine, you need to copy the public keyring to the remote machine:
+* Import public keys to the remote machine. This can be done by fetching from a keyserver. On the local machine, copy the public keyring to the remote machine:
 
 ```console
 $ scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
@@ -1541,7 +1541,7 @@ $ scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
 
 ```
 Host
-  Hostname your-domain
+  Hostname remote-host.tld
   ForwardAgent yes
   RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra
   # RemoteForward [remote socket] [local socket]
@@ -1692,7 +1692,7 @@ And reload the SSH daemon (e.g., `sudo service sshd reload`).
 
 - If you receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - make sure you replaced `ssh-agent` with `gpg-agent` as noted above.
 
-- If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - On Debian, [try](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=835394) `gpg-connect-agent updatestartuptty /bye`
+- If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - [run the command](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=835394) `gpg-connect-agent updatestartuptty /bye`
 
 - If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - check `~/.gnupg/gpg-agent.conf` to make sure the path to `pinentry` is correct.
 
