@@ -11,47 +11,54 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
 - [Purchase YubiKey](#purchase-yubikey)
 - [Live image](#live-image)
 - [Required software](#required-software)
-  - [Entropy](#entropy)
+  * [Entropy](#entropy)
 - [Creating keys](#creating-keys)
 - [Master key](#master-key)
 - [Subkeys](#subkeys)
-  - [Signing](#signing)
-  - [Encryption](#encryption)
-  - [Authentication](#authentication)
+  * [Signing](#signing)
+  * [Encryption](#encryption)
+  * [Authentication](#authentication)
 - [Verify keys](#verify-keys)
 - [Export keys](#export-keys)
 - [Backup keys](#backup-keys)
+  * [Linux](#linux)
+  * [OpenBSD](#openbsd)
 - [Configure YubiKey](#configure-yubikey)
 - [Configure Smartcard](#configure-smartcard)
-  - [Change PIN](#change-pin)
-  - [Set information](#set-information)
+  * [Change PIN](#change-pin)
+  * [Set information](#set-information)
 - [Transfer keys](#transfer-keys)
-  - [Signing](#signing-1)
-  - [Encryption](#encryption-1)
-  - [Authentication](#authentication-1)
+  * [Signing](#signing-1)
+  * [Encryption](#encryption-1)
+  * [Authentication](#authentication-1)
 - [Verify card](#verify-card)
 - [Export public key](#export-public-key)
 - [Cleanup](#cleanup)
 - [Using keys](#using-keys)
 - [Import public key](#import-public-key)
-  - [Trust master key](#trust-master-key)
+  * [Trust master key](#trust-master-key)
 - [Insert YubiKey](#insert-yubikey)
 - [Encryption](#encryption-2)
 - [Decryption](#decryption)
 - [Signing](#signing-2)
 - [Verifying signature](#verifying-signature)
 - [SSH](#ssh)
-  - [Create configuration](#create-configuration)
-  - [Replace agents](#replace-agents)
-  - [Copy public key](#copy-public-key)
-  - [(Optional) Save public key for identity file configuration](#optional-save-public-key-for-identity-file-configuration)
-  - [Connect with public key authentication](#connect-with-public-key-authentication)
-  - [Touch to authenticate](#touch-to-authenticate)
-  - [Import SSH keys](#import-ssh-keys)
-  - [GitHub](#github)
-  - [OpenBSD](#openbsd)
-  - [Windows](#windows)
-  - [Windows Subsystem for Linux (WSL)](#wsl)
+  * [Create configuration](#create-configuration)
+  * [Replace agents](#replace-agents)
+  * [Copy public key](#copy-public-key)
+  * [(Optional) Save public key for identity file configuration](#-optional--save-public-key-for-identity-file-configuration)
+  * [Connect with public key authentication](#connect-with-public-key-authentication)
+  * [Touch to authenticate](#touch-to-authenticate)
+  * [Import SSH keys](#import-ssh-keys)
+  * [Remote Machines (agent forwarding)](#remote-machines--agent-forwarding-)
+  * [GitHub](#github)
+  * [OpenBSD](#openbsd-1)
+  * [Windows](#windows)
+    + [WSL](#wsl)
+      - [Prerequisites](#prerequisites)
+      - [WSL configuration](#wsl-configuration)
+      - [Remote host configuration](#remote-host-configuration)
+      - [Final test](#final-test)
 - [Troubleshooting](#troubleshooting)
 - [Notes](#notes)
 - [Links](#links)
@@ -82,7 +89,7 @@ $ grep $(sha512sum debian-live-9.6.0-amd64-xfce.iso) SHA512SUMS
 e35dd65fe1b078f71fcf04fa749a05bfefe4aa11a9e80f116ceec0566d65636a4ac84a9aff22aa3f7a8eeb10289d0c2f54dfe7c599d8aa16663e4f9a74f3eec5 debian-live-9.6.0-amd64-xfce.iso
 ```
 
-Mount a USB drive and copy the image over to it:
+Mount a USB disk and copy the image over to it:
 
 ```console
 $ sudo dd if=debian-live-9.6.0-amd64-xfce.iso of=/dev/sdc bs=4M && sync
@@ -90,13 +97,13 @@ $ sudo dd if=debian-live-9.6.0-amd64-xfce.iso of=/dev/sdc bs=4M && sync
 
 Shut down the computer and disconnect any hard drives and unnecessary peripherals.
 
-Plug in the USB drive and boot to the live image. Configure networking to continue. If the screen locks, unlock with user/live.
+Plug in the USB disk and boot to the live image. Configure networking to continue. If the screen locks, unlock with user/live.
 
 # Required software
 
 Install several packages required for the following steps:
 
-**debian and ubuntu**
+**Debian/Ubuntu**
 
 ```console
 $ sudo apt-get update
@@ -116,15 +123,27 @@ $ sudo pacman -Syu gnupg2 pcsclite ccid yubikey-personalization
 ```
 
 **RHEL7**
+
 ```console
 $ sudo yum install -y gnupg2 pinentry-curses pcsc-lite pcsc-lite-libs gnupg2-smime
 ```
 
-You may also need more recent versions of [yubikey-personalization](https://developers.yubico.com/yubikey-personalization/Releases/) and [yubico-c](https://developers.yubico.com/yubico-c/Releases/).
+**OpenBSD**
 
-**macOS** Download and install [Homebrew](https://brew.sh/) and the following Brew packages - `gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac`
+```console
+$ doas pkg_add gnupg pcsc-tools
+```
 
-**Windows** Download and install [Gpg4Win](https://www.gpg4win.org/) and [PuTTY](https://putty.org).
+**macOS**
+
+Download and install [Homebrew](https://brew.sh/) and the following Brew packages - `gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac`
+
+**Windows**
+
+Download and install [Gpg4Win](https://www.gpg4win.org/) and [PuTTY](https://putty.org).
+
+**Note** You may also need more recent versions of [yubikey-personalization](https://developers.yubico.com/yubikey-personalization/Releases/) and [yubico-c](https://developers.yubico.com/yubico-c/Releases/).
+
 
 ## Entropy
 
@@ -547,7 +566,6 @@ The output will display any problems with your key in red text. If everything is
 
 > hokey may warn (orange text) about cross certification for the authentication key. GPG's [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html) documentation has more detail on cross certification, and gpg v2.2.1 notes "subkey <keyid> does not sign and so does not need to be cross-certified". hokey may also indicate a problem (red text) with `Key expiration times: []` on the primary key (see [Note #3](#notes) about not setting an expiry for the primary key).
 
-
 # Export keys
 
 The Master and subkeys will be encrypted with your passphrase when exported.
@@ -572,9 +590,11 @@ $ gpg --armor --export-secret-subkeys $KEYID -o \path\to\dir\sub.gpg
 
 Once keys are moved to hardware, they cannot be extracted again, so make sure you have made an **encrypted** backup before proceeding. An encrypted USB drive or container can be made using [VeraCrypt](https://www.veracrypt.fr/en/Downloads.html).
 
-Also consider using a [paper copy](http://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup measure.
+Also consider using a [paper copy](https://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup measure.
 
-To format and encrypt a USB drive on Linux, first attach it and check its label:
+## Linux
+
+Attach a USB disk and check its label:
 
 ```console
 $ sudo dmesg | tail
@@ -588,7 +608,7 @@ sd 8:0:0:0: [sde] Mode Sense: 43 00 00 00
 sd 8:0:0:0: [sde] Attached SCSI removable disk
 ```
 
-Check the size to make sure it's the right drive:
+Check the size to make sure it's the right device:
 
 ```console
 $ sudo fdisk -l /dev/sde
@@ -671,21 +691,19 @@ Creating journal (32768 blocks): done
 Writing superblocks and filesystem accounting information: done
 ```
 
-Mount the filesystem:
+Mount the filesystem and copy the temporary GNUPG directory:
 
 ```console
-$ sudo mount /dev/mapper/usb /mnt
-```
+$ sudo mkdir /mnt/encrypted-usb
 
-Backup all GPG files to it:
+$ sudo mount /dev/mapper/usb /mnt/encrypted-usb
 
-```console
-$ sudo cp -avi $GNUPGHOME /mnt
+$ sudo cp -avi $GNUPGHOME /mnt/encrypted-usb
 ```
 
 Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
 
-Otherwise, unmount and disconnected the encrypted USB drive:
+Otherwise, unmount and disconnected the encrypted USB disk:
 
 ```console
 $ sudo umount /mnt
@@ -693,8 +711,92 @@ $ sudo umount /mnt
 $ sudo cryptsetup luksClose usb
 ```
 
+## OpenBSD
+
+Attach a USB disk and determine its label:
+
+```console
+$ dmesg | grep sd.\ at
+sd2 at scsibus5 targ 1 lun 0: <Samsung, Flash Drive DUO, 1100> SCSI4 0/direct removable serial.50010000000000000001
+```
+
+Print the existing partitions to make sure it's the right device:
+
+```console
+$ doas disklabel -h sd2
+```
+
+Initialize the disk by creating an `a` partition with FS type `RAID`:
+
+```console
+$ doas fdisk -iy sd2
+Writing MBR at offset 0.
+
+$ doas disklabel -E sd2
+Label editor (enter '?' for help at any prompt)
+> a a
+offset: [64]
+size: [62653436]
+FS type: [4.2BSD] RAID
+> w
+> q
+No label changes.
+
+$ doas bioctl -c C -l sd2a softraid0
+New passphrase:
+Re-type passphrase:
+softraid0: CRYPTO volume attached as sd3
+```
+
+Make an `i` partition, then make and mount the filesystem:
+
+```console
+$ doas fdisk -iy sd3
+Writing MBR at offset 0.
+
+$ doas disklabel -E sd3
+Label editor (enter '?' for help at any prompt)
+> a i
+offset: [64]
+size: [62637371]
+FS type: [4.2BSD]
+> w
+> q
+No label changes.
+
+$ doas newfs sd3i
+/dev/rsd3i: 30584.6MB in 62637344 sectors of 512 bytes
+152 cylinder groups of 202.47MB, 12958 blocks, 25984 inodes each
+super-block backups (for fsck -b #) at:
+ 32, 414688, 829344, 1244000, 1658656, 2073312, 2487968, 2902624, 3317280, 3731936, 4146592, 4561248, 4975904,
+[...]
+```
+
+Mount the filesystem and copy the temporary GNUPG directory:
+
+```console
+$ doas mkdir /mnt/encrypted-usb
+
+$ doas mount /dev/sd3i /mnt/encrypted-usb
+
+$ doas cp -avi $GNUPGHOME /mnt/encrypted-usb
+```
+
+Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
+
+Otherwise, unmount and disconnected the encrypted USB disk:
+
+```console
+$ doas umount /mnt/encrypted-usb
+
+$ doas bioctl -d sd3
+```
+
+See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for more information.
+
 # Configure YubiKey
 
+**Note** YubiKey NEO shipped after November 2015 have [all modes enabled](https://www.yubico.com/support/knowledge-base/categories/articles/yubikey-neo-manager/); so this step may be skipped. Older versions of the YubiKey NEO may need to be reconfigured as a composite USB device (HID + CCID) which allows OTPs to be emitted while in use as a SmartCard.
 Plug in YubiKey and configure it with the `ykpersonalize` utility:
 
 ```console
@@ -706,9 +808,7 @@ The USB mode will be set to: 0x82
 Commit? (y/n) [n]: y
 ```
 
-The -m option is the mode command. To see the different modes, enter `ykpersonalize –help`. Mode 82 (in hex) enables the YubiKey NEO as a composite USB device (HID + CCID).  Once you have changed the mode, you need to re-boot the YubiKey – so remove and re-insert it. On YubiKey NEO with firmware version 3.3 or higher, you can enable composite USB device with `-m86` instead of `-m82`.
-
-**Note** YubiKey NEO shipped after November 2015 have [all modes enabled](https://www.yubico.com/support/knowledge-base/categories/articles/yubikey-neo-manager/); so this configuration may be skipped. Older versions of the YubiKey NEO may need to be reconfigured as a composite USB device (HID + CCID) which allows OTPs to be emitted while in use as a SmartCard.
+The -m option is the mode command. To see the different modes, enter `ykpersonalize -help`. Mode 82 (in hex) enables the YubiKey NEO as a composite USB device (HID + CCID).  Once you have changed the mode, you need to re-boot the YubiKey, so remove and re-insert it. On YubiKey NEO with firmware version 3.3 or higher, you can enable composite USB device with `-m86` instead of `-m82`.
 
 **Windows** Use the [YubiKey NEO Manager](https://www.yubico.com/products/services-software/download/yubikey-neo-manager/) to enable CCID functionality.
 
@@ -945,7 +1045,7 @@ ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 
 # Export public key
 
-Mount another USB drive to copy the *public* key, or save it somewhere where you can easily access later.
+Mount another USB disk to copy the *public* key, or save it somewhere where you can easily access later.
 
 **Important** Without the *public* key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use the YubiKey for SSH.
 
@@ -1016,7 +1116,7 @@ $ chmod 600 ~/.gnupg/gpg.conf
 
 # Import public key
 
-To import the public key from a file on an encrypted USB drive:
+To import the public key from a file on an encrypted USB disk:
 
 ```console
 $ sudo cryptsetup luksOpen /dev/sdd1 usb
@@ -1360,12 +1460,17 @@ debug1: Authentication succeeded (publickey).
 
 By default, YubiKey will perform key operations without requiring a touch from the user. To require a touch for every SSH authentication, use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and Admin PIN:
 
-    ykman openpgp touch aut on
+```console
+$ ykman openpgp touch aut on
+```
 
 To require a touch for signing and encryption operations:
 
-    ykman openpgp touch sig on
-    ykman openpgp touch enc on
+```console
+$ ykman openpgp touch sig on
+
+$ ykman openpgp touch enc on
+```
 
 The YubiKey will blink when it's waiting for touch.
 
@@ -1478,7 +1583,7 @@ You can then change the repository url to `git@github.com:USERNAME/repository` a
 
 ## OpenBSD
 
-Install `pcsc-tools` and enable with `doas rcctl enable pcscd`, then reboot in order to recognize YubiKey.
+`doas pkg_add pcsc-tools` and enable with `doas rcctl enable pcscd`, then reboot in order to recognize YubiKey.
 
 ## Windows
 
@@ -1511,20 +1616,20 @@ Copy this key to a file for later use. It represents the public SSH key correspo
 
 Now you can use PuTTY for public key SSH authentication. When the server asks for public key verification, PuTTY will forward the request to GPG, which will prompt you for a PIN and authorize the login using YubiKey.
 
-## WSL
+### WSL
 
 The goal here is to make the SSH client inside WSL work together with the Windows agent you are using (gpg-agent.exe in our case). Here is what we are going to achieve:
 ![WSL agent architecture](media/schema_gpg.png)
 
 **Note** this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See the [weasel-pageant](https://github.com/vuori/weasel-pageant) readme for further information.
 
-### Prerequisites
+#### Prerequisites
 
 * Ubuntu >16.04 for WSL
 * Kleopatra
 * [Windows configuration](#windows)
 
-### WSL configuration
+#### WSL configuration
 
 * Download or clone [weasel-pageant](https://github.com/vuori/weasel-pageant).
 * Add `eval $(/mnt/c/<path of extraction>/weasel-pageant -r -a /tmp/S.weasel-pageant)` to shell rc file. Use a named socket here so it can be used in the RemoteForward directive of the .ssh/config file.
@@ -1539,25 +1644,25 @@ RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
 
 **Note** The remote ssh socket path can be found by executing `$ gpgconf --list-dirs agent-ssh-socket` on the host.
 
-### Remote host configuration
+#### Remote host configuration
 
-- Add to the shell rc file:
+Add the following to the shell rc file:
 
 ```
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 export GPG_TTY=$(tty)
 ```
 
-- Add to `/etc/ssh/sshd_config`:
+Add the following to `/etc/ssh/sshd_config`:
 
 ```
 AllowAgentForwarding yes
 StreamLocalBindUnlink yes
 ```
 
-- Reload the ssh daemon (e.g., `sudo service sshd reload`).
+And reload the SSH daemon (e.g., `sudo service sshd reload`).
 
-### Final test
+#### Final test
 
 - Unplug YubiKey, disconnect or reboot.
 - Log back in to Windows, open a WSL console and enter `ssh-add -l` - you should see nothing.
@@ -1581,13 +1686,15 @@ StreamLocalBindUnlink yes
 
 - If you receive the error, `Yubikey core error: write error` - YubiKey is likely locked. Install and run yubikey-personalization-gui to unlock it.
 
-- If you receive the error, `Key does not match the card's capability` - you likely need to use 2048 bit RSA key sizes with your Yubikey.
+- If you receive the error, `Key does not match the card's capability` - you likely need to use 2048 bit RSA key sizes.
 
 - If ssh authentication fails - add up to 3 `-v` flags to increase verbosity.
 
-- If you receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - you probably have ssh-agent running.  Make sure you replaced ssh-agent with gpg-agent as noted above.
+- If you receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - make sure you replaced `ssh-agent` with `gpg-agent` as noted above.
 
 - If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - On Debian, [try](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=835394) `gpg-connect-agent updatestartuptty /bye`
+
+- If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - check `~/.gnupg/gpg-agent.conf` to make sure the path to `pinentry` is correct.
 
 - If you receive the error, `Error connecting to agent: No such file or directory` from `ssh-add -L`, the UNIX file socket that the agent uses for communication with other processes may not be set up correctly. On Debian, try `export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"`
 
@@ -1604,7 +1711,6 @@ StreamLocalBindUnlink yes
 
 # Links
 
-* http://www.bootc.net/archives/2013/06/09/my-perfect-gnupg-ssh-agent-setup/
 * https://alexcabal.com/creating-the-perfect-gpg-keypair/
 * https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO
 * https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/
@@ -1621,8 +1727,8 @@ StreamLocalBindUnlink yes
 * https://jclement.ca/articles/2015/gpg-smartcard/
 * https://rnorth.org/gpg-and-ssh-with-yubikey-for-mac
 * https://trmm.net/Yubikey
+* https://www.bootc.net/archives/2013/06/09/my-perfect-gnupg-ssh-agent-setup/
 * https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/
 * https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx
 * https://www.void.gr/kargig/blog/2013/12/02/creating-a-new-gpg-key-with-subkeys/
 * https://mlohr.com/gpg-agent-forwarding/
-
