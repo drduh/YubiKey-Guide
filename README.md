@@ -206,17 +206,53 @@ $ gpg --gen-random -a 0 24
 ydOmByxmDe63u7gqx2XI9eDgpvJwibNH
 ```
 
-Generate a new key with GPG, selecting `(4) RSA (sign only)` and `4096` bit keysize. Do not set the key to expire - see [Note #3](#notes).
+Generate a new key with GPG, selecting `(8) RSA (set your own capabilities)`, `Certify`-only and `4096` bit keysize. Do not set the key to expire - see [Note #3](#notes).
 
 ```console
-$ gpg --full-generate-key
+$ gpg --expert --full-generate-key
 
 Please select what kind of key you want:
    (1) RSA and RSA (default)
    (2) DSA and Elgamal
    (3) DSA (sign only)
    (4) RSA (sign only)
-Your selection? 4
+   (7) DSA (set your own capabilities)
+   (8) RSA (set your own capabilities)
+   (9) ECC and ECC
+  (10) ECC (sign only)
+  (11) ECC (set your own capabilities)
+  (13) Existing key
+Your selection? 8
+
+Possible actions for a RSA key: Sign Certify Encrypt Authenticate
+Current allowed actions: Sign Certify Encrypt
+
+   (S) Toggle the sign capability
+   (E) Toggle the encrypt capability
+   (A) Toggle the authenticate capability
+   (Q) Finished
+
+Your selection? e
+
+Possible actions for a RSA key: Sign Certify Encrypt Authenticate
+Current allowed actions: Sign Certify
+
+   (S) Toggle the sign capability
+   (E) Toggle the encrypt capability
+   (A) Toggle the authenticate capability
+   (Q) Finished
+
+Your selection? s
+
+Possible actions for a RSA key: Sign Certify Encrypt Authenticate
+Current allowed actions: Certify
+
+   (S) Toggle the sign capability
+   (E) Toggle the encrypt capability
+   (A) Toggle the authenticate capability
+   (Q) Finished
+
+Your selection? q
 RSA keys may be between 1024 and 4096 bits long.
 What keysize do you want? (2048) 4096
 Requested keysize is 4096 bits
@@ -252,7 +288,7 @@ public and secret key created and signed.
 
 Note that this key cannot be used for encryption.  You may want to use
 the command "--edit-key" to generate a subkey for this purpose.
-pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [SC]
+pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
 uid                              Dr Duh <doc@duh.to>
 ```
@@ -275,7 +311,7 @@ $ gpg --expert --edit-key $KEYID
 Secret key is available.
 
 sec  rsa4096/0xEA5DE91459B80592
-    created: 2017-10-09  expires: never       usage: SC  
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
@@ -323,10 +359,10 @@ disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC  
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S   
+    created: 2017-10-09  expires: 2018-10-09       usage: S
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
 
@@ -367,12 +403,12 @@ disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC  
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S   
+    created: 2017-10-09  expires: 2018-10-09       usage: S
 ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09       usage: E   
+    created: 2017-10-09  expires: 2018-10-09       usage: E
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
 
@@ -455,14 +491,14 @@ disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC  
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S   
+    created: 2017-10-09  expires: 2018-10-09       usage: S
 ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09       usage: E   
+    created: 2017-10-09  expires: 2018-10-09       usage: E
 ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09       usage: A   
+    created: 2017-10-09  expires: 2018-10-09       usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 
 gpg> save
@@ -476,7 +512,7 @@ List the generated secret keys and verify the output:
 $ gpg --list-secret-keys
 /tmp.FLZC0xcM/pubring.kbx
 -------------------------------------------------------------------------
-sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [SC]
+sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
 uid                            Dr Duh <doc@duh.to>
 ssb   rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
@@ -782,14 +818,14 @@ $ gpg --edit-key $KEYID
 Secret key is available.
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC  
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S   
+    created: 2017-10-09  expires: 2018-10-09  usage: S
 ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E   
+    created: 2017-10-09  expires: 2018-10-09  usage: E
 ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A   
+    created: 2017-10-09  expires: 2018-10-09  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
 
@@ -801,7 +837,7 @@ Select and move the signature key. You will be prompted for the key passphrase a
 gpg> key 1
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb* rsa4096/0xBECFA3C1AE191D15
     created: 2017-10-09  expires: 2018-10-09  usage: S
@@ -832,7 +868,7 @@ gpg> key 1
 gpg> key 2
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
     created: 2017-10-09  expires: 2018-10-09  usage: S
@@ -860,7 +896,7 @@ gpg> key 2
 gpg> key 3
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
     created: 2017-10-09  expires: 2018-10-09  usage: S
@@ -886,7 +922,7 @@ Verify the subkeys have moved to YubiKey as indicated by `ssb>`:
 $ gpg --list-secret-keys
 /tmp.FLZC0xcM/pubring.kbx
 -------------------------------------------------------------------------
-sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [SC]
+sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
 uid                            Dr Duh <doc@duh.to>
 ssb>  rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
@@ -1008,7 +1044,7 @@ $ gpg --edit-key $KEYID
 Secret key is available.
 
 gpg> trust
-pub  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never       usage: SC
+pub  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never       usage: C
                                trust: unknown       validity: unknown
 sub  4096R/0xBECFA3C1AE191D15  created: 2017-10-09  expires: 2018-10-09  usage: S
 sub  4096R/0x5912A795E90DD2CF  created: 2017-10-09  expires: 2018-10-09  usage: E
@@ -1028,7 +1064,7 @@ Please decide how far you trust this user to correctly verify other users' keys
 Your decision? 5
 Do you really want to set this key to ultimate trust? (y/N) y
 
-pub  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never       usage: SC
+pub  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never       usage: C
                                trust: ultimate      validity: unknown
 sub  4096R/0xBECFA3C1AE191D15  created: 2017-10-09  expires: 2018-10-09  usage: S
 sub  4096R/0x5912A795E90DD2CF  created: 2017-10-09  expires: 2018-10-09  usage: E
@@ -1081,7 +1117,7 @@ ssb>  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09
 # Encryption
 
 ```console
-$ echo "test message string" | gpg --encrypt --armor --recipient $KEYID 
+$ echo "test message string" | gpg --encrypt --armor --recipient $KEYID
 -----BEGIN PGP MESSAGE-----
 
 hQIMA1kSp5XpDdLPAQ/+JyYfLaUS/+llEzQaKDb5mWhG4HlUgD99dNJUXakm085h
@@ -1386,7 +1422,7 @@ $ scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
 * Finally, to enable agent forwarding for a given machine, add the following to the local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
 
 ```
-Host 
+Host
   Hostname your-domain
   ForwardAgent yes
   RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra
