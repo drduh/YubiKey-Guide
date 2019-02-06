@@ -111,13 +111,14 @@ $ sudo apt-get install -y \
      cryptsetup scdaemon pcscd \
      yubikey-personalization \
      dirmngr \
-     secure-delete
+     secure-delete \
+     hopenpgp-tools
 ```
 
 **Arch Linux**
 
 ```console
-$ sudo pacman -Syu gnupg2 pcsclite ccid yubikey-personalization
+$ sudo pacman -Syu gnupg2 pcsclite ccid yubikey-personalization hopenpgp-tools
 ```
 
 **RHEL7**
@@ -555,8 +556,6 @@ ssb   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 To verify with OpenPGP key checks, use the automated [key best practice checker](https://riseup.net/en/security/message-security/openpgp/best-practices#openpgp-key-checks):
 
 ```console
-$ sudo apt-get install hopenpgp-tools
-
 $ gpg --export $KEYID | hokey lint
 ```
 
