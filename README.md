@@ -135,14 +135,17 @@ $ doas pkg_add gnupg pcsc-tools
 
 **macOS**
 
-Download and install [Homebrew](https://brew.sh/) and the following Brew packages - `gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac`
+Download and install [Homebrew](https://brew.sh/) and the following Brew packages:
+
+```console
+brew install gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac
+```
 
 **Windows**
 
 Download and install [Gpg4Win](https://www.gpg4win.org/) and [PuTTY](https://putty.org).
 
 **Note** You may also need more recent versions of [yubikey-personalization](https://developers.yubico.com/yubikey-personalization/Releases/) and [yubico-c](https://developers.yubico.com/yubico-c/Releases/).
-
 
 ## Entropy
 
@@ -1687,8 +1690,6 @@ And reload the SSH daemon (e.g., `sudo service sshd reload`).
 
 - If you receive the error, `Key does not match the card's capability` - you likely need to use 2048 bit RSA key sizes.
 
-- If ssh authentication fails - add up to 3 `-v` flags to increase verbosity.
-
 - If you receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - make sure you replaced `ssh-agent` with `gpg-agent` as noted above.
 
 - If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - [run the command](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=835394) `gpg-connect-agent updatestartuptty /bye`
@@ -1698,6 +1699,8 @@ And reload the SSH daemon (e.g., `sudo service sshd reload`).
 - If you receive the error, `Error connecting to agent: No such file or directory` from `ssh-add -L`, the UNIX file socket that the agent uses for communication with other processes may not be set up correctly. On Debian, try `export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"`
 
 - If you receive the error, `Permission denied (publickey)`, increase ssh verbosity with the `-v` flag and ensure the public key from the card is being offered: `Offering public key: RSA SHA256:abcdefg... cardno:00060123456`. If it is, ensure you are connecting as the right user on the target system, rather than as the user on the local system. Otherwise, be sure `IdentitiesOnly` is not [enabled](https://github.com/FiloSottile/whosthere#how-do-i-stop-it) for this host.
+
+- If SSH authentication stil fails - add up to 3 `-v` flags to increase verbosity.
 
 - If you totally screw up, you can [reset the card](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html).
 
