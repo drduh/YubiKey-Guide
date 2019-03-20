@@ -70,7 +70,7 @@ Consider purchasing a pair of YubiKeys, programming both, and storing one in a s
 
 # Verify YubiKey
 
-To confirm your YubiKey is genuine open Chrome and go to [https://www.yubico.com/genuine/](https://www.yubico.com/genuine/). Insert your Yubico device, and click Verify Device to begin the process. Touch the YubiKey when prompted, and if asked, allow it to see the make and model of the device. If you see "Verification complete", your device is authentic.
+To confirm your YubiKey is genuine open a [browser with U2F support](https://support.yubico.com/support/solutions/articles/15000009591-how-to-confirm-your-yubico-device-is-genuine-with-u2f) and go to [https://www.yubico.com/genuine/](https://www.yubico.com/genuine/). Insert your Yubico device, and click `Verify Device` to begin the process. Touch the YubiKey when prompted, and if asked, allow it to see the make and model of the device. If you see `Verification complete`, your device is authentic.
 
 This website verifies the YubiKey's device attestation certificates signed by a set of Yubico CAs, and helps mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEFCON-25-r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
