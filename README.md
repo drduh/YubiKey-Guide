@@ -20,8 +20,6 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
 - [Verify keys](#verify-keys)
 - [Export keys](#export-keys)
 - [Backup keys](#backup-keys)
-  * [Linux](#linux)
-  * [OpenBSD](#openbsd)
 - [Configure YubiKey](#configure-yubikey)
 - [Configure Smartcard](#configure-smartcard)
   * [Change PIN](#change-pin)
@@ -81,7 +79,7 @@ It is recommended to generate cryptographic keys and configure YubiKey from a se
 Download the latest image and verify its integrity:
 
 ```console
-$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-9.8.0-amd64-xfce.iso
+$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-9.9.0-amd64-xfce.iso
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS.sign
 
@@ -90,17 +88,17 @@ $ gpg --verify SHA512SUMS.sign SHA512SUMS
 gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>" [unknown]
 [...]
 
-$ grep $(sha512sum debian-live-9.8.0-amd64-xfce.iso) SHA512SUMS
-SHA512SUMS:befdf12c58aee561ba9705ea1aba796a6a2fbfc816b8178dd54e3646a76c459137e20b420f391231b64666fa300e2b76c73e138590fb6ff83f5b9a16ea4debf1  debian-live-9.8.0-amd64-xfce.iso
+$ grep $(sha512sum debian-live-9.9.0-amd64-xfce.iso) SHA512SUMS
+SHA512SUMS:ae064cc399126214e4aa165fdbf9659047dd2af2d3b0ca57dd5f2686d1d3730019cfe3c56ac48db2af56eb856dbca75e642fadf56bc04c538b44d3d3a2982283 debian-live-9.9.0-amd64-xfce.iso
 ```
 
 Mount a USB disk and copy the image over to it:
 
 ```console
-$ sudo dd if=debian-live-9.8.0-amd64-xfce.iso of=/dev/sdc bs=4M && sync
+$ sudo dd if=debian-live-9.9.0-amd64-xfce.iso of=/dev/sdc bs=4M && sync
 ```
 
-Shut down the computer and disconnect any hard drives and unnecessary peripherals.
+Shut down the computer and disconnect any hard drives and unnecessary peripheral devices.
 
 Plug in the USB disk and boot to the live image. Configure networking to continue. If the screen locks, unlock with user/live.
 
@@ -111,9 +109,7 @@ Install several packages required for the following steps:
 **Debian/Ubuntu**
 
 ```console
-$ sudo apt-get update
-
-$ sudo apt-get install -y \
+$ sudo apt-get update && sudo apt-get install -y \
      curl gnupg2 gnupg-agent \
      cryptsetup scdaemon pcscd \
      yubikey-personalization \
@@ -145,7 +141,7 @@ $ doas pkg_add gnupg pcsc-tools
 Download and install [Homebrew](https://brew.sh/) and the following Brew packages:
 
 ```console
-brew install gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac
+$ brew install gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac
 ```
 
 **Windows**
@@ -212,7 +208,7 @@ Create a hardened configuration for GPG with the following options or by downloa
 ```console
 $ curl -o $GNUPGHOME/gpg.conf https://raw.githubusercontent.com/drduh/config/master/gpg.conf
 
-$ cat $GNUPGHOME/gpg.conf
+$ grep -ve "^#" $GNUPGHOME/gpg.conf
 personal-cipher-preferences AES256 AES192 AES
 personal-digest-preferences SHA512 SHA384 SHA256
 personal-compress-preferences ZLIB BZIP2 ZIP Uncompressed
@@ -601,7 +597,7 @@ Make sure you have made an **encrypted** backup before proceeding. An encrypted 
 
 Also consider using a [paper copy](https://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup measure.
 
-## Linux
+**Linux**
 
 Attach a USB disk and check its label:
 
@@ -720,7 +716,7 @@ $ sudo umount /mnt
 $ sudo cryptsetup luksClose usb
 ```
 
-## OpenBSD
+**OpenBSD**
 
 Attach a USB disk and determine its label:
 
@@ -1108,9 +1104,7 @@ You can reboot back into the Live image to test YubiKey.
 Install required programs:
 
 ```console
-$ sudo apt-get update
-
-$ sudo apt-get install -y \
+$ sudo apt-get update && sudo apt-get install -y \
      curl gnupg2 gnupg-agent \
      cryptsetup scdaemon pcscd
 ```
@@ -1546,7 +1540,7 @@ This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`.
 $ scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
 ```
 
-* Finally, to enable agent forwarding for a given machine, add the following to the local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
+* Finally, enable agent forwarding for a given machine by adding the following to the local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
 
 ```
 Host
@@ -1582,7 +1576,9 @@ Now, to sign commits or tags simply use the `-S` option. GPG will automatically 
 
 To authenticate:
 
-**Windows** Run the following command:
+**Windows**
+
+Run the following command:
 
 	> git config --global core.sshcommand 'plink -agent'
 
@@ -1592,7 +1588,15 @@ You can then change the repository url to `git@github.com:USERNAME/repository` a
 
 ## OpenBSD
 
-`doas pkg_add pcsc-tools` and enable with `doas rcctl enable pcscd`, then reboot in order to recognize YubiKey.
+Install and enable tools for use with PC/SC drivers, cards, readers, then reboot to recognize YubiKey:
+
+```console
+$ doas pkg_add pcsc-tools
+
+$ doas rcctl enable pcscd
+
+$ doas reboot
+```
 
 ## Windows
 
@@ -1723,6 +1727,7 @@ And reload the SSH daemon (e.g., `sudo service sshd reload`).
 * https://alexcabal.com/creating-the-perfect-gpg-keypair/
 * https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO
 * https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/
+* https://blog.onefellow.com/post/180065697833/yubikey-forwarding-ssh-keys
 * https://developers.yubico.com/PGP/Card_edit.html
 * https://developers.yubico.com/PIV/Introduction/Admin_access.html
 * https://developers.yubico.com/yubico-piv-tool/YubiKey_PIV_introduction.html
