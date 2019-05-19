@@ -13,14 +13,13 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
   * [Entropy](#entropy)
 - [Creating keys](#creating-keys)
 - [Master key](#master-key)
-- [Subkeys](#subkeys)
+- [Sub-keys](#sub-keys)
   * [Signing](#signing)
   * [Encryption](#encryption)
   * [Authentication](#authentication)
-- [Verify keys](#verify-keys)
-- [Export keys](#export-keys)
-- [Backup keys](#backup-keys)
-- [Configure YubiKey](#configure-yubikey)
+- [Verify](#verify)
+- [Export](#export)
+- [Backup](#backup)
 - [Configure Smartcard](#configure-smartcard)
   * [Change PIN](#change-pin)
   * [Set information](#set-information)
@@ -31,10 +30,6 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
 - [Verify card](#verify-card)
 - [Cleanup](#cleanup)
 - [Using keys](#using-keys)
-- [Import public key](#import-public-key)
-  * [Trust master key](#trust-master-key)
-- [Insert YubiKey](#insert-yubikey)
-- [Verifying signature](#verifying-signature)
 - [SSH](#ssh)
   * [Create configuration](#create-configuration)
   * [Replace agents](#replace-agents)
@@ -64,7 +59,7 @@ You will also need several small storage devices for booting a live image, creat
 
 # Verify YubiKey
 
-To confirm your YubiKey is genuine, open a [browser with U2F support](https://support.yubico.com/support/solutions/articles/15000009591-how-to-confirm-your-yubico-device-is-genuine-with-u2f) to [https://www.yubico.com/genuine/](https://www.yubico.com/genuine/). Insert your Yubico device, and select Verify Device` to begin the process. Touch the YubiKey when prompted, and if asked, allow it to see the make and model of the device. If you see `Verification complete`, your device is authentic.
+To confirm your YubiKey is genuine, open a [browser with U2F support](https://support.yubico.com/support/solutions/articles/15000009591-how-to-confirm-your-yubico-device-is-genuine-with-u2f) to [https://www.yubico.com/genuine/](https://www.yubico.com/genuine/). Insert your Yubico device, and select *Verify Device* to begin the process. Touch the YubiKey when prompted, and if asked, allow it to see the make and model of the device. If you see *Verification complete*, your device is authentic.
 
 This website verifies the YubiKey's device attestation certificates signed by a set of Yubico CAs, and helps mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEFCON-25-r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
@@ -298,9 +293,9 @@ Disable networking for the remainder of the setup.
 
 # Master key
 
-The first key to generate is the master key. It will be used for certification only: to issue subkeys that are used for encryption, signing and authentication.
+The first key to generate is the master key. It will be used for certification only: to issue sub-keys that are used for encryption, signing and authentication.
 
-**Important** The master key should be kept offline at all times and only accessed to revoke or issue new subkeys.
+**Important** The master key should be kept offline at all times and only accessed to revoke or issue new sub-keys. Keys can also be generated on the YubiKey itself to ensure no other copies exist.
 
 You'll be prompted to enter and verify a passphrase - keep it handy as you'll need it throughout. To generate a strong passphrase which could be written down in a hidden or secure place; or memorized:
 
@@ -409,7 +404,7 @@ Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/de
 $ export KEYID=0xFF3E7D88647EBCDB
 ```
 
-# Subkeys
+# Sub-keys
 
 Edit the master key to add sub-keys:
 
@@ -612,7 +607,7 @@ ssb  rsa4096/0x3F29127E79649A3D
 gpg> save
 ```
 
-# Verify keys
+# Verify
 
 List the generated secret keys and verify the output:
 
@@ -640,7 +635,7 @@ The output will display any problems with your key in red text. If everything is
 
 > hokey may warn (orange text) about cross certification for the authentication key. GPG's [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html) documentation has more detail on cross certification, and gpg v2.2.1 notes "subkey <keyid> does not sign and so does not need to be cross-certified". hokey may also indicate a problem (red text) with `Key expiration times: []` on the primary key (see [Note #3](#notes) about not setting an expiry for the primary key).
 
-# Export keys
+# Export
 
 The master key and sub-keys will be encrypted with your passphrase when exported.
 
@@ -660,7 +655,7 @@ $ gpg --armor --export-secret-keys $KEYID -o \path\to\dir\mastersub.gpg
 $ gpg --armor --export-secret-subkeys $KEYID -o \path\to\dir\sub.gpg
 ```
 
-# Backup keys
+# Backup
 
 Once GPG keys are moved to YubiKey, they cannot be moved again! Create an **encrypted** backup of the keyring and consider using a [paper copy](https://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup.
 
@@ -821,7 +816,7 @@ $ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID.txt
 [...]
 ```
 
-**Windows**
+Windows:
 
 ```console
 $ gpg --armor --export $KEYID -o \path\to\dir\pubkey.gpg
@@ -847,7 +842,7 @@ Attach a USB disk and determine its label:
 
 ```console
 $ dmesg | grep sd.\ at
-sd2 at scsibus5 targ 1 lun 0: <Samsung, Flash Drive DUO, 1100> SCSI4 0/direct removable serial.50010000000000000001
+sd2 at scsibus5 targ 1 lun 0: <TS-RDF5, SD Transcend, TS37> SCSI4 0/direct removable serial.00000000000000000000
 ```
 
 Print the existing partitions to make sure it's the right device:
@@ -856,7 +851,7 @@ Print the existing partitions to make sure it's the right device:
 $ doas disklabel -h sd2
 ```
 
-Initialize the disk by creating an `a` partition with FS type `RAID`:
+Initialize the disk by creating an `a` partition with FS type `RAID` and size of 10 Megabytes:
 
 ```console
 $ doas fdisk -iy sd2
@@ -864,21 +859,25 @@ Writing MBR at offset 0.
 
 $ doas disklabel -E sd2
 Label editor (enter '?' for help at any prompt)
-> a a
+sd2> a a
 offset: [64]
-size: [62653436]
+size: [31101776] 10M
 FS type: [4.2BSD] RAID
-> w
-> q
-No label changes.
+sd2*> w
+sd2> q
+No label changes
+```
 
+Encrypt with bioctl:
+
+```console
 $ doas bioctl -c C -l sd2a softraid0
 New passphrase:
 Re-type passphrase:
 softraid0: CRYPTO volume attached as sd3
 ```
 
-Create an `i` partition, then create and mount the filesystem:
+Create an `i` partition on the new crypto volume and the filesystem:
 
 ```console
 $ doas fdisk -iy sd3
@@ -886,23 +885,22 @@ Writing MBR at offset 0.
 
 $ doas disklabel -E sd3
 Label editor (enter '?' for help at any prompt)
-> a i
+sd3> a i
 offset: [64]
-size: [62637371]
+size: [16001]
 FS type: [4.2BSD]
-> w
-> q
+sd3*> w
+sd3> q
 No label changes.
 
 $ doas newfs sd3i
-/dev/rsd3i: 30584.6MB in 62637344 sectors of 512 bytes
-152 cylinder groups of 202.47MB, 12958 blocks, 25984 inodes each
+/dev/rsd3i: 7.8MB in 16000 sectors of 512 bytes
+4 cylinder groups of 1.95MB, 125 blocks, 256 inodes each
 super-block backups (for fsck -b #) at:
- 32, 414688, 829344, 1244000, 1658656, 2073312, 2487968, 2902624, 3317280, 3731936, 4146592, 4561248, 4975904,
-[...]
+ 32, 4032, 8032, 12032,
 ```
 
-Mount the filesystem and copy the temporary GNUPG directory:
+Mount the filesystem and copy the temporary directory with the keyring:
 
 ```console
 $ doas mkdir /mnt/encrypted-usb
@@ -914,7 +912,7 @@ $ doas cp -avi $GNUPGHOME /mnt/encrypted-usb
 
 Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
 
-Otherwise, unmount and disconnected the encrypted USB disk:
+Otherwise, unmount and disconnected the encrypted volume:
 
 ```console
 $ doas umount /mnt/encrypted-usb
@@ -924,25 +922,39 @@ $ doas bioctl -d sd3
 
 See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for more information.
 
-# Configure YubiKey
+Create another partition to store the public key, or skip this step if you plan on uploading it to a key server.
 
-**Note** YubiKey NEO shipped after November 2015 have [all modes enabled](https://www.yubico.com/support/knowledge-base/categories/articles/yubikey-neo-manager/); so this step may be skipped. Older versions of the YubiKey NEO may need to be reconfigured as a composite USB device (HID + CCID) which allows OTPs to be emitted while in use as a SmartCard.
-Plug in YubiKey and configure it with the `ykpersonalize` utility:
+**Important** Without the public key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use YubiKey for SSH authentication.
 
 ```console
-$ sudo ykpersonalize -m82
-Firmware version 4.3.7 Touch level 527 Program sequence 1
+$ doas disklabel -E sd2
+Label editor (enter '?' for help at any prompt)
+sd2> a b
+offset: [32130]
+size: [31069710] 10M
+FS type: [swap] 4.2BSD
+sd2*> w
+sd2> q
+No label changes.
 
-The USB mode will be set to: 0x82
+$ doas newfs sd2b
+/dev/rsd2b: 15.7MB in 32096 sectors of 512 bytes
+5 cylinder groups of 3.89MB, 249 blocks, 512 inodes each
+super-block backups (for fsck -b #) at:
+ 32, 8000, 15968, 23936, 31904,
 
-Commit? (y/n) [n]: y
+$ doas mkdir /mnt/public
+
+$ doas mount /dev/sd2b /mnt/public
+
+$ gpg --armor --export $KEYID | doas tee /mnt/public/$KEYID.txt
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+[...]
 ```
 
-The -m option is the mode command. To see the different modes, enter `ykpersonalize -help`. Mode 82 (in hex) enables the YubiKey NEO as a composite USB device (HID + CCID).  Once you have changed the mode, you need to re-boot the YubiKey, so remove and re-insert it. On YubiKey NEO with firmware version 3.3 or higher, you can enable composite USB device with `-m86` instead of `-m82`.
+# Configure Smartcard
 
 **Windows** Use the [YubiKey NEO Manager](https://www.yubico.com/products/services-software/download/yubikey-neo-manager/) to enable CCID functionality.
-
-# Configure Smartcard
 
 Use GPG to configure YubiKey as a smartcard:
 
@@ -1196,14 +1208,6 @@ $ gpg --delete-secret-key $KEYID
 
 # Using keys
 
-You can reboot back into the Live image to test YubiKey.
-
-Install required programs:
-
-```console
-$ sudo apt-get update && sudo apt-get install -y \
-     gnupg2 gnupg-agent scdaemon pcscd
-```
 
 Download [drduh/config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf):
 
@@ -1213,20 +1217,34 @@ $ cd ~/.gnupg ; wget https://raw.githubusercontent.com/drduh/config/master/gpg.c
 $ chmod 600 gpg.conf
 ```
 
-# Import public key
+Install the required packages and mount the non-encrypted volume created earlier:
 
-To import the public key from the non-encrypted volume created earlier:
+**Linux**
 
 ```console
-$ sudo mount /dev/sdb2 /mnt
+$ sudo apt-get update && sudo apt-get install -y \
+     gnupg2 gnupg-agent gnupg-curl scdaemon pcscd
 
+$ sudo mount /dev/sdb2 /mnt
+```
+**OpenBSD**
+
+```console
+$ doas pkg_add gnupg pcsc-tools
+
+$ doas mount /dev/sd2b /mnt
+```
+
+Import the key:
+
+```console
 $ gpg --import /mnt/pubkey.txt
 gpg: key 0xFF3E7D88647EBCDB: public key "Dr Duh <doc@duh.to>" imported
 gpg: Total number processed: 1
 gpg:               imported: 1
 ```
 
-To download the public key from a keyserver:
+Or download the public key from a keyserver:
 
 ```console
 $ gpg --recv $KEYID
@@ -1236,14 +1254,6 @@ gpg: key 0xFF3E7D88647EBCDB: public key "Dr Duh <doc@duh.to>" imported
 gpg: Total number processed: 1
 gpg:               imported: 1
 ```
-
-If you get the error `gpgkeys: HTTP fetch error 1: unsupported protocol` - this means you need to install a special version of curl which supports GPG:
-
-```console
-$ sudo apt-get install -y gnupg-curl
-```
-
-## Trust master key
 
 Edit the master key to assign it ultimate trust by selecting `trust` then option `5`:
 
@@ -1282,8 +1292,6 @@ sub  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09  usage: 
 
 gpg> quit
 ```
-
-# Insert YubiKey
 
 Remove and re-insert the YubiKey and check the status:
 
