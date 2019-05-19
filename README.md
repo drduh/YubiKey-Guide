@@ -4,7 +4,7 @@ Keys stored on YubiKey are non-exportable (as opposed to file-based keys that ar
 
 **New!** [drduh/Purse](https://github.com/drduh/Purse) is a password manager which uses GPG and YubiKey.
 
-If you have a comment or suggestion, please open an [issue](https://github.com/drduh/YubiKey-Guide/issues) on GitHub.
+If you have a comment or suggestion, please open an [Issue](https://github.com/drduh/YubiKey-Guide/issues) on GitHub.
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Verify YubiKey](#verify-yubikey)
@@ -34,38 +34,39 @@ If you have a comment or suggestion, please open an [issue](https://github.com/d
   * [Create configuration](#create-configuration)
   * [Replace agents](#replace-agents)
   * [Copy public key](#copy-public-key)
-  * [(Optional) Save public key for identity file configuration](#optional-save-public-key-for-identity-file-configuration)
+  * [(Optional) Save public key for identity file configuration](#-optional--save-public-key-for-identity-file-configuration)
   * [Connect with public key authentication](#connect-with-public-key-authentication)
   * [Touch to authenticate](#touch-to-authenticate)
   * [Import SSH keys](#import-ssh-keys)
-  * [Remote Machines (agent forwarding)](#remote-machines-agent-forwarding)
+  * [Remote Machines (agent forwarding)](#remote-machines--agent-forwarding-)
   * [GitHub](#github)
-  * [OpenBSD](#openbsd-1)
+  * [OpenBSD](#openbsd)
   * [Windows](#windows)
     + [WSL](#wsl)
       - [Prerequisites](#prerequisites)
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
       - [Final test](#final-test)
-- [Troubleshooting](#troubleshooting)
+- [Email](#email)
 - [Notes](#notes)
+- [Troubleshooting](#troubleshooting)
 - [Links](#links)
 
 # Purchase YubiKey
 
-All YubiKeys except the blue "security key" model are compatible with this guide. NEO models are limited to 2048-bit RSA keys. See [Compare YubiKeys](https://www.yubico.com/products/yubikey-hardware/compare-yubikeys/).
+All YubiKeys except the blue "security key" model are compatible with this guide. NEO models are limited to 2048-bit RSA keys. Compare YubiKeys [here](https://www.yubico.com/products/yubikey-hardware/compare-products-series/).
 
 You will also need several small storage devices for booting a live image, creating backups of private and public keys.
 
 # Verify YubiKey
 
-To confirm your YubiKey is genuine, open a [browser with U2F support](https://support.yubico.com/support/solutions/articles/15000009591-how-to-confirm-your-yubico-device-is-genuine-with-u2f) to [https://www.yubico.com/genuine/](https://www.yubico.com/genuine/). Insert your Yubico device, and select *Verify Device* to begin the process. Touch the YubiKey when prompted, and if asked, allow it to see the make and model of the device. If you see *Verification complete*, your device is authentic.
+To verify a YubiKey is genuine, open a [browser with U2F support](https://support.yubico.com/support/solutions/articles/15000009591-how-to-confirm-your-yubico-device-is-genuine-with-u2f) to [https://www.yubico.com/genuine/](https://www.yubico.com/genuine/). Insert a Yubico device, and select *Verify Device* to begin the process. Touch the YubiKey when prompted, and if asked, allow it to see the make and model of the device. If you see *Verification complete*, the device is authentic.
 
 This website verifies the YubiKey's device attestation certificates signed by a set of Yubico CAs, and helps mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEFCON-25-r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
 # Live image
 
-It is recommended to generate cryptographic keys and configure YubiKey from a secure operating system and ephemeral environment, such as [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html).
+It is recommended to generate cryptographic keys and configure YubiKey from a secure operating system and ephemeral environment, such as [Debian Live](https://www.debian.org/CD/live/), [Tails](https://tails.boum.org/index.en.html), or [OpenBSD](https://www.openbsd.org/).
 
 To use Debian, download the latest live image:
 
@@ -105,7 +106,7 @@ $ grep $(sha512sum debian-live-9.9.0-amd64-xfce.iso) SHA512SUMS
 SHA512SUMS:ae064cc399126214e4aa165fdbf9659047dd2af2d3b0ca57dd5f2686d1d3730019cfe3c56ac48db2af56eb856dbca75e642fadf56bc04c538b44d3d3a2982283 debian-live-9.9.0-amd64-xfce.iso
 ```
 
-If the key cannot be received, try changing your DNS resolver and/or specific keyserver:
+If the key cannot be received, try changing the DNS resolver and/or specific keyserver:
 
 ```console
 $ gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
@@ -163,18 +164,18 @@ Open the terminal and install several required packages:
 
 ```console
 $ sudo apt-get update && sudo apt-get install -y \
-    curl gnupg2 gnupg-agent dirmngr \
+    gnupg2 gnupg-agent dirmngr \
     cryptsetup scdaemon pcscd \
-    yubikey-personalization \
-    secure-delete hopenpgp-tools
+    secure-delete hopenpgp-tools \
+    yubikey-personalization
 ```
 
 **Arch**
 
 ```console
 $ sudo pacman -Syu \
-    gnupg2 pcsclite ccid \
-    yubikey-personalization hopenpgp-tools
+    gnupg2 pcsclite ccid hopenpgp-tools \
+    yubikey-personalization
 ```
 
 **RHEL7**
@@ -223,7 +224,7 @@ Plug in the device, then install and configure OneRNG software:
 $ sudo apt-get install -y \
     at rng-tools python-gnupg openssl
 
-$ curl -LfO https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.6-1_all.deb
+$ wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.6-1_all.deb
 
 $ sha256sum onerng_3.6-1_all.deb
 a9ccf7b04ee317dbfc91518542301e2d60ebe205d38e80563f29aac7cd845ccb  onerng_3.6-1_all.deb
@@ -258,14 +259,15 @@ An entropy pool value greater than 2000 is sufficient.
 Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs):
 
 ```console
-$ export GNUPGHOME=$(mktemp -d) ; echo $GNUPGHOME
-/tmp/tmp.aaiTTovYgo
+$ export GNUPGHOME=$(mktemp -d)
+
+$ cd $GNUPGHOME
 ```
 
-Create a hardened configuration for GPG with the following options or by downloading [drduh/config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf):
+Create a hardened configuration in the temporary directory with the following options:
 
 ```console
-$ curl -o $GNUPGHOME/gpg.conf https://raw.githubusercontent.com/drduh/config/master/gpg.conf
+$ wget https://raw.githubusercontent.com/drduh/config/master/gpg.conf
 
 $ grep -ve "^#" $GNUPGHOME/gpg.conf
 personal-cipher-preferences AES256 AES192 AES
@@ -297,14 +299,16 @@ The first key to generate is the master key. It will be used for certification o
 
 **Important** The master key should be kept offline at all times and only accessed to revoke or issue new sub-keys. Keys can also be generated on the YubiKey itself to ensure no other copies exist.
 
-You'll be prompted to enter and verify a passphrase - keep it handy as you'll need it throughout. To generate a strong passphrase which could be written down in a hidden or secure place; or memorized:
+You'll be prompted to enter and verify a passphrase - keep it handy as you'll need it multiple times later.
+
+To generate a strong passphrase which could be written down in a hidden or secure place; or memorized:
 
 ```console
 $ gpg --gen-random -a 0 24
 ydOmByxmDe63u7gqx2XI9eDgpvJwibNH
 ```
 
-On Linux, select the password with your mouse to copy it to the clipboard and paste using the middle mouse button or `Shift`-`Insert`.
+On Linux or OpenBSD, select the password with the mouse to copy it to the clipboard and paste using the middle mouse button or `Shift`-`Insert`.
 
 Generate a new key with GPG, selecting `(8) RSA (set your own capabilities)`, `Certify` capability only and `4096` bit key size.
 
@@ -680,7 +684,7 @@ sd 7:0:0:0: [sdb] Attached SCSI removable disk
 Write it with random data to prepare for encryption:
 
 ```console
-$ sudo dd if=/dev/urandom of=/dev/sdb bs=4M
+$ sudo dd if=/dev/urandom of=/dev/sdb bs=4M status=progress
 ```
 
 Erase and create a new partition table:
@@ -1346,7 +1350,7 @@ $ echo "test message string" | gpg --encrypt --armor --recipient $KEYID_0 --reci
 Decrypt the message:
 
 ```console
-$ gpg --decrypt --armor cipher.txt
+$ gpg --decrypt --armor encrypted.txt
 gpg: anonymous recipient; trying secret key 0x0000000000000000 ...
 gpg: okay, we are the anonymous recipient.
 gpg: encrypted with RSA key, ID 0x0000000000000000
@@ -1527,11 +1531,11 @@ When using the key `pinentry` will be invoked to request the key's passphrase. T
 
 ## Remote Machines (agent forwarding)
 
-If you want to use YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using "Agent Forwarding".  This section should help you setup GPG and SSH agent forwarding.
+If you want to use YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using Agent Forwarding.
 
-To do this, you need to already have shell access to the remote machine, and the YubiKey setup on the host machine.
+To do this, you need access to the remote machine and the YubiKey has to be set up on the host machine.
 
-* First, on the local machine, run:
+On the local machine, run:
 
 ```console
 $ gpgconf --list-dirs agent-extra-socket
@@ -1539,7 +1543,7 @@ $ gpgconf --list-dirs agent-extra-socket
 
 This should return a path to agent-extra-socket - `/run/user/1000/gnupg/S.gpg-agent.extra` - though on older Linux distros (and macOS) it may be `/home/<user>/.gnupg/S/gpg-agent.extra`.
 
-* Next, find the agent socket on the **remote** machine:
+Find the agent socket on the **remote** machine:
 
 ```console
 $ gpgconf --list-dirs agent-socket
@@ -1547,17 +1551,17 @@ $ gpgconf --list-dirs agent-socket
 
 This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`.
 
-* On the remote machine, edit the file `/etc/ssh/sshd_config`, so that option `StreamLocalBindUnlink` is set to `StreamLocalBindUnlink yes`
+On the remote machine, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink yes`
 
-* **Optional** If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket on the remote machine before forwarding works.  For example, `rm /run/user/1000/gnupg/S.gpg-agent`.  Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
+**Optional** If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket on the remote machine before forwarding works. For example, `rm /run/user/1000/gnupg/S.gpg-agent`. Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
 
-* Import public keys to the remote machine. This can be done by fetching from a keyserver. On the local machine, copy the public keyring to the remote machine:
+Import public keys to the remote machine. This can be done by fetching from a keyserver. On the local machine, copy the public keyring to the remote machine:
 
 ```console
 $ scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
 ```
 
-* Finally, enable agent forwarding for a given machine by adding the following to the local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
+Finally, enable agent forwarding for a given machine by adding the following to the local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
 
 ```
 Host
@@ -1576,6 +1580,8 @@ enable-ssh-support
 pinentry-program /usr/bin/pinentry-curses
 extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
 ```
+
+See [Issue #85](https://github.com/drduh/YubiKey-Guide/issues/85) for more information and troubleshooting.
 
 ## GitHub
 
@@ -1702,9 +1708,20 @@ And reload the SSH daemon (e.g., `sudo service sshd reload`).
 
 **Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
 
+# Email
+
+GPG keys on YubiKey can be used with ease to encrypt or sign email messages and attachments using [Thunderbird](https://www.thunderbird.net/) and [Enigmail](https://www.enigmail.net). Thunderbird supports OAuth 2 authentication and can be used with Gmail. See [this guide](https://ssd.eff.org/en/module/how-use-pgp-linux) from EFF for detailed instructions.
+
+# Notes
+
+1. YubiKey has two configurations: one invoked with a short press, and the other with a long press. By default, the short-press mode is configured for HID OTP - a brief touch will emit an OTP string starting with `cccccccc`. If you rarely use the OTP mode, you can swap it to the second configuration via the YubiKey Personalization tool. If you *never* use OTP, you can disable it entirely using the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this not the similarly named YubiKey NEO Manager).
+1. Programming YubiKey for GPG keys still lets you use its other configurations - [U2F](https://en.wikipedia.org/wiki/Universal_2nd_Factor), [OTP](https://www.yubico.com/faq/what-is-a-one-time-password-otp/) and [static password](https://www.yubico.com/products/services-software/personalization-tools/static-password/) modes, for example.
+1. Setting an expiry essentially forces you to manage your subkeys and announces to the rest of the world that you are doing so. Setting an expiry on a primary key is ineffective for protecting the key from loss - whoever has the primary key can simply extend its expiry period. Revocation certificates are [better suited](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) for this purpose. It may be appropriate for your use case to set expiry dates on subkeys.
+1. To switch between two or more identities on different keys - unplug the first key and restart gpg-agent, ssh-agent and pinentry with `pkill gpg-agent ; pkill ssh-agent ; pkill pinentry ; eval $(gpg-agent --daemon --enable-ssh-support)`, then plug in the other key and run `gpg-connect-agent updatestartuptty /bye` - then it should be ready for use.
+
 # Troubleshooting
 
-- If you don't understand some option - read `man gpg`.
+- Use `man gpg` to understand GPG options and command-line flags.
 
 - If you encounter problems connecting to YubiKey with GPG - try unplugging and re-inserting YubiKey, and restarting the `gpg-agent` process.
 
@@ -1731,13 +1748,6 @@ And reload the SSH daemon (e.g., `sudo service sshd reload`).
 - If SSH authentication stil fails - add up to 3 `-v` flags to increase verbosity.
 
 - If you totally screw up, you can [reset the card](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html).
-
-# Notes
-
-1. YubiKey has two configurations: one invoked with a short press, and the other with a long press. By default, the short-press mode is configured for HID OTP - a brief touch will emit an OTP string starting with `cccccccc`. If you rarely use the OTP mode, you can swap it to the second configuration via the YubiKey Personalization tool. If you *never* use OTP, you can disable it entirely using the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this not the similarly named YubiKey NEO Manager).
-1. Programming YubiKey for GPG keys still lets you use its other configurations - [U2F](https://en.wikipedia.org/wiki/Universal_2nd_Factor), [OTP](https://www.yubico.com/faq/what-is-a-one-time-password-otp/) and [static password](https://www.yubico.com/products/services-software/personalization-tools/static-password/) modes, for example.
-1. Setting an expiry essentially forces you to manage your subkeys and announces to the rest of the world that you are doing so. Setting an expiry on a primary key is ineffective for protecting the key from loss - whoever has the primary key can simply extend its expiry period. Revocation certificates are [better suited](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) for this purpose. It may be appropriate for your use case to set expiry dates on subkeys.
-1. To switch between two or more identities on different keys - unplug the first key and restart gpg-agent, ssh-agent and pinentry with `pkill gpg-agent ; pkill ssh-agent ; pkill pinentry ; eval $(gpg-agent --daemon --enable-ssh-support)`, then plug in the other key and run `gpg-connect-agent updatestartuptty /bye` - then it should be ready for use.
 
 # Links
 
