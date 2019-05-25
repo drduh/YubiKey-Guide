@@ -30,6 +30,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Verify card](#verify-card)
 - [Cleanup](#cleanup)
 - [Using keys](#using-keys)
+- [Rotating keys](#rotating-keys)
 - [SSH](#ssh)
   * [Create configuration](#create-configuration)
   * [Replace agents](#replace-agents)
@@ -148,7 +149,7 @@ $ doas dd if=debian-live-9.9.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
-Shut down the computer and disconnect any hard drives and unnecessary peripheral devices.
+Shut down the computer and disconnect internal hard drives and all unnecessary peripheral devices.
 
 Consider using secure hardware like a ThinkPad X230 running [Coreboot](https://www.coreboot.org/) and cleaned of [Intel ME](https://github.com/corna/me_cleaner).
 
@@ -156,7 +157,7 @@ Consider using secure hardware like a ThinkPad X230 running [Coreboot](https://w
 
 Boot the live image and configure networking.
 
-**Note** If the screen locks, unlock with credentials: user/live.
+**Note** If the screen locks, unlock with `user`/`live`.
 
 Open the terminal and install several required packages:
 
@@ -218,7 +219,7 @@ $ cat /proc/sys/kernel/random/entropy_avail
 
 Most operating systems use software-based pseudorandom number generators. A hardware random number generator like [OneRNG](http://onerng.info/onerng/) will [increase the speed](https://lwn.net/Articles/648550/) of entropy generation and possibly the quality.
 
-Plug in the device, then install and configure OneRNG software:
+Install and configure OneRNG software:
 
 ```console
 $ sudo apt-get install -y \
@@ -232,7 +233,11 @@ a9ccf7b04ee317dbfc91518542301e2d60ebe205d38e80563f29aac7cd845ccb  onerng_3.6-1_a
 $ sudo dpkg -i onerng_3.6-1_all.deb
 
 $ echo "HRNGDEVICE=/dev/ttyACM0" | sudo tee /etc/default/rng-tools
+```
 
+Plug in the device and restart rng-tools:
+
+```console
 $ sudo atd
 
 $ sudo service rng-tools restart
@@ -425,7 +430,7 @@ sec  rsa4096/0xEA5DE91459B80592
 
 Use 4096-bit key sizes.
 
-Use a 1 year or shorter expiration - keys can always be renewed using the offline master key.
+Use a 1 year expiration for sub-keys - they can be renewed using the offline master key. See [rotating keys](#rotating-keys).
 
 ## Signing
 
@@ -616,7 +621,7 @@ gpg> save
 List the generated secret keys and verify the output:
 
 ```console
-$ gpg --list-secret-keys
+$ gpg -K
 /tmp.FLZC0xcM/pubring.kbx
 -------------------------------------------------------------------------
 sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
@@ -769,6 +774,12 @@ $ sudo mount /dev/mapper/usb /mnt/encrypted-usb
 $ sudo cp -avi $GNUPGHOME /mnt/encrypted-usb
 ```
 
+**Optional** Backup the OneRNG package:
+
+```console
+$ sudo cp onerng_3.6-1_all.deb /mnt/encrypted-usb
+```
+
 Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
 
 Otherwise, unmount and disconnected the encrypted volume:
@@ -815,9 +826,7 @@ $ sudo mkdir /mnt/public
 
 $ sudo mount /dev/sdb2 /mnt/public/
 
-$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID.txt
------BEGIN PGP PUBLIC KEY BLOCK-----
-[...]
+$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date %+F).txt
 ```
 
 Windows:
@@ -952,8 +961,6 @@ $ doas mkdir /mnt/public
 $ doas mount /dev/sd2b /mnt/public
 
 $ gpg --armor --export $KEYID | doas tee /mnt/public/$KEYID.txt
------BEGIN PGP PUBLIC KEY BLOCK-----
-[...]
 ```
 
 # Configure Smartcard
@@ -1178,7 +1185,7 @@ gpg> save
 Verify the sub-keys have been moved to YubiKey as indicated by `ssb>`:
 
 ```console
-$ gpg --list-secret-keys
+$ gpg -K
 /tmp.FLZC0xcM/pubring.kbx
 -------------------------------------------------------------------------
 sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
@@ -1211,7 +1218,6 @@ $ gpg --delete-secret-key $KEYID
 **Important** Make sure you have securely erased all generated keys and revocation certificates if a Live image was not used!
 
 # Using keys
-
 
 Download [drduh/config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf):
 
@@ -1374,6 +1380,82 @@ Primary key fingerprint: 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
      Subkey fingerprint: 07AA 7735 E502 C5EB E09E  B8B0 BECF A3C1 AE19 1D15
 ```
 
+# Rotating keys
+
+PGP does not provide forward secrecy - a compromised key may be used to decrypt all past messages. Although keys stored on YubiKey are difficult to steal, it is not impossible - the key and PIN could be taken, or a vulnerability may be discovered in key hardware or random number generator used to create them, for example. Therefore, it is good practice to occassionally rotate sub-keys.
+
+When a sub-key expires, it can either be renewed or replaced. Both actions require access to the offline master key. Renewing sub-keys by updating their expiration date indicates you are still in possession of the offline master key and is more convenient.
+
+Replacing keys, on the other hand, is less convenient but more secure: the new sub-keys will **not** be able to decrypt previous messages, authenticate with SSH, etc. Contacts will need to receive the updated public key and any encrypted secrets need to be decrypted and re-encrypted to new sub-keys to be usable. This process is functionally equivalent to "losing" the YubiKey and provisioning a new one. However, you will always be able to decrypt previous messages using the offline encrypted backup of the original keys.
+
+Neither rotation method is superior and it's up to personal philosophy on identity management and individual threat model to decide which one to use, or whether to expire sub-keys at all. Ideally, sub-keys would be ephemeral: used only once for each encryption, signing and authentication event, however in practice that is not really feasible or worthwhile with YubiKey. Advanced users may want to dedicate an offline device for more frequent key rotations and ease of provisioning.
+
+To renew or rotate sub-keys, follow the same procedure to boot to a secure environment. Install required software and disconnect networking. Decrypt and mount the offline volume, then import the master key and configuration to a temporary working directory:
+
+```console
+$ export GNUPGHOME=$(mktemp -d)
+
+$ gpg --import /mnt/encrypted-usb/tmp.XXX/mastersub.key
+
+$ cp -v /mnt/encrypted-usb/tmp.XXX/gpg.conf $GNUPGHOME
+```
+
+Edit the master key:
+
+```console
+$ export KEYID=0xFF3E7D88647EBCDB
+
+$ gpg --edit-key $KEYID
+
+Secret key is available
+[...]
+```
+
+Follow the original steps to generate each sub-key. Previous sub-keys may be kept or deleted from the identity.
+
+Finish by exporting new keys:
+
+```console
+$ gpg --armor --export-secret-keys $KEYID > $GNUPGHOME/mastersub.key
+
+$ gpg --armor --export-secret-subkeys $KEYID > $GNUPGHOME/sub.key
+```
+
+Copy the **new** temporary working directory to encrypted offline storage, which should still be mounted:
+
+```console
+$ sudo cp -avi $GNUPGHOME /mnt/encrypted-usb
+```
+
+There should now be at least two versions of the master and sub-keys backed up:
+
+```console
+$ ls /mnt/encrypted-usb
+lost+found  tmp.ykhTOGjR36  tmp.2gyGnyCiHs
+```
+
+Unmount and close the encrypted volume:
+
+```console
+$ sudo umount /mnt/encrypted-usb
+
+$ sudo cryptsetup luksClose /dev/mapper/usb/
+```
+
+Export the updated public key:
+
+```console
+$ sudo mkdir /mnt/public
+
+$ sudo mount /dev/sdb2 /mnt/public
+
+$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date %+F).txt
+
+$ sudo umount /mnt/public
+```
+
+Disconnect the storage device and follow the original steps to transfer new keys (4, 5 and 6) to YubiKey, replacing existing ones. Reboot or securely erase the GPG temporary working directory.
+
 # SSH
 
 [gpg-agent](https://wiki.archlinux.org/index.php/GnuPG#SSH_agent) supports the OpenSSH ssh-agent protocol (`enable-ssh-support`), as well as Putty's Pageant on Windows (`enable-putty-support`). This means it can be used instead of the traditional ssh-agent / pageant. There are some differences from ssh-agent, notably that gpg-agent does not _cache_ keys rather it converts, encrypts and stores them - persistently - as GPG keys and then makes them available to ssh clients. Any existing ssh private keys that you'd like to keep in `gpg-agent` should be deleted after they've been imported to the GPG agent.
@@ -1391,12 +1473,14 @@ $ curl -o ~/.gnupg/gpg-agent.conf https://raw.githubusercontent.com/drduh/config
 
 $ cat ~/.gnupg/gpg-agent.conf
 enable-ssh-support
-pinentry-program /usr/bin/pinentry-curses
 default-cache-ttl 60
 max-cache-ttl 120
+pinentry-program /usr/bin/pinentry-curses
 ```
 
-Alternatively, you may want to use `/usr/bin/pinentry-gnome3` to use a GUI manager. On macOS, use `brew install pinentry-mac` and adjust the program path to suit.
+Alternatively, you may want to use `/usr/bin/pinentry-gnome3` for a GUI-based prompt.
+
+On macOS, use `brew install pinentry-mac` and adjust the program path to suit.
 
 ## Replace agents
 
@@ -1541,7 +1625,7 @@ On the local machine, run:
 $ gpgconf --list-dirs agent-extra-socket
 ```
 
-This should return a path to agent-extra-socket - `/run/user/1000/gnupg/S.gpg-agent.extra` - though on older Linux distros (and macOS) it may be `/home/<user>/.gnupg/S/gpg-agent.extra`.
+This should return a path to agent-extra-socket - `/run/user/1000/gnupg/S.gpg-agent.extra` - though on older Linux distros (and macOS) it may be `/home/<user>/.gnupg/S/gpg-agent.extra`
 
 Find the agent socket on the **remote** machine:
 
@@ -1549,7 +1633,7 @@ Find the agent socket on the **remote** machine:
 $ gpgconf --list-dirs agent-socket
 ```
 
-This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`.
+This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`
 
 On the remote machine, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink yes`
 
@@ -1661,24 +1745,26 @@ The goal here is to make the SSH client inside WSL work together with the Window
 
 #### Prerequisites
 
-* Ubuntu >16.04 for WSL
+* Ubuntu 16.04 or newer for WSL
 * Kleopatra
 * [Windows configuration](#windows)
 
 #### WSL configuration
 
-* Download or clone [weasel-pageant](https://github.com/vuori/weasel-pageant).
-* Add `eval $(/mnt/c/<path of extraction>/weasel-pageant -r -a /tmp/S.weasel-pageant)` to shell rc file. Use a named socket here so it can be used in the RemoteForward directive of the .ssh/config file.
-* Source it with `source ~/.bashrc`.
-* Display the SSH key with `$ ssh-add -l`.
-* Edit `~/.ssh/config` - for each host you want to use agent forwarding, add:
+Download or clone [weasel-pageant](https://github.com/vuori/weasel-pageant).
+
+Add `eval $(/mnt/c/<path of extraction>/weasel-pageant -r -a /tmp/S.weasel-pageant)` to shell rc file. Use a named socket here so it can be used in the `RemoteForward` directive of `~/.ssh/config`. Source it with `source ~/.bashrc`.
+
+Display the SSH key with `$ ssh-add -l`
+
+Edit `~/.ssh/config` to add the following for each host you want to use agent forwarding:
 
 ```
 ForwardAgent yes
 RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
 ```
 
-**Note** The remote ssh socket path can be found by executing `$ gpgconf --list-dirs agent-ssh-socket` on the host.
+**Note** The remote ssh socket path can be found with `gpgconf --list-dirs agent-ssh-socket`
 
 #### Remote host configuration
 
