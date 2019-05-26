@@ -48,6 +48,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
       - [Final test](#final-test)
+- [Using multiple YubiKey with same GPG keys](#Using-multiple-YubiKey-with-same-GPG-keys)
 - [Email](#email)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
