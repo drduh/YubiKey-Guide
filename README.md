@@ -826,7 +826,7 @@ $ sudo mkdir /mnt/public
 
 $ sudo mount /dev/sdb2 /mnt/public/
 
-$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date %+F).txt
+$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).txt
 ```
 
 Windows:
