@@ -717,8 +717,8 @@ Command (m for help): n
 Partition type
    p   primary (0 primary, 0 extended, 4 free)
    e   extended (container for logical partitions)
-Select (default p): 
-Partition number (1-4, default 1): 
+Select (default p):
+Partition number (1-4, default 1):
 First sector (2048-62980095, default 2048):
 Last sector, +sectors or +size{K,M,G,T,P} (2048-62980095, default 62980095): +10M
 
@@ -1793,6 +1793,42 @@ And reload the SSH daemon (e.g., `sudo service sshd reload`).
 - On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwarding works!
 
 **Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
+
+# Using multiple YubiKey with same GPG keys
+
+If you want to store your keys on multiple YubiKey, you will see that GnuPG doesn't store the serial number of the first key it has seen.
+This is a know issue [#T2291](https://dev.gnupg.org/T2291). For now if you lost one of your keys and want to use another one the only workaround
+is to delete GnuPG's shadowed key (this is where the serial number is stored).
+
+To do so, first of all you need to find the `Keygrip` number of each key :
+```
+gpg2 --with-keygrip -k $KEYID
+pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
+      Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
+      Keygrip = 7A20855980A62C10569DE893157F38A696B1300E
+uid                  [  ultime ] Dr Duh <doc@duh.to>
+sub   rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
+      Keygrip = 85D44BD52AD45C0852BD15BF41161EE9AE477398
+sub   rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
+      Keygrip = A0AA3D9F626BDEA3B833F290C7BCA79216C8A996
+sub   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
+      Keygrip = 7EF25A1115294342F451BC1CDD0FA94395F2D074
+```
+
+Then delete all the shadow keys using their `Keygrip` number :
+```
+cd .gnupg/private-keys-v1.d
+rm 85D44BD52AD45C0852BD15BF41161EE9AE477398.key \
+A0AA3D9F626BDEA3B833F290C7BCA79216C8A996.key \
+7EF25A1115294342F451BC1CDD0FA94395F2D074.key
+```
+
+Insert the new YubiKey simply run a card-status this will re-generate the shadow-keys :
+```
+gpg2 --card-status
+```
+
+Then try to use your key, it should work, without serial number error.
 
 # Email
 
