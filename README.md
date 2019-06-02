@@ -37,7 +37,6 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Copy public key](#copy-public-key)
   * [(Optional) Save public key for identity file configuration](#-optional--save-public-key-for-identity-file-configuration)
   * [Connect with public key authentication](#connect-with-public-key-authentication)
-  * [Touch to authenticate](#touch-to-authenticate)
   * [Import SSH keys](#import-ssh-keys)
   * [Remote Machines (agent forwarding)](#remote-machines--agent-forwarding-)
   * [GitHub](#github)
@@ -47,9 +46,10 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
       - [Prerequisites](#prerequisites)
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
-      - [Final test](#final-test)
-- [Using multiple YubiKey with same GPG keys](#Using-multiple-YubiKey-with-same-GPG-keys)
+- [Multiple keys](#Multiple-keys)
+- [Require touch](#require-touch)
 - [Email](#email)
+- [Reset](#reset)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
 - [Links](#links)
@@ -613,7 +613,11 @@ ssb  rsa4096/0x5912A795E90DD2CF
 ssb  rsa4096/0x3F29127E79649A3D
     created: 2017-10-09  expires: 2018-10-09       usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
+```
 
+Finish by saving the keys.
+
+```console
 gpg> save
 ```
 
@@ -635,7 +639,7 @@ ssb   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 
 Add any additional identities or email addresses you wish to associate using the `adduid` command.
 
-**Optional** Verify with OpenPGP key checks, use the automated [key best practice checker](https://riseup.net/en/security/message-security/openpgp/best-practices#openpgp-key-checks):
+**Tip** Verify with a OpenPGP [key best practice checker](https://riseup.net/en/security/message-security/openpgp/best-practices#openpgp-key-checks):
 
 ```console
 $ gpg --export $KEYID | hokey lint
@@ -668,6 +672,8 @@ $ gpg --armor --export-secret-subkeys $KEYID -o \path\to\dir\sub.gpg
 # Backup
 
 Once GPG keys are moved to YubiKey, they cannot be moved again! Create an **encrypted** backup of the keyring and consider using a [paper copy](https://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup.
+
+**Tip**: The ext2 filesystem (without encryption) can be mounted on both Linux and OpenBSD.
 
 **Linux**
 
@@ -1266,7 +1272,7 @@ gpg: Total number processed: 1
 gpg:               imported: 1
 ```
 
-Edit the master key to assign it ultimate trust by selecting `trust` then option `5`:
+Edit the master key to assign it ultimate trust by selecting `trust` and `5`:
 
 ```console
 $ export KEYID=0xFF3E7D88647EBCDB
@@ -1470,16 +1476,18 @@ Probably the biggest thing missing from `gpg-agent`'s ssh agent support is being
 Create a hardened configuration for gpg-agent by downloading [drduh/config/gpg-agent.conf](https://github.com/drduh/config/blob/master/gpg-agent.conf):
 
 ```console
-$ curl -o ~/.gnupg/gpg-agent.conf https://raw.githubusercontent.com/drduh/config/master/gpg-agent.conf
+$ cd ~/.gnupg
 
-$ cat ~/.gnupg/gpg-agent.conf
+$ wget https://raw.githubusercontent.com/drduh/config/master/gpg-agent.conf
+
+$ grep -ve "^#" gpg-agent.conf
 enable-ssh-support
 default-cache-ttl 60
 max-cache-ttl 120
 pinentry-program /usr/bin/pinentry-curses
 ```
 
-Alternatively, you may want to use `/usr/bin/pinentry-gnome3` for a GUI-based prompt.
+**Tip** Set `pinentry-program /usr/bin/pinentry-gnome3` for a GUI-based prompt.
 
 On macOS, use `brew install pinentry-mac` and adjust the program path to suit.
 
@@ -1562,26 +1570,6 @@ debug1: Authentication succeeded (publickey).
 ```
 
 **Note** To make multiple connections or securely transfer many files, consider using the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) ssh option. Also see [drduh/config/ssh_config](https://github.com/drduh/config/blob/master/ssh_config).
-
-## Touch to authenticate
-
-**Note** This is not possible on YubiKey NEO.
-
-By default, YubiKey will perform key operations without requiring a touch from the user. To require a touch for every SSH authentication, use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and Admin PIN:
-
-```console
-$ ykman openpgp touch aut on
-```
-
-To require a touch for signing and encryption operations:
-
-```console
-$ ykman openpgp touch sig on
-
-$ ykman openpgp touch enc on
-```
-
-The YubiKey will blink when it's waiting for touch.
 
 ## Import SSH keys
 
@@ -1785,25 +1773,24 @@ StreamLocalBindUnlink yes
 
 And reload the SSH daemon (e.g., `sudo service sshd reload`).
 
-#### Final test
+Unplug YubiKey, disconnect or reboot. Log back in to Windows, open a WSL console and enter `ssh-add -l` - you should see nothing.
 
-- Unplug YubiKey, disconnect or reboot.
-- Log back in to Windows, open a WSL console and enter `ssh-add -l` - you should see nothing.
-- Plug in YubiKey, enter the same command to display the ssh key.
-- Log in to the remote host, you should have the pinentry dialog asking for the YubiKey pin.
-- On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwarding works!
+Plug in YubiKey, enter the same command to display the ssh key.
+
+Log in to the remote host, you should have the pinentry dialog asking for the YubiKey pin.
+
+On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwarding works!
 
 **Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
 
-# Using multiple YubiKey with same GPG keys
+# multiple keys
 
-If you want to store your keys on multiple YubiKey, you will see that GnuPG doesn't store the serial number of the first key it has seen.
-This is a know issue [#T2291](https://dev.gnupg.org/T2291). For now if you lost one of your keys and want to use another one the only workaround
-is to delete GnuPG's shadowed key (this is where the serial number is stored).
+GnuPG doesn't store the serial number of the first key it has seen - [#T2291](https://dev.gnupg.org/T2291).
 
-To do so, first of all you need to find the `Keygrip` number of each key :
-```
-gpg2 --with-keygrip -k $KEYID
+If a YubiKey is lost and replaced, delete GnuPG's shadowed key - where the serial number is stored. Find the `Keygrip` number of each key:
+
+```console
+$ gpg --with-keygrip -k $KEYID
 pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
       Keygrip = 7A20855980A62C10569DE893157F38A696B1300E
@@ -1816,24 +1803,76 @@ sub   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
       Keygrip = 7EF25A1115294342F451BC1CDD0FA94395F2D074
 ```
 
-Then delete all the shadow keys using their `Keygrip` number :
-```
-cd .gnupg/private-keys-v1.d
-rm 85D44BD52AD45C0852BD15BF41161EE9AE477398.key \
-A0AA3D9F626BDEA3B833F290C7BCA79216C8A996.key \
-7EF25A1115294342F451BC1CDD0FA94395F2D074.key
+Then delete all the shadow keys using their `Keygrip` number:
+
+```console
+$ cd .gnupg/private-keys-v1.d
+
+$ rm 85D44BD52AD45C0852BD15BF41161EE9AE477398.key \
+    A0AA3D9F626BDEA3B833F290C7BCA79216C8A996.key \
+    7EF25A1115294342F451BC1CDD0FA94395F2D074.key
 ```
 
-Insert the new YubiKey simply run a card-status this will re-generate the shadow-keys :
-```
-gpg2 --card-status
+Insert the new YubiKey and re-generate shadow-keys by checking card status:
+
+```console
+$ gpg --card-status
 ```
 
-Then try to use your key, it should work, without serial number error.
+# Require touch
+
+**Note** This is not possible on YubiKey NEO.
+
+By default, YubiKey will perform encryption, signing and authentication operations without requiring any action from the user, after the key is plugged in and first unlocked with the PIN.
+
+To require a touch for each key operation, install [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and recall the Admin PIN:
+
+Authentication:
+
+```console
+$ ykman openpgp touch aut on
+```
+
+Signing:
+
+```console
+$ ykman openpgp touch sig on
+```
+
+Encryption:
+
+```console
+$ ykman openpgp touch enc on
+```
+
+YubiKey will blink when it is waiting for a touch.
+
 
 # Email
 
 GPG keys on YubiKey can be used with ease to encrypt or sign email messages and attachments using [Thunderbird](https://www.thunderbird.net/) and [Enigmail](https://www.enigmail.net). Thunderbird supports OAuth 2 authentication and can be used with Gmail. See [this guide](https://ssd.eff.org/en/module/how-use-pgp-linux) from EFF for detailed instructions.
+
+# Reset
+
+If PIN attempts are exceeded, the card is locked and must be [reset](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html) and set up again using the encrypted backup.
+
+Copy the following script to a file and run `gpg-connect-agent -R $file` to lock and terminate the card. Then re-insert YubiKey to reset.
+
+```console
+/hex
+scd serialno
+scd apdu 00 20 00 81 08 40 40 40 40 40 40 40 40
+scd apdu 00 20 00 81 08 40 40 40 40 40 40 40 40
+scd apdu 00 20 00 81 08 40 40 40 40 40 40 40 40
+scd apdu 00 20 00 81 08 40 40 40 40 40 40 40 40
+scd apdu 00 20 00 83 08 40 40 40 40 40 40 40 40
+scd apdu 00 20 00 83 08 40 40 40 40 40 40 40 40
+scd apdu 00 20 00 83 08 40 40 40 40 40 40 40 40
+scd apdu 00 20 00 83 08 40 40 40 40 40 40 40 40
+scd apdu 00 e6 00 00
+scd apdu 00 44 00 00
+/echo Card has been successfully reset.
+```
 
 # Notes
 
@@ -1869,8 +1908,6 @@ GPG keys on YubiKey can be used with ease to encrypt or sign email messages and 
 - If you receive the error, `Permission denied (publickey)`, increase ssh verbosity with the `-v` flag and ensure the public key from the card is being offered: `Offering public key: RSA SHA256:abcdefg... cardno:00060123456`. If it is, ensure you are connecting as the right user on the target system, rather than as the user on the local system. Otherwise, be sure `IdentitiesOnly` is not [enabled](https://github.com/FiloSottile/whosthere#how-do-i-stop-it) for this host.
 
 - If SSH authentication stil fails - add up to 3 `-v` flags to increase verbosity.
-
-- If you totally screw up, you can [reset the card](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html).
 
 # Links
 
