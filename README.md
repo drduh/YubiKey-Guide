@@ -1785,7 +1785,13 @@ On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwa
 
 # Multiple Keys
 
-If a you want to use multiple YubiKeys with a single identity - or to replace a lost card with another, delete the GnuPG shadowed key - where the card serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)).
+To use a single identity with multiple YubiKeys - or to replace a lost card with another - issue this command to switch keys:
+
+```console
+$ gpg-connect-agent "scd serialno" "learn --force" /bye
+```
+
+Alternatively, you could manually delete the GnuPG shadowed key - where the card serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)).
 
 Find the `Keygrip` number of each key:
 
@@ -1803,7 +1809,7 @@ sub   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
       Keygrip = 7EF25A1115294342F451BC1CDD0FA94395F2D074
 ```
 
-Then delete all the shadow keys using their `Keygrip` number:
+Delete all the shadow keys using their `Keygrip` number:
 
 ```console
 $ cd ~/.gnupg/private-keys-v1.d
