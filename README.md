@@ -46,7 +46,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
       - [Prerequisites](#prerequisites)
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
-- [Multiple keys](#Multiple-keys)
+- [Multiple Keys](#multiple-keys)
 - [Require touch](#require-touch)
 - [Email](#email)
 - [Reset](#reset)
@@ -1783,11 +1783,11 @@ On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwa
 
 **Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
 
-# multiple keys
+# Multiple Keys
 
-GnuPG doesn't store the serial number of the first key it has seen - [#T2291](https://dev.gnupg.org/T2291).
+If a you want to use multiple YubiKeys with a single identity - or to replace a lost card with another, delete the GnuPG shadowed key - where the card serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)).
 
-If a YubiKey is lost and replaced, delete GnuPG's shadowed key - where the serial number is stored. Find the `Keygrip` number of each key:
+Find the `Keygrip` number of each key:
 
 ```console
 $ gpg --with-keygrip -k $KEYID
@@ -1806,7 +1806,7 @@ sub   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 Then delete all the shadow keys using their `Keygrip` number:
 
 ```console
-$ cd .gnupg/private-keys-v1.d
+$ cd ~/.gnupg/private-keys-v1.d
 
 $ rm 85D44BD52AD45C0852BD15BF41161EE9AE477398.key \
     A0AA3D9F626BDEA3B833F290C7BCA79216C8A996.key \
@@ -1818,6 +1818,8 @@ Insert the new YubiKey and re-generate shadow-keys by checking card status:
 ```console
 $ gpg --card-status
 ```
+
+See discussion in Issues [#19](https://github.com/drduh/YubiKey-Guide/issues/19) and [#112](https://github.com/drduh/YubiKey-Guide/issues/112) for more information and troubleshooting steps.
 
 # Require touch
 
