@@ -1838,19 +1838,19 @@ To require a touch for each key operation, install [YubiKey Manager](https://dev
 Authentication:
 
 ```console
-$ ykman openpgp touch aut on
+$ ykman openpgp set-touch aut on
 ```
 
 Signing:
 
 ```console
-$ ykman openpgp touch sig on
+$ ykman openpgp set-touch sig on
 ```
 
 Encryption:
 
 ```console
-$ ykman openpgp touch enc on
+$ ykman openpgp set-touch enc on
 ```
 
 YubiKey will blink when it is waiting for a touch.
