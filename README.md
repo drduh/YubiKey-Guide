@@ -8,7 +8,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Verify YubiKey](#verify-yubikey)
-- [Live image](#live-image)
+- [Download OS image](#download-os-image)
 - [Required software](#required-software)
   * [Entropy](#entropy)
 - [Creating keys](#creating-keys)
@@ -58,7 +58,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 
 All YubiKeys except the blue "security key" model are compatible with this guide. NEO models are limited to 2048-bit RSA keys. Compare YubiKeys [here](https://www.yubico.com/products/yubikey-hardware/compare-products-series/).
 
-You will also need several small storage devices for booting a live image, creating backups of private and public keys.
+You will also need several small storage devices for booting a temporary operating system and creating backups of private/public keys.
 
 # Verify YubiKey
 
@@ -66,14 +66,14 @@ To verify a YubiKey is genuine, open a [browser with U2F support](https://suppor
 
 This website verifies the YubiKey's device attestation certificates signed by a set of Yubico CAs, and helps mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
-# Live image
+# Download OS Image
 
-It is recommended to generate cryptographic keys and configure YubiKey from a secure operating system and ephemeral environment, such as [Debian Live](https://www.debian.org/CD/live/), [Tails](https://tails.boum.org/index.en.html), or [OpenBSD](https://www.openbsd.org/).
+It is recommended to generate cryptographic keys and configure YubiKey from a secure operating system and using an ephemeral environment ("live image"), such as [Debian](https://www.debian.org/CD/live/), [Tails](https://tails.boum.org/index.en.html), or [OpenBSD](https://www.openbsd.org/) booted from a USB drive.
 
-To use Debian, download the latest live image:
+To use Debian, download the latest image:
 
 ```console
-$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-9.9.0-amd64-xfce.iso
+$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-10.0.0-amd64-xfce.iso
 
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS
 
@@ -84,7 +84,7 @@ Verify file integrity with GPG:
 
 ```console
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat Apr 27 11:46:08 2019 PDT
+gpg: Signature made Sat Jul  6 18:51:32 2019 PDT
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Can't check signature: No public key
 
@@ -97,22 +97,24 @@ gpg: Total number processed: 1
 gpg:               imported: 1
 
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat Apr 27 11:46:08 2019 PDT
+gpg: Signature made Sat Jul  6 18:51:32 2019 PDT
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>" [unknown]
 gpg: WARNING: This key is not certified with a trusted signature!
 gpg:          There is no indication that the signature belongs to the owner.
 Primary key fingerprint: DF9B 9C49 EAA9 2984 3258  9D76 DA87 E80D 6294 BE9B
 
-$ grep $(sha512sum debian-live-9.9.0-amd64-xfce.iso) SHA512SUMS
-SHA512SUMS:ae064cc399126214e4aa165fdbf9659047dd2af2d3b0ca57dd5f2686d1d3730019cfe3c56ac48db2af56eb856dbca75e642fadf56bc04c538b44d3d3a2982283 debian-live-9.9.0-amd64-xfce.iso
+$ grep $(sha512sum debian-live-10.0.0-amd64-xfce.iso) SHA512SUMS
+SHA512SUMS:c230dc15705bbae07782185af7f933ed7821ec94fa4b9d08a61856b27cdf7d3a4e9f5b6ddb419b96714464ca76c2686083fc4534dc116cc9980b52c233331e03  debian-live-10.0.0-amd64-xfce.iso
 ```
 
-If the key cannot be received, try changing the DNS resolver and/or specific keyserver:
+If the key cannot be received, try changing the DNS resolver and/or use a specific keyserver:
 
 ```console
 $ gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 ```
+
+See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
 
 Mount a storage device and copy the image to it:
 
@@ -131,7 +133,7 @@ sd 2:0:0:0: [sdb] Write cache: disabled, read cache: enabled, doesn't support DP
 sdb: sdb1 sdb2
 sd 2:0:0:0: [sdb] Attached SCSI removable disk
 
-$ sudo dd if=debian-live-9.9.0-amd64-xfce.iso of=/dev/sdb bs=4M
+$ sudo dd if=debian-live-10.0.0-amd64-xfce.iso of=/dev/sdb bs=4M
 465+1 records in
 465+1 records out
 1951432704 bytes (2.0 GB, 1.8 GiB) copied, 42.8543 s, 45.5 MB/s
@@ -144,7 +146,7 @@ $ dmesg | tail -n2
 sd2 at scsibus4 targ 1 lun 0: <TS-RDF5, SD Transcend, TS3A> SCSI4 0/direct removable serial.0000000000000
 sd2: 15193MB, 512 bytes/sector, 31116288 sectors
 
-$ doas dd if=debian-live-9.9.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
+$ doas dd if=debian-live-10.0.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
 465+1 records in
 465+1 records out
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
@@ -152,11 +154,11 @@ $ doas dd if=debian-live-9.9.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
 
 Shut down the computer and disconnect internal hard drives and all unnecessary peripheral devices.
 
-Consider using secure hardware like a ThinkPad X230 running [Coreboot](https://www.coreboot.org/) and cleaned of [Intel ME](https://github.com/corna/me_cleaner).
+Consider using secure hardware like a ThinkPad X230 running [Coreboot](https://www.coreboot.org/) and [cleaned of Intel ME](https://github.com/corna/me_cleaner).
 
 # Required software
 
-Boot the live image and configure networking.
+Boot the OS image and configure networking.
 
 **Note** If the screen locks, unlock with `user`/`live`.
 
@@ -165,7 +167,7 @@ Open the terminal and install several required packages:
 **Debian/Ubuntu**
 
 ```console
-$ sudo apt-get update && sudo apt-get install -y \
+$ sudo apt update && sudo apt install -y \
     gnupg2 gnupg-agent dirmngr \
     cryptsetup scdaemon pcscd \
     secure-delete hopenpgp-tools \
@@ -244,14 +246,14 @@ $ sudo atd
 $ sudo service rng-tools restart
 ```
 
-Test by emptying `/dev/random` - the light on the device should dim briefly:
+Test by emptying `/dev/random` - the light on the device will dim briefly:
 
 ```console
 $ cat /dev/random >/dev/null
 [Press Control-C]
 ```
 
-Verify the available entropy pool is re-seeded:
+After a few seconds, verify the available entropy pool is quickly re-seeded:
 
 ```console
 $ cat /proc/sys/kernel/random/entropy_avail
@@ -1222,7 +1224,7 @@ $ sudo srm -r $GNUPGHOME || sudo rm -rf $GNUPGHOME
 $ gpg --delete-secret-key $KEYID
 ```
 
-**Important** Make sure you have securely erased all generated keys and revocation certificates if a Live image was not used!
+**Important** Make sure you have securely erased all generated keys and revocation certificates if an ephemeral enviroment was not used!
 
 # Using keys
 
@@ -1855,10 +1857,9 @@ $ ykman openpgp set-touch enc on
 
 YubiKey will blink when it is waiting for a touch.
 
-
 # Email
 
-GPG keys on YubiKey can be used with ease to encrypt or sign email messages and attachments using [Thunderbird](https://www.thunderbird.net/) and [Enigmail](https://www.enigmail.net). Thunderbird supports OAuth 2 authentication and can be used with Gmail. See [this guide](https://ssd.eff.org/en/module/how-use-pgp-linux) from EFF for detailed instructions.
+GPG keys on YubiKey can be used with ease to encrypt and/or sign emails and attachments using [Thunderbird](https://www.thunderbird.net/) and [Enigmail](https://www.enigmail.net). Thunderbird supports OAuth 2 authentication and can be used with Gmail. See [this guide](https://ssd.eff.org/en/module/how-use-pgp-linux) from EFF for detailed instructions.
 
 # Reset
 
