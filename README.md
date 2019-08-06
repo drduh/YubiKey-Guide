@@ -1837,6 +1837,8 @@ By default, YubiKey will perform encryption, signing and authentication operatio
 
 To require a touch for each key operation, install [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and recall the Admin PIN:
 
+**Note** Older versions of the YubiKey Manager used `touch` instead of `set-touch` in the below commands.
+
 Authentication:
 
 ```console
