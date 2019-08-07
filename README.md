@@ -666,9 +666,9 @@ $ gpg --armor --export-secret-subkeys $KEYID > $GNUPGHOME/sub.key
 On Windows, note that using any extension other than `.gpg` or attempting IO redirection to a file will garble the secret key, making it impossible to import it again at a later date:
 
 ```console
-$ gpg --armor --export-secret-keys $KEYID -o \path\to\dir\mastersub.gpg
+$ gpg -o \path\to\dir\mastersub.gpg --armor --export-secret-keys $KEYID
 
-$ gpg --armor --export-secret-subkeys $KEYID -o \path\to\dir\sub.gpg
+$ gpg -o \path\to\dir\sub.gpg --armor --export-secret-subkeys $KEYID
 ```
 
 # Backup
@@ -841,7 +841,7 @@ $ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).txt
 Windows:
 
 ```console
-$ gpg --armor --export $KEYID -o \path\to\dir\pubkey.gpg
+$ gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
 ```
 
 **Optional** Upload the public key to a [public keyserver](https://debian-administration.org/article/451/Submitting_your_GPG_key_to_a_keyserver):
