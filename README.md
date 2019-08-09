@@ -1890,7 +1890,9 @@ and paste:
 ```
 
 Edit the default path to allow Chrome to find gpg:
-```sudo launchctl config user path /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin```
+```console
+$ sudo launchctl config user path /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+```
 
 Close Chrome if it is running and reboot your Mac.
 
