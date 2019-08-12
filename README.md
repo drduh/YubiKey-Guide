@@ -1502,7 +1502,7 @@ Add these to the shell `rc` file:
 ```console
 export GPG_TTY="$(tty)"
 export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
-gpg-connect-agent updatestartuptty /bye
+gpg-connect-agent updatestartuptty /bye > /dev/null
 ```
 
 On some systems, you may need to use the following instead:
