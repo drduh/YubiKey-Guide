@@ -1863,6 +1863,41 @@ YubiKey will blink when it is waiting for a touch.
 
 GPG keys on YubiKey can be used with ease to encrypt and/or sign emails and attachments using [Thunderbird](https://www.thunderbird.net/) and [Enigmail](https://www.enigmail.net). Thunderbird supports OAuth 2 authentication and can be used with Gmail. See [this guide](https://ssd.eff.org/en/module/how-use-pgp-linux) from EFF for detailed instructions.
 
+## mailvelope on MacOS
+
+[Mailvelope](https://www.mailvelope.com/en) allows GPG keys on YubiKey to be used with Gmail and others.
+
+On MacOS install gpgme using homebrew:
+```console
+$ brew install gpgme
+```
+
+To allow Chrome to run gpgme:
+```console
+$ nano ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/gpgmejson.json
+```
+and paste:
+```json
+{
+    "name": "gpgmejson",
+    "description": "Integration with GnuPG",
+    "path": "/usr/local/bin/gpgme-json",
+    "type": "stdio",
+    "allowed_origins": [
+        "chrome-extension://kajibbejlbohfaggdiogboambcijhkke/"
+    ]
+}
+```
+
+Edit the default path to allow Chrome to find gpg:
+```console
+$ sudo launchctl config user path /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+```
+
+Close Chrome if it is running and reboot your Mac.
+
+Finally install the [mailvelope extension](https://chrome.google.com/webstore/detail/mailvelope/kajibbejlbohfaggdiogboambcijhkke) from the Chrome app store. 
+
 # Reset
 
 If PIN attempts are exceeded, the card is locked and must be [reset](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html) and set up again using the encrypted backup.
