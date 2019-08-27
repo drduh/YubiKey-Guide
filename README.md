@@ -416,16 +416,25 @@ Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/de
 $ export KEYID=0xFF3E7D88647EBCDB
 ```
 
-# Sign with an existing key (if you have one)
+# Sign with an existing key (optional)
 
-Export your existing key to move it to the working keyring.  From a different terminal do:
+If you already have a pgp key you may want want to sign your new key
+with the old one to help prove that your new key is infact controlled
+by you.
 
-   $ gpg --export-secret-keys --armor --output /tmp/new.sec
+Export your existing key to move it to the working keyring.  From a
+different terminal do:
 
-and then
+```console
+$ gpg --export-secret-keys --armor --output /tmp/new.sec
+```
 
-   $ gpg  --default-key $OLDKEY --sign-key $KEYID
+to export your old key and then
 
+
+```console
+$ gpg  --default-key $OLDKEY --sign-key $KEYID
+```
 
 # Sub-keys
 
