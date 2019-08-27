@@ -416,6 +416,26 @@ Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/de
 $ export KEYID=0xFF3E7D88647EBCDB
 ```
 
+# Sign with an existing key (optional)
+
+If you already have a pgp key you may want want to sign your new key
+with the old one to help prove that your new key is infact controlled
+by you.
+
+Export your existing key to move it to the working keyring.  From a
+different terminal do:
+
+```console
+$ gpg --export-secret-keys --armor --output /tmp/new.sec
+```
+
+to export your old key and then
+
+
+```console
+$ gpg  --default-key $OLDKEY --sign-key $KEYID
+```
+
 # Sub-keys
 
 Edit the master key to add sub-keys:
@@ -620,6 +640,70 @@ ssb  rsa4096/0x3F29127E79649A3D
 Finish by saving the keys.
 
 ```console
+gpg> save
+```
+
+## Add extra emails
+
+```console
+gpg> adduid
+Real name: Dr Duh
+Email address: DrDuh@other.org
+Comment:
+You selected this USER-ID:
+    "Dr Duh <DrDuh@other.org>"
+
+sec  rsa4096/0xFF3E7D88647EBCDB
+    created: 2017-10-09  expires: never       usage: SC
+    trust: ultimate      validity: ultimate
+ssb  rsa4096/0xBECFA3C1AE191D15
+    created: 2017-10-09  expires: never       usage: S
+ssb  rsa4096/0x5912A795E90DD2CF
+    created: 2017-10-09  expires: never       usage: E
+ssb  rsa4096/0x3F29127E79649A3D
+    created: 2017-10-09  expires: never       usage: A
+[ultimate] (1). Dr Duh <doc@duh.to>
+[ unknown] (2). Dr Duh <DrDuh@other.org>
+
+
+gpg> trust
+sec  rsa4096/0xFF3E7D88647EBCDB
+    created: 2017-10-09  expires: never       usage: SC
+    trust: ultimate      validity: ultimate
+ssb  rsa4096/0xBECFA3C1AE191D15
+    created: 2017-10-09  expires: never       usage: S
+ssb  rsa4096/0x5912A795E90DD2CF
+    created: 2017-10-09  expires: never       usage: E
+ssb  rsa4096/0x3F29127E79649A3D
+    created: 2017-10-09  expires: never       usage: A
+[ultimate] (1). Dr Duh <doc@duh.to>
+[ unknown] (2). Dr Duh <DrDuh@other.org>
+
+Please decide how far you trust this user to correctly verify other users' keys
+(by looking at passports, checking fingerprints from different sources, etc.)
+
+  1 = I don't know or won't say
+  2 = I do NOT trust
+  3 = I trust marginally
+  4 = I trust fully
+  5 = I trust ultimately
+  m = back to the main menu
+
+Your decision? 5
+Do you really want to set this key to ultimate trust? (y/N) y
+
+sec  rsa4096/0xFF3E7D88647EBCDB
+    created: 2017-10-09  expires: never       usage: SC
+    trust: ultimate      validity: ultimate
+ssb  rsa4096/0xBECFA3C1AE191D15
+    created: 2017-10-09  expires: never       usage: S
+ssb  rsa4096/0x5912A795E90DD2CF
+    created: 2017-10-09  expires: never       usage: E
+ssb  rsa4096/0x3F29127E79649A3D
+    created: 2017-10-09  expires: never       usage: A
+[ultimate] (1). Dr Duh <doc@duh.to>
+[ unknown] (2). Dr Duh <DrDuh@other.org>
+
 gpg> save
 ```
 
