@@ -418,7 +418,7 @@ $ export KEYID=0xFF3E7D88647EBCDB
 
 # Sign with an existing key (optional)
 
-If you already have a pgp key you may want want to sign your new key
+If you already have a pgp key you may want to sign your new key
 with the old one to help prove that your new key is infact controlled
 by you.
 
