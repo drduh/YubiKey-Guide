@@ -38,7 +38,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [(Optional) Save public key for identity file configuration](#-optional--save-public-key-for-identity-file-configuration)
   * [Connect with public key authentication](#connect-with-public-key-authentication)
   * [Import SSH keys](#import-ssh-keys)
-  * [Remote Machines (agent forwarding)](#remote-machines--agent-forwarding-)
+  * [Remote Machines (Agent Forwarding)](#remote-machines--agent-forwarding-)
   * [GitHub](#github)
   * [OpenBSD](#openbsd)
   * [Windows](#windows)
@@ -162,9 +162,11 @@ Boot the OS image and configure networking.
 
 **Note** If the screen locks, unlock with `user`/`live`.
 
-Open the terminal and install several required packages:
+Open the terminal and install required software packages.
 
 **Debian/Ubuntu**
+
+**Note** Live Ubuntu images [may require modification](https://github.com/drduh/YubiKey-Guide/issues/116) to `/etc/apt/sources.list`
 
 ```console
 $ sudo apt update && sudo apt install -y \
@@ -225,7 +227,7 @@ Most operating systems use software-based pseudorandom number generators. A hard
 Install and configure OneRNG software:
 
 ```console
-$ sudo apt-get install -y \
+$ sudo apt install -y \
     at rng-tools python-gnupg openssl
 
 $ wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.6-1_all.deb
@@ -1325,11 +1327,12 @@ Install the required packages and mount the non-encrypted volume created earlier
 **Linux**
 
 ```console
-$ sudo apt-get update && sudo apt-get install -y \
+$ sudo apt update && sudo apt install -y \
      gnupg2 gnupg-agent gnupg-curl scdaemon pcscd
 
 $ sudo mount /dev/sdb2 /mnt
 ```
+
 **OpenBSD**
 
 ```console
@@ -1338,7 +1341,7 @@ $ doas pkg_add gnupg pcsc-tools
 $ doas mount /dev/sd2b /mnt
 ```
 
-Import the key:
+Import the public key:
 
 ```console
 $ gpg --import /mnt/pubkey.txt
@@ -1396,7 +1399,7 @@ sub  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09  usage: 
 gpg> quit
 ```
 
-Remove and re-insert the YubiKey and check the status:
+Remove and re-insert YubiKey and check the status:
 
 ```console
 $ gpg --card-status
@@ -1434,7 +1437,7 @@ ssb>  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09
 
 **Note** If you see `General key info..: [none]` in the output instead - go back and import the public key using the previous step.
 
-Encrypt a message to your own key (useful for storing passwords and other credentials):
+Encrypt a message to your own key (useful for storing password credentials and other data):
 
 ```console
 $ echo "test message string" | gpg --encrypt --armor --recipient $KEYID -o encrypted.txt
@@ -1688,9 +1691,11 @@ $ ssh-add -E md5 -l
 
 When using the key `pinentry` will be invoked to request the key's passphrase. The passphrase will be cached for up to 10 minutes idle time between uses, to a maximum of 2 hours.
 
-## Remote Machines (agent forwarding)
+## Remote Machines (Agent Forwarding)
 
-If you want to use YubiKey to sign a git commit on a remote machine, or ssh through another layer, then this is possible using Agent Forwarding.
+**Note** SSH Agent Forwarding can [add additional risk](https://matrix.org/blog/2019/05/08/post-mortem-and-remediations-for-apr-11-security-incident/#ssh-agent-forwarding-should-be-disabled) - proceed with caution!
+
+To use YubiKey to sign a git commit on a remote host, or ssh through another network, configure and use Agent Forwarding.
 
 To do this, you need access to the remote machine and the YubiKey has to be set up on the host machine.
 
