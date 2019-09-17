@@ -1851,9 +1851,7 @@ RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
 
 #### Remote host configuration
 
-You may have to add the following to the shell rc file (on Linux, this is only required on the laptop/workstation
-where the YubiKey is plugged in, and **NOT** on the remote host server that you connect to; in fact at least on
-some Linux distributions, changing SSH_AUTH_SOCK on the server breaks agent forwarding):
+You may have to add the following to the shell rc file:  _(On Linux, this is only required on the laptop/workstation where the YubiKey is plugged in, and **NOT** on the remote host server that you connect to; in fact at least on some Linux distributions, changing SSH_AUTH_SOCK on the server breaks agent forwarding.)_
 
 ```
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
