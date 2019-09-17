@@ -2047,7 +2047,10 @@ scd apdu 00 44 00 00
 
 - If you receive the error, `Permission denied (publickey)`, increase ssh verbosity with the `-v` flag and ensure the public key from the card is being offered: `Offering public key: RSA SHA256:abcdefg... cardno:00060123456`. If it is, ensure you are connecting as the right user on the target system, rather than as the user on the local system. Otherwise, be sure `IdentitiesOnly` is not [enabled](https://github.com/FiloSottile/whosthere#how-do-i-stop-it) for this host.
 
-- If SSH authentication stil fails - add up to 3 `-v` flags to increase verbosity.
+- If SSH authentication still fails - add up to 3 `-v` flags to the `ssh` client to increase verbosity.
+
+- If it still fails, it may be useful to stop the background `sshd` daemon process service on the server (e.g. using `sudo systemctl stop sshd`) and instead start it in the foreground with extensive debugging output, using `sshd -eddd`.  Note that (quote `man sshd`) _The server also will not fork and will only process one connection._, and therefore has to be re-started after every `ssh` test.
+
 
 # Links
 
