@@ -38,7 +38,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [(Optional) Save public key for identity file configuration](#-optional--save-public-key-for-identity-file-configuration)
   * [Connect with public key authentication](#connect-with-public-key-authentication)
   * [Import SSH keys](#import-ssh-keys)
-  * [Remote Machines (Agent Forwarding)](#remote-machines--agent-forwarding-)
+  * [Remote Machines (Agent Forwarding)](#remote-machines-agent-forwarding)
   * [GitHub](#github)
   * [OpenBSD](#openbsd)
   * [Windows](#windows)
