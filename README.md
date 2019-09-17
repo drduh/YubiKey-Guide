@@ -1699,6 +1699,23 @@ To use YubiKey to sign a git commit on a remote host, or ssh through another net
 
 To do this, you need access to the remote machine and the YubiKey has to be set up on the host machine.
 
+On the remote machine, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink yes`
+
+**Optional** If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket on the remote machine before forwarding works. For example, `rm /run/user/1000/gnupg/S.gpg-agent`. Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
+
+Import public keys to the remote machine. This can be done by fetching from a keyserver. On the local machine, copy the public keyring to the remote machine:
+
+```console
+$ scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
+```
+
+You should now be able use `ssh -A remote` on the _local_ machine to log into _remote_, and should then be able to use YubiKey as if it were connected to the remote machine. For example, using e.g. `ssh-add -l` on that remote machine should show the public key from the YubiKey (note `cardno:`).  (If you don't want to have to remember to use `ssh -A`, you can use `ForwardAgent yes` in `~/.ssh/config`.  As a security best practice, always use `ForwardAgent yes` only for a single `Hostname`, never for all servers.)
+
+On modern distributions, such as Fedora 30, there is typically no need to also set `RemoteForward` in `~/.ssh/config` as detailed in the next chapter, because the right thing actually happens automatically.
+
+
+### Steps for older distributions
+
 On the local machine, run:
 
 ```console
@@ -1715,16 +1732,6 @@ $ gpgconf --list-dirs agent-socket
 
 This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`
 
-On the remote machine, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink yes`
-
-**Optional** If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket on the remote machine before forwarding works. For example, `rm /run/user/1000/gnupg/S.gpg-agent`. Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
-
-Import public keys to the remote machine. This can be done by fetching from a keyserver. On the local machine, copy the public keyring to the remote machine:
-
-```console
-$ scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
-```
-
 Finally, enable agent forwarding for a given machine by adding the following to the local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
 
 ```
@@ -1734,8 +1741,6 @@ Host
   RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra
   # RemoteForward [remote socket] [local socket]
 ```
-
-You should then be able to use YubiKey as if it were connected to the remote machine.
 
 If you're still having problems, it may be necessary to edit `gpg-agent.conf` file on both the remote and local machines to add the following information:
 
