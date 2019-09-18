@@ -1592,13 +1592,16 @@ export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 gpg-connect-agent updatestartuptty /bye > /dev/null
 ```
 
-On some systems, you may need to use the following instead:
+On modern systems, you can use the following instead, as `gpgconf --list-dirs agent-ssh-socket` will automatically set `SSH_AUTH_SOCK` to the correct value; and is therefore typically better than hard-coding to `run/user/$UID/gnupg/S.gpg-agent.ssh`, if available:
 
 ```console
 export GPG_TTY="$(tty)"
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
 ```
+
+Note that `SSH_AUTH_SOCK` normally only needs to be set on the *local* laptop (workstation), where the YubiKey is plugged in.  On the *remote* server that we SSH into, `ssh` will automatically set `SSH_AUTH_SOCK` to something like `/tmp/ssh-mXzCzYT2Np/agent.7541` when we connect.  We therefore do **NOT** manually set `SSH_AUTH_SOCK` on the server.  (Doing so would break [SSH Agent Forwarding](#remote-machines-agent-forwarding).)
+
 
 ## Copy public key
 
@@ -1853,7 +1856,7 @@ RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
 
 #### Remote host configuration
 
-Add the following to the shell rc file:
+You may have to add the following to the shell rc file:  _(On Linux, this is only required on the laptop/workstation where the YubiKey is plugged in, and **NOT** on the remote host server that you connect to; in fact at least on some Linux distributions, changing SSH_AUTH_SOCK on the server breaks agent forwarding.)_
 
 ```
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
