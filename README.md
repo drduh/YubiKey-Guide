@@ -58,8 +58,6 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 
 All YubiKeys except the blue "security key" model are compatible with this guide. NEO models are limited to 2048-bit RSA keys. Compare YubiKeys [here](https://www.yubico.com/products/yubikey-hardware/compare-products-series/).
 
-You will also need several small storage devices for booting a temporary operating system and creating backups of private/public keys.
-
 # Verify YubiKey
 
 To verify a YubiKey is genuine, open a [browser with U2F support](https://support.yubico.com/support/solutions/articles/15000009591-how-to-confirm-your-yubico-device-is-genuine-with-u2f) to [https://www.yubico.com/genuine/](https://www.yubico.com/genuine/). Insert a Yubico device, and select *Verify Device* to begin the process. Touch the YubiKey when prompted, and if asked, allow it to see the make and model of the device. If you see *Verification complete*, the device is authentic.
@@ -68,7 +66,11 @@ This website verifies the YubiKey's device attestation certificates signed by a 
 
 # Download OS Image
 
+You will need several small storage devices for booting a temporary operating system and creating backups of your private/public keys.
+
 It is recommended to generate cryptographic keys and configure YubiKey from a secure operating system and using an ephemeral environment ("live image"), such as [Debian](https://www.debian.org/CD/live/), [Tails](https://tails.boum.org/index.en.html), or [OpenBSD](https://www.openbsd.org/) booted from a USB drive.
+
+Depending on your threat model and/or level of inherent trust in your own system. It is also a valid option to run the "live image" within a VM using something like Virtualbox or VMWare
 
 To use Debian, download the latest image:
 
@@ -152,9 +154,9 @@ $ doas dd if=debian-live-10.0.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
-Shut down the computer and disconnect internal hard drives and all unnecessary peripheral devices.
+Shut down the computer and disconnect internal hard drives and all unnecessary peripheral devices. If being run within a VM this part can be skipped as no such devices should be attached to the VM since the image will still be run as a "live image"
 
-Consider using secure hardware like a ThinkPad X230 running [Coreboot](https://www.coreboot.org/) and [cleaned of Intel ME](https://github.com/corna/me_cleaner).
+If on physical hardware consider using secure hardware like a ThinkPad X230 running [Coreboot](https://www.coreboot.org/) and [cleaned of Intel ME](https://github.com/corna/me_cleaner).
 
 # Required software
 
@@ -1993,7 +1995,7 @@ $ sudo launchctl config user path /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
 Close Chrome if it is running and reboot your Mac.
 
-Finally install the [mailvelope extension](https://chrome.google.com/webstore/detail/mailvelope/kajibbejlbohfaggdiogboambcijhkke) from the Chrome app store. 
+Finally install the [mailvelope extension](https://chrome.google.com/webstore/detail/mailvelope/kajibbejlbohfaggdiogboambcijhkke) from the Chrome app store.
 
 # Reset
 
