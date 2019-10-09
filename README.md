@@ -75,7 +75,7 @@ Depending on your threat model and/or level of inherent trust in your own system
 To use Debian, download the latest image:
 
 ```console
-$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-10.0.0-amd64-xfce.iso
+$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-10.1.0-amd64-xfce.iso
 
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS
 
