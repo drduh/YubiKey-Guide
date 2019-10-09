@@ -75,7 +75,7 @@ Depending on your threat model and/or level of inherent trust in your own system
 To use Debian, download the latest image:
 
 ```console
-$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-10.0.0-amd64-xfce.iso
+$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-10.1.0-amd64-xfce.iso
 
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS
 
@@ -106,8 +106,8 @@ gpg: WARNING: This key is not certified with a trusted signature!
 gpg:          There is no indication that the signature belongs to the owner.
 Primary key fingerprint: DF9B 9C49 EAA9 2984 3258  9D76 DA87 E80D 6294 BE9B
 
-$ grep $(sha512sum debian-live-10.0.0-amd64-xfce.iso) SHA512SUMS
-SHA512SUMS:c230dc15705bbae07782185af7f933ed7821ec94fa4b9d08a61856b27cdf7d3a4e9f5b6ddb419b96714464ca76c2686083fc4534dc116cc9980b52c233331e03  debian-live-10.0.0-amd64-xfce.iso
+$ grep $(sha512sum debian-live-10.1.0-amd64-xfce.iso) SHA512SUMS
+SHA512SUMS:b40aa5a680fd560ce5bd52a874004c18a7d005865fc83e82c36af1cd01cf1cfbd177a4a212288c648f59088444c16aa2c1c52da206c27df2fa8ffadb4fc9a7fd  debian-live-10.1.0-amd64-xfce.iso
 ```
 
 If the key cannot be received, try changing the DNS resolver and/or use a specific keyserver:
@@ -135,7 +135,7 @@ sd 2:0:0:0: [sdb] Write cache: disabled, read cache: enabled, doesn't support DP
 sdb: sdb1 sdb2
 sd 2:0:0:0: [sdb] Attached SCSI removable disk
 
-$ sudo dd if=debian-live-10.0.0-amd64-xfce.iso of=/dev/sdb bs=4M
+$ sudo dd if=debian-live-10.1.0-amd64-xfce.iso of=/dev/sdb bs=4M; sync
 465+1 records in
 465+1 records out
 1951432704 bytes (2.0 GB, 1.8 GiB) copied, 42.8543 s, 45.5 MB/s
@@ -148,7 +148,7 @@ $ dmesg | tail -n2
 sd2 at scsibus4 targ 1 lun 0: <TS-RDF5, SD Transcend, TS3A> SCSI4 0/direct removable serial.0000000000000
 sd2: 15193MB, 512 bytes/sector, 31116288 sectors
 
-$ doas dd if=debian-live-10.0.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
+$ doas dd if=debian-live-10.1.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
 465+1 records in
 465+1 records out
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
