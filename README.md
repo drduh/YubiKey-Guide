@@ -1578,6 +1578,8 @@ max-cache-ttl 120
 pinentry-program /usr/bin/pinentry-curses
 ```
 
+**Important** The `cache-ttl` options do **NOT** apply when using a YubiKey as a smartcard as the PIN is [cached by the smartcard itself](https://dev.gnupg.org/T3362). Therefore, in order to clear the PIN from cache (smartcard equivalent to `default-cache-ttl` and `max-cache-ttl`), you need to unplug the YubiKey.
+
 **Tip** Set `pinentry-program /usr/bin/pinentry-gnome3` for a GUI-based prompt.
 
 On macOS, use `brew install pinentry-mac` and adjust the program path to suit.
