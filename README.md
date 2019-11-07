@@ -90,7 +90,7 @@ gpg: Signature made Sat Jul  6 18:51:32 2019 PDT
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Can't check signature: No public key
 
-$ gpg --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
+$ gpg --keyserver keyring.debian.org --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: key 0xDA87E80D6294BE9B: 61 signatures not checked due to missing keys
 gpg: key 0xDA87E80D6294BE9B: public key "Debian CD signing key <debian-cd@lists.debian.org>" imported
 gpg: marginals needed: 3  completes needed: 1  trust model: pgp
