@@ -1958,7 +1958,7 @@ Encryption:
 $ ykman openpgp set-touch enc on
 ```
 
-YubiKey will blink when it is waiting for a touch.
+YubiKey will blink when it is waiting for a touch. On Linux you can also use [yubikey-touch-detector](https://github.com/maximbaz/yubikey-touch-detector) to have an indicator or notification that YubiKey is waiting for a touch.
 
 # Email
 
