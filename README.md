@@ -214,7 +214,7 @@ Download and install [Homebrew](https://brew.sh/) and the following packages:
 $ brew install gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac
 ```
 
-**Note** An additional Python package dependency may need to be installed to use `[ykman](https://support.yubico.com/support/solutions/articles/15000012643-yubikey-manager-cli-ykman-user-guide)` - `pip install yubikey-manager`
+**Note** An additional Python package dependency may need to be installed to use [`ykman`](https://support.yubico.com/support/solutions/articles/15000012643-yubikey-manager-cli-ykman-user-guide) - `pip install yubikey-manager`
 
 ## Windows
 
