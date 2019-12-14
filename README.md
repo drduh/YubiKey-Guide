@@ -80,7 +80,7 @@ You will need several small storage devices for booting a temporary operating sy
 
 It is recommended to generate cryptographic keys and configure YubiKey from a secure operating system and using an ephemeral environment ("live image"), such as [Debian](https://www.debian.org/CD/live/), [Tails](https://tails.boum.org/index.en.html), or [OpenBSD](https://www.openbsd.org/) booted from a USB drive.
 
-Depending on your threat model and/or level of inherent trust in your own system, it may also be a valid option to run the live image within a virtual machine using VirtualBox or VMWare software.
+Depending on your threat model and/or level of inherent trust in your own system, it may also be a valid option to run the live image within a virtual machine using [virt-manager](https://virt-manager.org/), VirtualBox, or VMWare software.
 
 To use Debian, download the latest image:
 
@@ -1585,7 +1585,7 @@ pinentry-program /usr/bin/pinentry-curses
 
 **Tip** Set `pinentry-program /usr/bin/pinentry-gnome3` for a GUI-based prompt. If the _pinentry_ graphical dialog doesn't show and you get this error: `sign_and_send_pubkey: signing failed: agent refused operation`, you may need to install the `dbus-user-session` package and restart the computer for the `dbus` user session to be fully inherited; this is because behind the scenes, `pinentry` complains about `No $DBUS_SESSION_BUS_ADDRESS found`, falls back to `curses` but doesn't find the expected `tty`.
 
-On macOS, use `brew install pinentry-mac` and adjust the program path to suit.
+On macOS, use `brew install pinentry-mac` and set the program path to `pinentry-program /usr/local/bin/pinentry-mac`
 
 ## Replace agents
 
@@ -1977,11 +1977,8 @@ On macOS, install gpgme using Homebrew:
 $ brew install gpgme
 ```
 
-To allow Chrome to run gpgme:
-```console
-$ nano ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/gpgmejson.json
-```
-and paste:
+To allow Chrome to run gpgme, edit `~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/gpgmejson.json` and add:
+
 ```json
 {
     "name": "gpgmejson",
@@ -1994,14 +1991,13 @@ and paste:
 }
 ```
 
-Edit the default path to allow Chrome to find gpg:
+Edit the default path to allow Chrome to find GPG:
+
 ```console
 $ sudo launchctl config user path /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 ```
 
-Close Chrome if it is running and reboot your Mac.
-
-Finally install the [mailvelope extension](https://chrome.google.com/webstore/detail/mailvelope/kajibbejlbohfaggdiogboambcijhkke) from the Chrome app store.
+Finally, install the [Mailvelope extension](https://chrome.google.com/webstore/detail/mailvelope/kajibbejlbohfaggdiogboambcijhkke) from the Chrome app store.
 
 # Reset
 
@@ -2052,7 +2048,9 @@ scd apdu 00 44 00 00
 
 - If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - [run the command](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=835394) `gpg-connect-agent updatestartuptty /bye`
 
-- If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - check `~/.gnupg/gpg-agent.conf` to make sure the path to `pinentry` is correct.
+- If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - edit `~/.gnupg/gpg-agent.conf` to set a valid `pinentry` program path, e.g. `pinentry-program /usr/local/bin/pinentry-mac` on macOS.
+
+- If you receive the error, `The agent has no identities` from `ssh-add -L`, make sure you have installed and started `scdaemon`.
 
 - If you receive the error, `Error connecting to agent: No such file or directory` from `ssh-add -L`, the UNIX file socket that the agent uses for communication with other processes may not be set up correctly. On Debian, try `export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"`. Also see that `gpgconf --list-dirs agent-ssh-socket` is returning single path, to existing `S.gpg-agent.ssh` socket.
 
