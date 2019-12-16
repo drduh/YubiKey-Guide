@@ -10,7 +10,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Verify YubiKey](#verify-yubikey)
 - [Download OS Image](#download-os-image)
 - [Required software](#required-software)
-  * [Debian/Ubuntu](#debian-ubuntu)
+  * [Debian/Ubuntu](#debianubuntu)
   * [Arch](#arch)
   * [RHEL7](#rhel7)
   * [OpenBSD](#openbsd)
