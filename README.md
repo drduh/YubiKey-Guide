@@ -185,7 +185,7 @@ Open the terminal and install required software packages.
 ```console
 $ sudo apt update
 
-$ sudo apt install -y gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd secure-delete hopenpgp-tools yubikey-personalization
+$ sudo apt install -y wget gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd secure-delete hopenpgp-tools yubikey-personalization
 ```
 
 ## Arch
@@ -324,7 +324,7 @@ You'll be prompted to enter and verify a passphrase - keep it handy as you'll ne
 To generate a strong passphrase which could be written down in a hidden or secure place; or memorized:
 
 ```console
-$ gpg --gen-random -a 0 24
+$ gpg --gen-random --armor 0 24
 ydOmByxmDe63u7gqx2XI9eDgpvJwibNH
 ```
 
@@ -767,7 +767,7 @@ $ gpg -o \path\to\dir\sub.gpg --armor --export-secret-subkeys $KEYID
 
 Once keys are moved to YubiKey, they cannot be moved again! Create an **encrypted** backup of the keyring and consider using a [paper copy](https://www.jabberwocky.com/software/paperkey/) of the keys as an additional backup measure.
 
-**Tip**: The ext2 filesystem (without encryption) can be mounted on both Linux and OpenBSD.
+**Tip** The ext2 filesystem (without encryption) can be mounted on both Linux and OpenBSD. Consider using a FAT32/NTFS filesystem for MacOS/Windows compatibility instead.
 
 **Linux**
 
@@ -821,7 +821,7 @@ Partition type
 Select (default p):
 Partition number (1-4, default 1):
 First sector (2048-62980095, default 2048):
-Last sector, +sectors or +size{K,M,G,T,P} (2048-62980095, default 62980095): +10M
+Last sector, +sectors or +size{K,M,G,T,P} (2048-62980095, default 62980095): +25M
 
 Created a new partition 1 of type 'Linux' and of size 10 MiB.
 
@@ -883,7 +883,7 @@ $ sudo cp onerng_3.6-1_all.deb /mnt/encrypted-usb
 
 Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
 
-Otherwise, unmount and disconnected the encrypted volume:
+Unmount, close and disconnected the encrypted volume:
 
 ```console
 $ sudo umount /mnt/encrypted-usb
@@ -905,7 +905,7 @@ Partition type
 Select (default p):
 Partition number (2-4, default 2):
 First sector (22528-31116287, default 22528):
-Last sector, +sectors or +size{K,M,G,T,P} (22528-31116287, default 31116287): +10M
+Last sector, +sectors or +size{K,M,G,T,P} (22528-31116287, default 31116287): +25M
 
 Created a new partition 2 of type 'Linux' and of size 10 MiB.
 
@@ -1074,7 +1074,7 @@ Use GPG to configure YubiKey as a smartcard:
 $ gpg --card-edit
 Reader ...........: Yubico Yubikey 4 OTP U2F CCID
 Application ID ...: D2760001240102010006055532110000
-Version ..........: 2.1
+Version ..........: 3.4
 Manufacturer .....: Yubico
 Serial number ....: 05553211
 Name of cardholder: [not set]
@@ -1151,7 +1151,7 @@ Login data (account name): doc@duh.to
 gpg/card> list
 
 Application ID ...: D2760001240102010006055532110000
-Version ..........: 2.1
+Version ..........: 3.4
 Manufacturer .....: unknown
 Serial number ....: 05553211
 Name of cardholder: Dr Duh
@@ -1161,7 +1161,7 @@ URL of public key : [not set]
 Login data .......: doc@duh.to
 Private DO 4 .....: [not set]
 Signature PIN ....: not forced
-Key attributes ...: 2048R 2048R 2048R
+Key attributes ...: rsa2048 rsa2048 rsa2048
 Max. PIN lengths .: 127 127 127
 PIN retry counter : 3 0 3
 Signature counter : 0
@@ -1346,10 +1346,10 @@ $ doas pkg_add gnupg pcsc-tools
 $ doas mount /dev/sd2b /mnt
 ```
 
-Import the public key:
+Import the public key file:
 
 ```console
-$ gpg --import /mnt/pubkey.txt
+$ gpg --import /mnt/0x*txt
 gpg: key 0xFF3E7D88647EBCDB: public key "Dr Duh <doc@duh.to>" imported
 gpg: Total number processed: 1
 gpg:               imported: 1
@@ -1408,8 +1408,9 @@ Remove and re-insert YubiKey and check the status:
 
 ```console
 $ gpg --card-status
+Reader ...........: Yubico YubiKey OTP FIDO CCID 00 00
 Application ID ...: D2760001240102010006055532110000
-Version ..........: 2.1
+Version ..........: 3.4
 Manufacturer .....: Yubico
 Serial number ....: 05553211
 Name of cardholder: Dr Duh
@@ -1418,7 +1419,7 @@ Sex ..............: unspecified
 URL of public key : [not set]
 Login data .......: doc@duh.to
 Signature PIN ....: not forced
-Key attributes ...: 4096R 4096R 4096R
+Key attributes ...: rsa4096 rsa4096 rsa4096
 Max. PIN lengths .: 127 127 127
 PIN retry counter : 3 3 3
 Signature counter : 0
@@ -1585,7 +1586,7 @@ pinentry-program /usr/bin/pinentry-curses
 
 **Tip** Set `pinentry-program /usr/bin/pinentry-gnome3` for a GUI-based prompt. If the _pinentry_ graphical dialog doesn't show and you get this error: `sign_and_send_pubkey: signing failed: agent refused operation`, you may need to install the `dbus-user-session` package and restart the computer for the `dbus` user session to be fully inherited; this is because behind the scenes, `pinentry` complains about `No $DBUS_SESSION_BUS_ADDRESS found`, falls back to `curses` but doesn't find the expected `tty`.
 
-On macOS, use `brew install pinentry-mac` and set the program path to `pinentry-program /usr/local/bin/pinentry-mac`
+On macOS, use `brew install pinentry-mac` and set the program path to `pinentry-program /usr/local/bin/pinentry-mac` or `pinentry-program /usr/local/MacGPG2/libexec/pinentry-mac.app/Contents/MacOS/pinentry-mac` if using MacGPG Suite.
 
 ## Replace agents
 
@@ -1599,7 +1600,7 @@ export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 gpg-connect-agent updatestartuptty /bye > /dev/null
 ```
 
-On modern systems, you can use the following instead, as `gpgconf --list-dirs agent-ssh-socket` will automatically set `SSH_AUTH_SOCK` to the correct value; and is therefore typically better than hard-coding to `run/user/$UID/gnupg/S.gpg-agent.ssh`, if available:
+On modern systems, `gpgconf --list-dirs agent-ssh-socket` will automatically set `SSH_AUTH_SOCK` to the correct value and is better than hard-coding to `run/user/$UID/gnupg/S.gpg-agent.ssh`, if available:
 
 ```console
 export GPG_TTY="$(tty)"
@@ -1668,7 +1669,7 @@ debug1: Authentication succeeded (publickey).
 [...]
 ```
 
-**Note** To make multiple connections or securely transfer many files, consider using the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) ssh option. Also see [drduh/config/ssh_config](https://github.com/drduh/config/blob/master/ssh_config).
+**Tip** To make multiple connections or securely transfer many files, consider using the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) ssh option. Also see [drduh/config/ssh_config](https://github.com/drduh/config/blob/master/ssh_config).
 
 ## Import SSH keys
 
@@ -1683,7 +1684,7 @@ $ ssh-add ~/.ssh/id_rsa && rm ~/.ssh/id_rsa
 
 When invoking `ssh-add`, it will prompt for the SSH key's passphrase if present, then the `pinentry` program will prompt and confirm for a new passphrase to use to encrypt the converted key within the GPG key store.
 
-The migrated key should be listed in `ssh-add -l`:
+The migrated key will be listed in `ssh-add -l`:
 
 ```console
 $ ssh-add -l
@@ -1802,10 +1803,10 @@ $ doas reboot
 
 ## Windows
 
-Windows can already have some virtual smartcard readers installed, like the one provided for Windows Hello. To ensure your YubiKey is the correct one used by scdaemon, you should add it to its configuration. You will need your device's full name. To find out what is your device's full name, plug your YubiKey, open the Device Manager, select "View->Show hidden devices". Go to the Software Devices list, you should see something like `Yubico YubiKey OTP+FIDO+CCID 0`. The name slightly differs according to the model. Thanks to [Scott Hanselman](https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx) for sharing this information.
+Windows can already have some virtual smartcard readers installed, like the one provided for Windows Hello. To ensure your YubiKey is the correct one used by scdaemon, you should add it to its configuration. You will need your device's full name. To find out what is your device's full name, plug your YubiKey, open the Device Manager, select "View > Show hidden devices". Go to the Software Devices list, you should see something like `Yubico YubiKey OTP+FIDO+CCID 0`. The name slightly differs according to the model. Thanks to [Scott Hanselman](https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx) for sharing this information.
 
-* Create or edit %APPDATA%/gnupg/scdaemon.conf, add `reader-port <your yubikey device's full name>`.
-* In %APPDATA%/gnupg/gpg-agent.conf, add:
+* Create or edit `%APPDATA%/gnupg/scdaemon.conf` to add `reader-port <your yubikey device's full name>`
+* Edit `%APPDATA%/gnupg/gpg-agent.conf` to add:
 
 ```
 enable-ssh-support
@@ -1821,7 +1822,7 @@ enable-putty-support
 
 * Enter `> gpg --card-status` to see YubiKey details.
 * Import the [public key](#export-public-key): `> gpg --import <path to public key file>`
-* Trust it: [Trust master key](#trust-master-key)
+* [Trust the master key](#trust-master-key)
 * Retrieve the public key id: `> gpg --list-public-keys`
 * Export the SSH key from GPG: `> gpg --export-ssh-key <public key id>`
 
