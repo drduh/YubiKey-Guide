@@ -10,7 +10,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Verify YubiKey](#verify-yubikey)
 - [Download OS Image](#download-os-image)
 - [Required software](#required-software)
-  * [Debian/Ubuntu](#debianubuntu)
+  * [Debian/Ubuntu](#debian-ubuntu)
   * [Arch](#arch)
   * [RHEL7](#rhel7)
   * [OpenBSD](#openbsd)
@@ -782,7 +782,6 @@ sd 7:0:0:0: Attached scsi generic sg1 type 0
 sd 7:0:0:0: [sdb] 31116288 512-byte logical blocks: (15.9 GB/14.8 GiB)
 sd 7:0:0:0: [sdb] Write Protect is off
 sd 7:0:0:0: [sdb] Mode Sense: 23 00 00 00
-sd 7:0:0:0: [sdb] Write cache: disabled, read cache: enabled, doesn't support DPO or FUA
 sdb: sdb1
 sd 7:0:0:0: [sdb] Attached SCSI removable disk
 ```
@@ -797,7 +796,7 @@ Erase and create a new partition table:
 
 ```console
 $ sudo fdisk /dev/sdb
-Welcome to fdisk (util-linux 2.29.2).
+Welcome to fdisk (util-linux 2.33.1).
 
 Command (m for help): o
 Created a new DOS disklabel with disk identifier 0xeac7ee35.
@@ -808,11 +807,11 @@ Calling ioctl() to re-read partition table.
 Syncing disks.
 ```
 
-Create a new partition with a 10 Megabyte size:
+Create a new partition with a 25 Megabyte size:
 
 ```console
 $ sudo fdisk /dev/sdb
-Welcome to fdisk (util-linux 2.29.2).
+Welcome to fdisk (util-linux 2.33.1).
 
 Command (m for help): n
 Partition type
@@ -823,7 +822,7 @@ Partition number (1-4, default 1):
 First sector (2048-62980095, default 2048):
 Last sector, +sectors or +size{K,M,G,T,P} (2048-62980095, default 62980095): +25M
 
-Created a new partition 1 of type 'Linux' and of size 10 MiB.
+Created a new partition 1 of type 'Linux' and of size 25 MiB.
 
 Command (m for help): w
 The partition table has been altered.
@@ -907,7 +906,7 @@ Partition number (2-4, default 2):
 First sector (22528-31116287, default 22528):
 Last sector, +sectors or +size{K,M,G,T,P} (22528-31116287, default 31116287): +25M
 
-Created a new partition 2 of type 'Linux' and of size 10 MiB.
+Created a new partition 2 of type 'Linux' and of size 25 MiB.
 
 Command (m for help): w
 The partition table has been altered.
@@ -965,7 +964,7 @@ Print the existing partitions to make sure it's the right device:
 $ doas disklabel -h sd2
 ```
 
-Initialize the disk by creating an `a` partition with FS type `RAID` and size of 10 Megabytes:
+Initialize the disk by creating an `a` partition with FS type `RAID` and size of 25 Megabytes:
 
 ```console
 $ doas fdisk -iy sd2
@@ -975,7 +974,7 @@ $ doas disklabel -E sd2
 Label editor (enter '?' for help at any prompt)
 sd2> a a
 offset: [64]
-size: [31101776] 10M
+size: [31101776] 25M
 FS type: [4.2BSD] RAID
 sd2*> w
 sd2> q
@@ -1008,10 +1007,6 @@ sd3> q
 No label changes.
 
 $ doas newfs sd3i
-/dev/rsd3i: 7.8MB in 16000 sectors of 512 bytes
-4 cylinder groups of 1.95MB, 125 blocks, 256 inodes each
-super-block backups (for fsck -b #) at:
- 32, 4032, 8032, 12032,
 ```
 
 Mount the filesystem and copy the temporary directory with the keyring:
@@ -1045,17 +1040,13 @@ $ doas disklabel -E sd2
 Label editor (enter '?' for help at any prompt)
 sd2> a b
 offset: [32130]
-size: [31069710] 10M
+size: [31069710] 25M
 FS type: [swap] 4.2BSD
 sd2*> w
 sd2> q
 No label changes.
 
 $ doas newfs sd2b
-/dev/rsd2b: 15.7MB in 32096 sectors of 512 bytes
-5 cylinder groups of 3.89MB, 249 blocks, 512 inodes each
-super-block backups (for fsck -b #) at:
- 32, 8000, 15968, 23936, 31904,
 
 $ doas mkdir /mnt/public
 
@@ -1805,7 +1796,12 @@ $ doas reboot
 
 Windows can already have some virtual smartcard readers installed, like the one provided for Windows Hello. To ensure your YubiKey is the correct one used by scdaemon, you should add it to its configuration. You will need your device's full name. To find out what is your device's full name, plug your YubiKey, open the Device Manager, select "View > Show hidden devices". Go to the Software Devices list, you should see something like `Yubico YubiKey OTP+FIDO+CCID 0`. The name slightly differs according to the model. Thanks to [Scott Hanselman](https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx) for sharing this information.
 
-* Create or edit `%APPDATA%/gnupg/scdaemon.conf` to add `reader-port <your yubikey device's full name>`
+* Create or edit `%APPDATA%/gnupg/scdaemon.conf` to add:
+
+```
+reader-port <your yubikey device's full name>
+```
+
 * Edit `%APPDATA%/gnupg/gpg-agent.conf` to add:
 
 ```
@@ -1828,7 +1824,7 @@ enable-putty-support
 
 Copy this key to a file for later use. It represents the public SSH key corresponding to the secret key on the YubiKey. You can upload this key to any server you wish to SSH into.
 
-* Create a shortcut that points to `gpg-connect-agent /bye` and place it in the startup folder `shell:startup` to make sure the agent starts after a system shutdown. Modify the shortcut properties so it starts in a "Minimized" window, to avoid unnecessary noise at startup.
+Create a shortcut that points to `gpg-connect-agent /bye` and place it in the startup folder `shell:startup` to make sure the agent starts after a system shutdown. Modify the shortcut properties so it starts in a "Minimized" window, to avoid unnecessary noise at startup.
 
 Now you can use PuTTY for public key SSH authentication. When the server asks for public key verification, PuTTY will forward the request to GPG, which will prompt you for a PIN and authorize the login using YubiKey.
 
@@ -1857,14 +1853,14 @@ Edit `~/.ssh/config` to add the following for each host you want to use agent fo
 
 ```
 ForwardAgent yes
-RemoteForward <remote ssh socket path> /tmp/S.weasel-pageant
+RemoteForward <remote SSH socket path> /tmp/S.weasel-pageant
 ```
 
-**Note** The remote ssh socket path can be found with `gpgconf --list-dirs agent-ssh-socket`
+**Note** The remote SSH socket path can be found with `gpgconf --list-dirs agent-ssh-socket`
 
 #### Remote host configuration
 
-You may have to add the following to the shell rc file:  _(On Linux, this is only required on the laptop/workstation where the YubiKey is plugged in, and **NOT** on the remote host server that you connect to; in fact at least on some Linux distributions, changing SSH_AUTH_SOCK on the server breaks agent forwarding.)_
+You may have to add the following to the shell rc file. On Linux, this is only required on the laptop/workstation where the YubiKey is plugged in, and **NOT** on the remote host server that you connect to; in fact at least on some Linux distributions, changing SSH_AUTH_SOCK on the server breaks agent forwarding.
 
 ```
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
