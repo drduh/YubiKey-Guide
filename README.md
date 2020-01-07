@@ -1772,9 +1772,10 @@ To authenticate:
 
 **Windows**
 
-Run the following command:
+Run the following commands:
 
 	> git config --global core.sshcommand 'plink -agent'
+	> git config --global gpg.program 'C:\Program Files (x86)\GnuPG\bin\gpg.exe'
 
 You can then change the repository url to `git@github.com:USERNAME/repository` and any authenticated commands will be authorized by YubiKey.
 
