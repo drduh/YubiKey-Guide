@@ -712,8 +712,38 @@ ssb  rsa4096/0x3F29127E79649A3D
 [ultimate] (1). Dr Duh <doc@duh.to>
 [ unknown] (2). Dr Duh <DrDuh@other.org>
 
+gpg> uid 1
+
+sec  rsa4096/0xFF3E7D88647EBCDB
+created: 2017-10-09  expires: never       usage: SC
+    trust: ultimate      validity: ultimate
+ssb  rsa4096/0xBECFA3C1AE191D15
+    created: 2017-10-09  expires: never       usage: S
+ssb  rsa4096/0x5912A795E90DD2CF
+    created: 2017-10-09  expires: never       usage: E
+ssb  rsa4096/0x3F29127E79649A3D
+    created: 2017-10-09  expires: never       usage: A
+[ultimate] (1)* Dr Duh <doc@duh.to>
+[ unknown] (2). Dr Duh <DrDuh@other.org>
+
+gpg> primary
+
+sec  rsa4096/0xFF3E7D88647EBCDB
+created: 2017-10-09  expires: never       usage: SC
+    trust: ultimate      validity: ultimate
+ssb  rsa4096/0xBECFA3C1AE191D15
+    created: 2017-10-09  expires: never       usage: S
+ssb  rsa4096/0x5912A795E90DD2CF
+    created: 2017-10-09  expires: never       usage: E
+ssb  rsa4096/0x3F29127E79649A3D
+    created: 2017-10-09  expires: never       usage: A
+[ultimate] (1)* Dr Duh <doc@duh.to>
+[ unknown] (2)  Dr Duh <DrDuh@other.org>
+
 gpg> save
 ```
+
+By default, the last identity added will be the primary user ID. Use `primary` to change that.
 
 # Verify
 
