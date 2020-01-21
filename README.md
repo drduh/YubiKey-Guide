@@ -191,7 +191,7 @@ $ sudo apt install -y wget gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd 
 ## Arch
 
 ```console
-$ sudo pacman -Syu gnupg2 pcsclite ccid hopenpgp-tools yubikey-personalization
+$ sudo pacman -Syu gnupg pcsclite ccid hopenpgp-tools yubikey-personalization
 ```
 
 ## RHEL7
