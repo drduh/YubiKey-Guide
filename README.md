@@ -13,6 +13,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Debian/Ubuntu](#debianubuntu)
   * [Arch](#arch)
   * [RHEL7](#rhel7)
+  * [NixOS](#nixos)
   * [OpenBSD](#openbsd)
   * [macOS](#macos)
   * [Windows](#windows)
@@ -199,6 +200,56 @@ $ sudo pacman -Syu gnupg pcsclite ccid hopenpgp-tools yubikey-personalization
 ```console
 $ sudo yum install -y gnupg2 pinentry-curses pcsc-lite pcsc-lite-libs gnupg2-smime
 ```
+
+## NixOS
+
+Generate a NixOS LiveCD image with the given config:
+
+```nix
+# yubikey-installer.nix
+{ nixpkgs ? <nixpkgs>, system ? "x86_64-linux" } :
+
+let
+  config = { pkgs, ... }:
+  with pkgs; {
+    imports = [ <nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-graphical-kde.nix> ];
+
+    boot.kernelPackages = linuxPackages_latest;
+
+    services.pcscd.enable = true;
+    services.udev.packages = [ yubikey-personalization ];
+
+    environment.systemPackages = [ gnupg pinentry-curses pinentry-qt paperkey wget ];
+
+    programs = {
+      ssh.startAgent = false;
+      gnupg.agent = {
+        enable = true;
+        enableSSHSupport = true;
+      };
+    };
+  };
+
+  evalNixos = configuration: import <nixpkgs/nixos> {
+    inherit system configuration;
+  };
+
+in {
+  iso = (evalNixos config).config.system.build.isoImage;
+}
+```
+
+Build the installer and copy it to a USB drive.
+
+```console
+$ nix build -f yubikey-installer.nix --out-link installer
+
+$ sudo cp -v installer/iso/*.iso /dev/sdb; sync
+'installer/iso/nixos-20.03.git.c438ce1-x86_64-linux.iso' -> '/dev/sdb'
+```
+
+On NixOS, ensure that you have `pinentry-program /run/current-system/sw/bin/pinentry-curses` in your `$GNUPGHOME/gpg-agent.conf` before running any `gpg` commands.
+
 
 ## OpenBSD
 
