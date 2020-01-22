@@ -1318,6 +1318,22 @@ ssb>  rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
 ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 ```
 
+# Multiple YubiKeys
+
+If you have additional (e.g. backup) security devices, restore the USB backup and repeat the [Configure Smartcard](#configure-smartcard) steps.
+
+```console
+$ cd
+
+$ mv -vi $GNUPGHOME $GNUPGHOME.1
+renamed '/tmp.FLZC0xcM' -> '/tmp.FLZC0xcM.1'
+
+$ cp -avi /mnt/encrypted-usb/tmp.XXX $GNUPGHOME
+'/mnt/encrypted-usb/tmp.FLZC0xcM' -> '/tmp.FLZC0xcM'
+
+$ cd $GNUPGHOME
+```
+
 # Cleanup
 
 Ensure you have:
