@@ -86,7 +86,7 @@ Depending on your threat model and/or level of inherent trust in your own system
 To use Debian, download the latest image:
 
 ```console
-$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-10.2.0-amd64-xfce.iso
+$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-10.3.0-amd64-xfce.iso
 
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS
 
@@ -97,18 +97,17 @@ Verify the signature of the hashes file with GPG:
 
 ```console
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat Nov 16 18:49:18 2019 PST
+gpg: Signature made Sat Feb  8 18:02:16 2020 PST
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Can't check signature: No public key
 
 $ gpg --keyserver hkps://keyring.debian.org --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
-gpg: key 0xDA87E80D6294BE9B: 5 signatures not checked due to missing keys
 gpg: key 0xDA87E80D6294BE9B: public key "Debian CD signing key <debian-cd@lists.debian.org>" imported
 gpg: Total number processed: 1
 gpg:               imported: 1
 
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat Nov 16 18:49:18 2019 PST
+gpg: Signature made Sat Feb  8 18:02:16 2020 PST
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>" [unknown]
 gpg: WARNING: This key is not certified with a trusted signature!
@@ -125,8 +124,8 @@ $ gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv DF9B9C49EAA9298432589D7
 Ensure the SHA512 hash of the live image matches the one in the signed file.
 
 ```console
-$ grep $(sha512sum debian-live-10.2.0-amd64-xfce.iso) SHA512SUMS
-SHA512SUMS:b253e347bf04c4e16b4c948b88bfba58f6084717f8ca290d5ea320837f63cf69b46734b7127dabd114ad88022075020982434fcf31463b82c6225671e7116a4d  debian-live-10.2.0-amd64-xfce.iso
+$ grep $(sha512sum debian-live-10.3.0-amd64-xfce.iso) SHA512SUMS
+SHA512SUMS:c6adede144eb32b7316b65342f7445cb13b95ef17551d47ce1a8468d3954710f5f68c979c1086aa1b94262c8bfd86679eb38b01731c7b9aaeaca690455f1ff7f  debian-live-10.3.0-amd64-xfce.iso
 ```
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
@@ -148,7 +147,7 @@ sd 2:0:0:0: [sdb] Write cache: disabled, read cache: enabled, doesn't support DP
 sdb: sdb1 sdb2
 sd 2:0:0:0: [sdb] Attached SCSI removable disk
 
-$ sudo dd if=debian-live-10.2.0-amd64-xfce.iso of=/dev/sdb bs=4M; sync
+$ sudo dd if=debian-live-10.3.0-amd64-xfce.iso of=/dev/sdb bs=4M; sync
 465+1 records in
 465+1 records out
 1951432704 bytes (2.0 GB, 1.8 GiB) copied, 42.8543 s, 45.5 MB/s
@@ -161,7 +160,7 @@ $ dmesg | tail -n2
 sd2 at scsibus4 targ 1 lun 0: <TS-RDF5, SD Transcend, TS3A> SCSI4 0/direct removable serial.0000000000000
 sd2: 15193MB, 512 bytes/sector, 31116288 sectors
 
-$ doas dd if=debian-live-10.2.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
+$ doas dd if=debian-live-10.3.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
 465+1 records in
 465+1 records out
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
@@ -1568,6 +1567,31 @@ gpg:                using RSA key 0xBECFA3C1AE191D15
 gpg: Good signature from "Dr Duh <doc@duh.to>" [ultimate]
 Primary key fingerprint: 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
      Subkey fingerprint: 07AA 7735 E502 C5EB E09E  B8B0 BECF A3C1 AE19 1D15
+```
+
+Use a [shell function](https://github.com/drduh/config/blob/master/zshrc) to make encrypting files easier:
+
+```
+secret () {
+        output=~/"${1}".$(date +%s).enc
+        gpg --encrypt --armor --output ${output} -r 0x0000 -r 0x0001 -r 0x0002 "${1}" && echo "${1} -> ${output}"
+}
+
+reveal () {
+        output=$(echo "${1}" | rev | cut -c16- | rev)
+        gpg --decrypt --output ${output} "${1}" && echo "${1} -> ${output}"
+}
+```
+
+```console
+$ secret document.pdf
+document.pdf -> document.pdf.1580000000.enc
+
+$ reveal document.pdf.1580000000.enc
+gpg: anonymous recipient; trying secret key 0xFF3E7D88647EBCDB ...
+gpg: okay, we are the anonymous recipient.
+gpg: encrypted with RSA key, ID 0x0000000000000000
+document.pdf.1580000000.enc -> document.pdf
 ```
 
 # Rotating keys
