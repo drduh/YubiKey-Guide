@@ -218,7 +218,6 @@ _BACKUP_PUB_DEVICE = args.public_backup_device
 _BACKUP_DEVICE = args.create_backup_usb
 
 _WORKDIR = getoutput("mktemp -d")
-print(_WORKDIR)
 
 
 # ===== CONSTANTS =====
