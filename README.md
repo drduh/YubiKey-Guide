@@ -1604,6 +1604,8 @@ Replacing keys, on the other hand, is less convenient but more secure: the new s
 
 Neither rotation method is superior and it's up to personal philosophy on identity management and individual threat model to decide which one to use, or whether to expire sub-keys at all. Ideally, sub-keys would be ephemeral: used only once for each encryption, signing and authentication event, however in practice that is not really feasible or worthwhile with YubiKey. Advanced users may want to dedicate an offline device for more frequent key rotations and ease of provisioning.
 
+### Initial setup for rotating keys or renewing sub-keys
+
 To renew or rotate sub-keys, follow the same procedure to boot to a secure environment. Install required software and disconnect networking. Decrypt and mount the offline volume, then import the master key and configuration to a temporary working directory:
 
 ```console
@@ -1625,7 +1627,106 @@ Secret key is available
 [...]
 ```
 
-Follow the original steps to generate each sub-key. Previous sub-keys may be kept or deleted from the identity.
+### Renewing sub-keys
+
+Renewing sub-keys is simpler: you do not need to generate new keys, move keys to the YubiKey, or update any SSH public keys linked to the GPG key.  All you need to do is to change the expiry time associated with the public key (which requires access to the master key you just loaded) and then to export that public key and import it on any computer where you wish to use the **GPG** (as distinct from the SSH) key.
+
+To change the expiration date of all sub-keys, start by selecting all keys:
+
+```console
+$ gpg --edit-key $KEYID
+
+Secret key is available.
+
+sec  rsa4096/0xFF3E7D88647EBCDB
+    created: 2017-10-09  expires: never       usage: C
+    trust: ultimate      validity: ultimate
+ssb  rsa4096/0xBECFA3C1AE191D15
+    created: 2017-10-09  expires: 2018-10-09  usage: S
+ssb  rsa4096/0x5912A795E90DD2CF
+    created: 2017-10-09  expires: 2018-10-09  usage: E
+ssb  rsa4096/0x3F29127E79649A3D
+    created: 2017-10-09  expires: 2018-10-09  usage: A
+[ultimate] (1). Dr Duh <doc@duh.to>
+
+gpg> key 1
+
+Secret key is available.
+
+sec  rsa4096/0xFF3E7D88647EBCDB
+     created: 2017-10-09  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb* rsa4096/0xBECFA3C1AE191D15
+     created: 2017-10-09  expires: 2018-10-09  usage: S
+ssb  rsa4096/0x5912A795E90DD2CF
+     created: 2017-10-09  expires: 2018-10-09  usage: E
+ssb  rsa4096/0x3F29127E79649A3D
+     created: 2017-10-09  expires: 2018-10-09  usage: A
+[ultimate] (1). Dr Duh <doc@duh.to>
+
+gpg> key 2
+
+Secret key is available.
+
+sec  rsa4096/0xFF3E7D88647EBCDB
+     created: 2017-10-09  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb* rsa4096/0xBECFA3C1AE191D15
+     created: 2017-10-09  expires: 2018-10-09  usage: S
+ssb* rsa4096/0x5912A795E90DD2CF
+     created: 2017-10-09  expires: 2018-10-09  usage: E
+ssb  rsa4096/0x3F29127E79649A3D
+     created: 2017-10-09  expires: 2018-10-09  usage: A
+[ultimate] (1). Dr Duh <doc@duh.to>
+
+gpg> key 3
+
+Secret key is available.
+
+sec   rsa4096/0xFF3E7D88647EBCDB
+      created: 2017-10-09  expires: never       usage: C
+      trust: ultimate      validity: ultimate
+ssb*  rsa4096/0xBECFA3C1AE191D15
+      created: 2017-10-09  expires: 2018-10-09  usage: S
+ssb*  rsa4096/0x5912A795E90DD2CF
+      created: 2017-10-09  expires: 2018-10-09  usage: E
+ssb*  rsa4096/0x3F29127E79649A3D
+      created: 2017-10-09  expires: 2018-10-09  usage: A
+[ultimate] (1). Dr Duh <doc@duh.to>
+```
+
+Then, use the `expire` command to set a new expiration date.  (Despite the name, this will not cause currently valid keys to become expired).
+
+```console
+gpg> expire
+Changing expiration time for a subkey.
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Key is valid for? (0)
+```
+Follow these prompts to set a new expiration date, then `quit` to save your changes.
+
+Next, export your public key:
+
+```console
+$ gpg --export $KEYID > pubkey.gpg
+```
+
+Transfer that public key to the computer from which you use your GPG key, and then import it with:
+
+```console
+$ gpg --import pubkey.gpg
+```
+
+This will extend the validity of your GPG key and will allow you to use it for SSH authorization.  Note that you do _not_ need to update the SSH public key located on remote servers.
+
+### Rotating keys
+
+Rotating keys is more a bit more involved.  First, follow the original steps to generate each sub-key. Previous sub-keys may be kept or deleted from the identity.
 
 Finish by exporting new keys:
 
