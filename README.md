@@ -2241,6 +2241,12 @@ scd apdu 00 44 00 00
 /echo Card has been successfully reset.
 ```
 
+Or you may do it via `ykman` if installed:
+
+```console
+$ ykman openpgp reset
+```
+
 # Notes
 
 1. YubiKey has two configurations: one invoked with a short press, and the other with a long press. By default, the short-press mode is configured for HID OTP - a brief touch will emit an OTP string starting with `cccccccc`. If you rarely use the OTP mode, you can swap it to the second configuration via the YubiKey Personalization tool. If you *never* use OTP, you can disable it entirely using the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this not the similarly named older YubiKey NEO Manager).
