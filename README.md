@@ -2117,38 +2117,24 @@ To use a single identity with multiple YubiKeys - or to replace a lost card with
 $ gpg-connect-agent "scd serialno" "learn --force" /bye
 ```
 
-Alternatively, you could manually delete the GnuPG shadowed key - where the card serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)).
+Alternatively, you could delete via a script the GnuPG shadowed key - where the card serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)).
 
-Find the `Keygrip` number of each key:
-
-```console
-$ gpg --with-keygrip -k $KEYID
-pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
-      Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
-      Keygrip = 7A20855980A62C10569DE893157F38A696B1300E
-uid                  [  ultime ] Dr Duh <doc@duh.to>
-sub   rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
-      Keygrip = 85D44BD52AD45C0852BD15BF41161EE9AE477398
-sub   rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
-      Keygrip = A0AA3D9F626BDEA3B833F290C7BCA79216C8A996
-sub   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
-      Keygrip = 7EF25A1115294342F451BC1CDD0FA94395F2D074
-```
-
-Delete all the shadow keys using their `Keygrip` number:
+Put it somewhere in your `$PATH`. E.g.:
 
 ```console
-$ cd ~/.gnupg/private-keys-v1.d
+$ cat >> ~/.scripts/remove-keygrips.sh <<EOF
+#!/usr/bin/env bash
+test ! "$@" && echo "Specify a key." && exit 1
+KEYGRIPS="$(gpg --with-keygrip --list-secret-keys $@ | grep Keygrip | awk '{print $3}')"
+for keygrip in $KEYGRIPS
+do
+    rm "$HOME/.gnupg/private-keys-v1.d/$keygrip.key" 2> /dev/null
+done
 
-$ rm 85D44BD52AD45C0852BD15BF41161EE9AE477398.key \
-    A0AA3D9F626BDEA3B833F290C7BCA79216C8A996.key \
-    7EF25A1115294342F451BC1CDD0FA94395F2D074.key
-```
-
-Insert the new YubiKey and re-generate shadow-keys by checking card status:
-
-```console
-$ gpg --card-status
+gpg --card-status
+EOF
+$ chmod +x ~/.scripts/remove-keygrips.sh
+$ remove-keygrips.sh $KEYID
 ```
 
 See discussion in Issues [#19](https://github.com/drduh/YubiKey-Guide/issues/19) and [#112](https://github.com/drduh/YubiKey-Guide/issues/112) for more information and troubleshooting steps.
@@ -2280,6 +2266,7 @@ scd apdu 00 44 00 00
 
 - If it still fails, it may be useful to stop the background `sshd` daemon process service on the server (e.g. using `sudo systemctl stop sshd`) and instead start it in the foreground with extensive debugging output, using `/usr/sbin/sshd -eddd`. Note that the server will not fork and will only process one connection, therefore has to be re-started after every `ssh` test.
 
+- If you receive the error, `Please insert the card with serial number: *` see [management of multiple keys](#multiple-keys).
 
 # Links
 
