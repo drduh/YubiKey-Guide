@@ -27,6 +27,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Authentication](#authentication)
   * [Add extra emails](#add-extra-emails)
 - [Verify](#verify)
+- [Create a revoke certificate](#create-a-revoke-certificate)
 - [Export](#export)
 - [Backup](#backup)
 - [Configure Smartcard](#configure-smartcard)
@@ -842,6 +843,20 @@ $ gpg -o \path\to\dir\mastersub.gpg --armor --export-secret-keys $KEYID
 
 $ gpg -o \path\to\dir\sub.gpg --armor --export-secret-subkeys $KEYID
 ```
+
+# Create a revoke certificate
+
+Although we will backup and store the master key in a safe place, it is best practice to never rule out the possibility of losing it or having the backup fail. Without the master key it will be impossible to renew or rotate subkeys or generate a revoke certificate, our keychain will be basically useless.
+
+Even worse, we cannot advertise this fact in any way to those that are using our keys. It is therefore safe to assume that at some point in the future this *will* happen and the only thing that will allow us to deprecate our *orphan* keys is a revoke certificate.
+
+In order to create the revoke certificate:
+
+``` console
+gpg --output revoke.asc --gen-revoke $KEYID
+```
+
+The newly created `revoke.asc` file should be stored (or printed) in a place that allows us to retrieve it in case our backup strategy fails.
 
 # Backup
 
