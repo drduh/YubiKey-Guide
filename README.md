@@ -1837,11 +1837,11 @@ ssh-rsa AAAAB4NzaC1yc2EAAAADAQABAAACAz[...]zreOKM+HwpkHzcy9DQcVG2Nw== cardno:000
 
 ## (Optional) Save public key for identity file configuration
 
-By default, SSH attempts to use all the identities available via the agent. It's often a good idea to manage exactly which keys SSH will use to connect to a server, for example to separate different roles or [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/). To do this you'll need to use the command line argument `-i [identity_file]` or the `IdentityFile` and `IdentitiesOnly` options in `.ssh/config`.
+By default, SSH attempts to use all the identities available via the agent. It's often a good idea to manage exactly which keys SSH will use to connect to a server, for example to separate different roles or [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/). To do this you'll need to use the command line argument `-i [identity_file]` or the `IdentityFile` and `PubkeyAuthentication` options in `.ssh/config`.
 
-The argument provided to `IdentityFile` is traditionally the path to the _private_ key file (for example `IdentityFile ~/.ssh/id_rsa`). For the YubiKey - indeed, in general for keys stored in an ssh agent - `IdentityFile` should point to the _public_ key file, `ssh` will select the appropriate private key from those available via the ssh agent. To prevent `ssh` from trying all keys in the agent use the `IdentitiesOnly yes` option along with one or more `-i` or `IdentityFile` options for the target host.
+The argument provided to `IdentityFile` is traditionally the path to the _private_ key file (for example `IdentityFile ~/.ssh/id_rsa`). For the YubiKey - indeed, in general for keys stored in an ssh agent - `IdentityFile` should point to the _public_ key file, `ssh` will select the appropriate private key from those available via the ssh agent. To prevent `ssh` from trying all keys in the agent use the `PubkeyAuthentication yes` option along with one or more `-i` or `IdentityFile` options for the target host.
 
-To reiterate, with `IdentitiesOnly yes`, `ssh` will not automatically enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
+To reiterate, with `PubkeyAuthentication yes`, `ssh` will not automatically enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
 
 In the case of YubiKey usage, to extract the public key from the ssh agent:
 
@@ -1854,8 +1854,14 @@ Then you can explicitly associate this YubiKey-stored key for used with a host, 
 ```console
 $ cat << EOF >> ~/.ssh/config
 Host github.com
-    IdentitiesOnly yes
+    PubkeyAuthentication yes
     IdentityFile ~/.ssh/id_rsa_yubikey.pub
+
+# Tell ssh not to present your public keys to any servers by default.
+# Handle all hosts above or through ssh -i [identity_file] -o PubkeyAuthentication=yes user@host
+Host *
+    PubkeyAuthentication no
+    IdentitiesOnly yes
 EOF
 ```
 
