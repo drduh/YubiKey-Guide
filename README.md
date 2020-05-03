@@ -18,19 +18,20 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Windows](#windows)
 - [Entropy](#entropy)
 - [Creating keys](#creating-keys)
-  * [Using a temporary file system](#using-a-temporary-file-system)
+  * [Temporary working directory](#temporary-working-directory)
   * [Harden configuration](#harden-configuration)
 - [Master key](#master-key)
-- [Sign with an existing key (optional)](#sign-with-an-existing-key--optional-)
+- [Sign with existing key](#sign-with-existing-key)
 - [Sub-keys](#sub-keys)
   * [Signing](#signing)
   * [Encryption](#encryption)
   * [Authentication](#authentication)
-  * [Add extra emails (optional)](#add-extra-emails--optional-)
+  * [Add extra identities](#add-extra-identities)
 - [Verify](#verify)
-- [Export](#export)
-- [Create a revoke certificate](#create-a-revoke-certificate)
+- [Export secret keys](#export-secret-keys)
+- [Revocation certificate](#revocation-certificate)
 - [Backup](#backup)
+- [Export public keys](#export-public-keys)
 - [Configure Smartcard](#configure-smartcard)
   * [Change PIN](#change-pin)
   * [Set information](#set-information)
@@ -43,9 +44,9 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Cleanup](#cleanup)
 - [Using keys](#using-keys)
 - [Rotating keys](#rotating-keys)
-    + [Initial setup for rotating keys or renewing sub-keys](#initial-setup-for-rotating-keys-or-renewing-sub-keys)
-    + [Renewing sub-keys](#renewing-sub-keys)
-    + [Rotating keys](#rotating-keys-1)
+  * [Setup environment](#setup-environment)
+  * [Renewing sub-keys](#renewing-sub-keys)
+  * [Rotating keys](#rotating-keys-1)
 - [SSH](#ssh)
   * [Create configuration](#create-configuration)
   * [Replace agents](#replace-agents)
@@ -345,7 +346,7 @@ An entropy pool value greater than 2000 is sufficient.
 
 # Creating keys
 
-## Using a temporary file system
+## Temporary working directory
 
 Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs) and set it as the GnuPG directory:
 
@@ -505,9 +506,9 @@ Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/de
 $ export KEYID=0xFF3E7D88647EBCDB
 ```
 
-# Sign with an existing key (optional)
+# Sign with existing key
 
-If you already have a PGP key, you may want to sign the new key with the old one to prove that the new key is controlled by you.
+(Optional) If you already have a PGP key, you may want to sign the new key with the old one to prove that the new key is controlled by you.
 
 Export your existing key to move it to the working keyring:
 
@@ -728,7 +729,9 @@ Finish by saving the keys.
 gpg> save
 ```
 
-## Add extra emails (optional)
+## Add extra identities
+
+(Optional) To add additional email addresses or identities, use `adduid`:
 
 ```console
 gpg> adduid
@@ -749,7 +752,6 @@ ssb  rsa4096/0x3F29127E79649A3D
     created: 2017-10-09  expires: never       usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 [ unknown] (2). Dr Duh <DrDuh@other.org>
-
 
 gpg> trust
 sec  rsa4096/0xFF3E7D88647EBCDB
@@ -820,7 +822,7 @@ ssb  rsa4096/0x3F29127E79649A3D
 gpg> save
 ```
 
-By default, the last identity added will be the primary user ID. Use `primary` to change that.
+By default, the last identity added will be the primary user ID - use `primary` to change that.
 
 # Verify
 
@@ -850,7 +852,7 @@ The output will display any problems with your key in red text. If everything is
 
 > hokey may warn (orange text) about cross certification for the authentication key. GPG's [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html) documentation has more detail on cross certification, and gpg v2.2.1 notes "subkey <keyid> does not sign and so does not need to be cross-certified". hokey may also indicate a problem (red text) with `Key expiration times: []` on the primary key (see [Note #3](#notes) about not setting an expiry for the primary key).
 
-# Export
+# Export secret keys
 
 The master key and sub-keys will be encrypted with your passphrase when exported.
 
@@ -870,13 +872,13 @@ $ gpg -o \path\to\dir\mastersub.gpg --armor --export-secret-keys $KEYID
 $ gpg -o \path\to\dir\sub.gpg --armor --export-secret-subkeys $KEYID
 ```
 
-# Create a revoke certificate
+# Revocation certificate
 
-Although we will backup and store the master key in a safe place, it is best practice to never rule out the possibility of losing it or having the backup fail. Without the master key it will be impossible to renew or rotate subkeys or generate a revoke certificate, our keychain will be basically useless.
+Although we will backup and store the master key in a safe place, it is best practice to never rule out the possibility of losing it or having the backup fail. Without the master key, it will be impossible to renew or rotate subkeys or generate a revocation certificate, the PGP identity will be useless.
 
-Even worse, we cannot advertise this fact in any way to those that are using our keys. It is therefore safe to assume that at some point in the future this *will* happen and the only thing that will allow us to deprecate our *orphan* keys is a revoke certificate.
+Even worse, we cannot advertise this fact in any way to those that are using our keys. It is reasonable to assume this *will* occur at some point and the only remaining way to deprecate orphaned keys is a revocation certificate.
 
-In order to create the revoke certificate:
+To create the revocation certificate:
 
 ``` console
 $ gpg --gen-revoke $KEYID --output $GNUPGHOME/revoke.asc
@@ -1020,64 +1022,6 @@ $ sudo umount /mnt/encrypted-storage/
 $ sudo cryptsetup luksClose secret
 ```
 
-Create another partition to store the public key, or skip this step if you plan on uploading it to a key server.
-
-**Important** Without the *public* key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use YubiKey for SSH authentication.
-
-```console
-$ sudo fdisk /dev/mmcblk0
-
-Command (m for help): n
-Partition type
-   p   primary (1 primary, 0 extended, 3 free)
-   e   extended (container for logical partitions)
-Select (default p):
-Partition number (2-4, default 2):
-First sector (22528-31116287, default 22528):
-Last sector, +sectors or +size{K,M,G,T,P} (22528-31116287, default 31116287): +25M
-
-Created a new partition 2 of type 'Linux' and of size 25 MiB.
-
-Command (m for help): w
-The partition table has been altered.
-Calling ioctl() to re-read partition table.
-Syncing disks.
-
-$ sudo mkfs.ext2 /dev/mmcblk0p2
-Creating filesystem with 10240 1k blocks and 2560 inodes
-Superblock backups stored on blocks:
-        8193
-
-Allocating group tables: done
-Writing inode tables: done
-Writing superblocks and filesystem accounting information: done
-
-$ sudo mkdir /mnt/public
-
-$ sudo mount /dev/mmcblk0p2 /mnt/public/
-
-$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).txt
-```
-
-Windows:
-
-```console
-$ gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
-```
-
-**Optional** Upload the public key to a [public keyserver](https://debian-administration.org/article/451/Submitting_your_GPG_key_to_a_keyserver):
-
-```console
-$ gpg --send-key $KEYID
-
-$ gpg --keyserver pgp.mit.edu --send-key $KEYID
-
-$ gpg --keyserver keys.gnupg.net --send-key $KEYID
-
-$ gpg --keyserver hkps://keyserver.ubuntu.com:443 --send-key $KEYID
-```
-
-After some time, the public key will to propagate to [other](https://pgp.key-server.io/pks/lookup?search=doc%40duh.to&fingerprint=on&op=vindex) [servers](https://pgp.mit.edu/pks/lookup?search=doc%40duh.to&op=index).
 
 **OpenBSD**
 
@@ -1161,9 +1105,50 @@ $ doas bioctl -d sd3
 
 See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for more information.
 
-Create another partition to store the public key, or skip this step if you plan on uploading it to a key server.
+# Export public keys
 
-**Important** Without the public key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use YubiKey for SSH authentication.
+**Important** Without the *public* key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use YubiKey for SSH authentication.
+
+Create another partition on the removable storage device to store the public key, or reconnect networking and upload to a key server.
+
+**Linux**
+
+```console
+$ sudo fdisk /dev/mmcblk0
+
+Command (m for help): n
+Partition type
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended (container for logical partitions)
+Select (default p):
+Partition number (2-4, default 2):
+First sector (22528-31116287, default 22528):
+Last sector, +sectors or +size{K,M,G,T,P} (22528-31116287, default 31116287): +25M
+
+Created a new partition 2 of type 'Linux' and of size 25 MiB.
+
+Command (m for help): w
+The partition table has been altered.
+Calling ioctl() to re-read partition table.
+Syncing disks.
+
+$ sudo mkfs.ext2 /dev/mmcblk0p2
+Creating filesystem with 10240 1k blocks and 2560 inodes
+Superblock backups stored on blocks:
+        8193
+
+Allocating group tables: done
+Writing inode tables: done
+Writing superblocks and filesystem accounting information: done
+
+$ sudo mkdir /mnt/public
+
+$ sudo mount /dev/mmcblk0p2 /mnt/public/
+
+$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).txt
+```
+
+**OpenBSD**
 
 ```console
 $ doas disklabel -E sd2
@@ -1185,9 +1170,29 @@ $ doas mount /dev/sd2b /mnt/public
 $ gpg --armor --export $KEYID | doas tee /mnt/public/$KEYID.txt
 ```
 
-# Configure Smartcard
+**Windows**
 
-**Windows** Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this not the similarly named older YubiKey NEO Manager) to enable CCID functionality.
+```console
+$ gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
+```
+
+**Keyserver**
+
+(Optional) Upload the public key to a [public keyserver](https://debian-administration.org/article/451/Submitting_your_GPG_key_to_a_keyserver):
+
+```console
+$ gpg --send-key $KEYID
+
+$ gpg --keyserver pgp.mit.edu --send-key $KEYID
+
+$ gpg --keyserver keys.gnupg.net --send-key $KEYID
+
+$ gpg --keyserver hkps://keyserver.ubuntu.com:443 --send-key $KEYID
+```
+
+After some time, the public key will to propagate to [other](https://pgp.key-server.io/pks/lookup?search=doc%40duh.to&fingerprint=on&op=vindex) [servers](https://pgp.mit.edu/pks/lookup?search=doc%40duh.to&op=index).
+
+# Configure Smartcard
 
 Use GPG to configure YubiKey as a smartcard:
 
@@ -1213,6 +1218,10 @@ Encryption key....: [none]
 Authentication key: [none]
 General key info..: [none]
 ```
+
+**Windows**
+
+Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this not the similarly named older YubiKey NEO Manager) to enable CCID functionality.
 
 ## Change PIN
 
@@ -1476,7 +1485,7 @@ Install the required packages and mount the non-encrypted volume created earlier
 ```console
 $ sudo apt update && sudo apt install -y gnupg2 gnupg-agent gnupg-curl scdaemon pcscd
 
-$ sudo mount /dev/sdb2 /mnt
+$ sudo mount /dev/mmcblk0p2 /mnt
 ```
 
 **OpenBSD**
@@ -1658,7 +1667,7 @@ Replacing keys, on the other hand, is less convenient but more secure: the new s
 
 Neither rotation method is superior and it's up to personal philosophy on identity management and individual threat model to decide which one to use, or whether to expire sub-keys at all. Ideally, sub-keys would be ephemeral: used only once for each encryption, signing and authentication event, however in practice that is not really feasible or worthwhile with YubiKey. Advanced users may want to dedicate an offline device for more frequent key rotations and ease of provisioning.
 
-### Initial setup for rotating keys or renewing sub-keys
+## Setup environment
 
 To renew or rotate sub-keys, follow the same process as generating keys: boot to a secure environment, install required software and disconnect networking.
 
@@ -1699,7 +1708,7 @@ Secret key is available
 [...]
 ```
 
-### Renewing sub-keys
+## Renewing sub-keys
 
 Renewing sub-keys is simpler: you do not need to generate new keys, move keys to the YubiKey, or update any SSH public keys linked to the GPG key.  All you need to do is to change the expiry time associated with the public key (which requires access to the master key you just loaded) and then to export that public key and import it on any computer where you wish to use the **GPG** (as distinct from the SSH) key.
 
@@ -1796,7 +1805,7 @@ $ gpg --import pubkey.gpg
 
 This will extend the validity of your GPG key and will allow you to use it for SSH authorization.  Note that you do _not_ need to update the SSH public key located on remote servers.
 
-### Rotating keys
+## Rotating keys
 
 Rotating keys is more a bit more involved.  First, follow the original steps to generate each sub-key. Previous sub-keys may be kept or deleted from the identity.
 
@@ -1834,7 +1843,7 @@ Export the updated public key:
 ```console
 $ sudo mkdir /mnt/public
 
-$ sudo mount /dev/sdb2 /mnt/public
+$ sudo mount /dev/mmcblk0p2 /mnt/public
 
 $ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).txt
 
