@@ -326,6 +326,8 @@ An entropy pool value greater than 2000 is sufficient.
 
 # Creating keys
 
+## Using a temporary file system (Tmpfs)
+
 Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs):
 
 ```console
@@ -333,6 +335,19 @@ $ export GNUPGHOME=$(mktemp -d)
 
 $ cd $GNUPGHOME
 ```
+
+## Use the Storage Device as backup and reusable enviroment
+
+As you may want to keep a offline backup of your keys as well as a clean enviroment to be set up easily, you also might consider to keep your USB-Storage device including the keys in a save place. Therefore, just set your desired GNUPGHOME-Variable:
+
+```console
+$ export GNUPGHOME=~/gnupg-workspace
+
+$ cd $GNUPGHOME
+```
+**Remember** You must store the device in a secure place afterwards or destroy it physically (smash, burn, shred etc.) 
+
+## Harden your setup
 
 Create a hardened configuration in the temporary directory with the following options:
 
