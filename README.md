@@ -29,6 +29,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Verify](#verify)
 - [Export](#export)
 - [Backup](#backup)
+  * [Backup OTP codes](#backup-otp-codes)
 - [Configure Smartcard](#configure-smartcard)
   * [Change PIN](#change-pin)
   * [Set information](#set-information)
@@ -1134,6 +1135,14 @@ $ doas mount /dev/sd2b /mnt/public
 
 $ gpg --armor --export $KEYID | doas tee /mnt/public/$KEYID.txt
 ```
+
+## Backup OTP codes
+
+There is a tricky way to have the same OTP codes on several YubiKeys with 
+[YubiKey Authenticator](https://www.yubico.com/products/services-software/download/yubico-authenticator/). For instance,
+if you've got YubiKey 5C and YubiKey 5 NFC then it's possible to install the authenticator to your PC and phone, insert
+YubiKeys to phone and PC and scan a 2FA QR code on both devices. In such situation, you will have the same OTP code on
+two YubiKeys what's good in case of a lost/stolen key.
 
 # Configure Smartcard
 
