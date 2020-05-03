@@ -9,7 +9,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Purchase](#purchase)
 - [Download OS Image](#download-os-image)
 - [Required software](#required-software)
-  * [Debian/Ubuntu](#debian-ubuntu)
+  * [Debian and Ubuntu](#debian-and-ubuntu)
   * [Arch](#arch)
   * [RHEL7](#rhel7)
   * [NixOS](#nixos)
@@ -184,7 +184,7 @@ Boot the live image and configure networking.
 
 Open the terminal and install required software packages.
 
-## Debian/Ubuntu
+## Debian and Ubuntu
 
 **Note** Live Ubuntu images [may require modification](https://github.com/drduh/YubiKey-Guide/issues/116) to `/etc/apt/sources.list`
 
@@ -1086,11 +1086,11 @@ $ doas newfs sd3i
 Mount the filesystem and copy the temporary directory with the keyring:
 
 ```console
-$ doas mkdir /mnt/encrypted-usb
+$ doas mkdir /mnt/encrypted-storage
 
-$ doas mount /dev/sd3i /mnt/encrypted-usb
+$ doas mount /dev/sd3i /mnt/encrypted-storage
 
-$ doas cp -avi $GNUPGHOME /mnt/encrypted-usb
+$ doas cp -avi $GNUPGHOME /mnt/encrypted-storage
 ```
 
 Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
@@ -1098,7 +1098,7 @@ Keep the backup mounted if you plan on setting up two or more keys as `keytocard
 Otherwise, unmount and disconnected the encrypted volume:
 
 ```console
-$ doas umount /mnt/encrypted-usb
+$ doas umount /mnt/encrypted-storage
 
 $ doas bioctl -d sd3
 ```
@@ -1441,8 +1441,8 @@ To provision additional security keys, restore the master key backup and repeat 
 $ mv -vi $GNUPGHOME $GNUPGHOME.1
 renamed '/tmp.FLZC0xcM' -> '/tmp.FLZC0xcM.1'
 
-$ cp -avi /mnt/encrypted-usb/tmp.XXX $GNUPGHOME
-'/mnt/encrypted-usb/tmp.FLZC0xcM' -> '/tmp.FLZC0xcM'
+$ cp -avi /mnt/encrypted-storage/tmp.XXX $GNUPGHOME
+'/mnt/encrypted-storage/tmp.FLZC0xcM' -> '/tmp.FLZC0xcM'
 
 $ cd $GNUPGHOME
 ```
@@ -1685,6 +1685,8 @@ Decrypt and mount the offline volume:
 ```console
 $ sudo cryptsetup luksOpen /dev/mmcblk0p1 secret
 Enter passphrase for /dev/mmcblk0p1:
+
+$ sudo mount /dev/mapper/secret /mnt/encrypted-storage
 ```
 
 Import the master key and configuration to a temporary working directory:
@@ -1692,9 +1694,9 @@ Import the master key and configuration to a temporary working directory:
 ```console
 $ export GNUPGHOME=$(mktemp -d)
 
-$ gpg --import /mnt/encrypted-usb/tmp.XXX/mastersub.key
+$ gpg --import /mnt/encrypted-storage/tmp.XXX/mastersub.key
 
-$ cp -v /mnt/encrypted-usb/tmp.XXX/gpg.conf $GNUPGHOME
+$ cp -v /mnt/encrypted-storage/tmp.XXX/gpg.conf $GNUPGHOME
 ```
 
 Edit the master key:
@@ -1820,22 +1822,22 @@ $ gpg --armor --export-secret-subkeys $KEYID > $GNUPGHOME/sub.key
 Copy the **new** temporary working directory to encrypted offline storage, which should still be mounted:
 
 ```console
-$ sudo cp -avi $GNUPGHOME /mnt/encrypted-usb
+$ sudo cp -avi $GNUPGHOME /mnt/encrypted-storage
 ```
 
 There should now be at least two versions of the master and sub-keys backed up:
 
 ```console
-$ ls /mnt/encrypted-usb
+$ ls /mnt/encrypted-storage
 lost+found  tmp.ykhTOGjR36  tmp.2gyGnyCiHs
 ```
 
 Unmount and close the encrypted volume:
 
 ```console
-$ sudo umount /mnt/encrypted-usb
+$ sudo umount /mnt/encrypted-storage
 
-$ sudo cryptsetup luksClose /dev/mapper/usb/
+$ sudo cryptsetup luksClose /dev/mapper/secret
 ```
 
 Export the updated public key:
@@ -2257,6 +2259,8 @@ GPG keys on YubiKey can be used with ease to encrypt and/or sign emails and atta
 ## Mailvelope on macOS
 
 [Mailvelope](https://www.mailvelope.com/en) allows GPG keys on YubiKey to be used with Gmail and others.
+
+**Important** Mailvelope [does not work](https://github.com/drduh/YubiKey-Guide/issues/178) with the `throw-keyids` option set in `gpg.conf`.
 
 On macOS, install gpgme using Homebrew:
 
