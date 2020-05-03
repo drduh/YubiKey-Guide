@@ -6,11 +6,10 @@ Keys stored on YubiKey are [non-exportable](https://support.yubico.com/support/s
 
 If you have a comment or suggestion, please open an [Issue](https://github.com/drduh/YubiKey-Guide/issues) on GitHub.
 
-- [Purchase YubiKey](#purchase-yubikey)
-- [Verify YubiKey](#verify-yubikey)
+- [Purchase](#purchase)
 - [Download OS Image](#download-os-image)
 - [Required software](#required-software)
-  * [Debian/Ubuntu](#debianubuntu)
+  * [Debian/Ubuntu](#debian-ubuntu)
   * [Arch](#arch)
   * [RHEL7](#rhel7)
   * [NixOS](#nixos)
@@ -19,16 +18,18 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Windows](#windows)
 - [Entropy](#entropy)
 - [Creating keys](#creating-keys)
+  * [Using a temporary file system](#using-a-temporary-file-system)
+  * [Harden configuration](#harden-configuration)
 - [Master key](#master-key)
-- [Sign with an existing key (optional)](#sign-with-an-existing-key-optional)
+- [Sign with an existing key (optional)](#sign-with-an-existing-key--optional-)
 - [Sub-keys](#sub-keys)
   * [Signing](#signing)
   * [Encryption](#encryption)
   * [Authentication](#authentication)
-  * [Add extra emails](#add-extra-emails)
+  * [Add extra emails (optional)](#add-extra-emails--optional-)
 - [Verify](#verify)
-- [Create a revoke certificate](#create-a-revoke-certificate)
 - [Export](#export)
+- [Create a revoke certificate](#create-a-revoke-certificate)
 - [Backup](#backup)
 - [Configure Smartcard](#configure-smartcard)
   * [Change PIN](#change-pin)
@@ -38,17 +39,21 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Encryption](#encryption-1)
   * [Authentication](#authentication-1)
 - [Verify card](#verify-card)
+- [Multiple keys](#multiple-keys)
 - [Cleanup](#cleanup)
 - [Using keys](#using-keys)
 - [Rotating keys](#rotating-keys)
+    + [Initial setup for rotating keys or renewing sub-keys](#initial-setup-for-rotating-keys-or-renewing-sub-keys)
+    + [Renewing sub-keys](#renewing-sub-keys)
+    + [Rotating keys](#rotating-keys-1)
 - [SSH](#ssh)
   * [Create configuration](#create-configuration)
   * [Replace agents](#replace-agents)
   * [Copy public key](#copy-public-key)
-  * [(Optional) Save public key for identity file configuration](#optional-save-public-key-for-identity-file-configuration)
+  * [(Optional) Save public key for identity file configuration](#-optional--save-public-key-for-identity-file-configuration)
   * [Connect with public key authentication](#connect-with-public-key-authentication)
   * [Import SSH keys](#import-ssh-keys)
-  * [Remote Machines (Agent Forwarding)](#remote-machines-agent-forwarding)
+  * [Remote Machines (Agent Forwarding)](#remote-machines--agent-forwarding-)
     + [Steps for older distributions](#steps-for-older-distributions)
   * [GitHub](#github)
   * [OpenBSD](#openbsd-1)
@@ -66,15 +71,14 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Troubleshooting](#troubleshooting)
 - [Links](#links)
 
-# Purchase YubiKey
+
+# Purchase
 
 All YubiKeys except the blue "security key" model are compatible with this guide. NEO models are limited to 2048-bit RSA keys. Compare YubiKeys [here](https://www.yubico.com/products/yubikey-hardware/compare-products-series/).
 
-# Verify YubiKey
-
 To verify a YubiKey is genuine, open a [browser with U2F support](https://support.yubico.com/support/solutions/articles/15000009591-how-to-confirm-your-yubico-device-is-genuine-with-u2f) to [https://www.yubico.com/genuine/](https://www.yubico.com/genuine/). Insert a Yubico device, and select *Verify Device* to begin the process. Touch the YubiKey when prompted, and if asked, allow it to see the make and model of the device. If you see *Verification complete*, the device is authentic.
 
-This website verifies the YubiKey's device attestation certificates signed by a set of Yubico CAs, and helps mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
+This website verifies YubiKey device attestation certificates signed by a set of Yubico certificate authorities, and helps mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
 # Download OS Image
 
@@ -186,7 +190,21 @@ Open the terminal and install required software packages.
 ```console
 $ sudo apt update
 
-$ sudo apt install -y wget gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd secure-delete hopenpgp-tools yubikey-personalization
+$ sudo apt -y upgrade
+
+$ sudo apt -y install wget gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd secure-delete hopenpgp-tools yubikey-personalization
+```
+
+To install and use the `ykman` utility:
+
+```console
+$ sudo apt -y install python-pip python-pyscard
+
+$ pip install yubikey-manager
+
+$ sudo service pcscd start
+
+$ ~/.local/bin/ykman openpgp info
 ```
 
 ## Arch
@@ -289,7 +307,7 @@ Most operating systems use software-based pseudorandom number generators. A hard
 Install and configure OneRNG software:
 
 ```console
-$ sudo apt install -y at rng-tools python-gnupg openssl
+$ sudo apt -y install at rng-tools python-gnupg openssl
 
 $ wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.6-1_all.deb
 
@@ -327,33 +345,26 @@ An entropy pool value greater than 2000 is sufficient.
 
 # Creating keys
 
-## Using a temporary file system (Tmpfs)
+## Using a temporary file system
 
-Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs):
+Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs) and set it as the GnuPG directory:
 
 ```console
 $ export GNUPGHOME=$(mktemp -d)
-
-$ cd $GNUPGHOME
 ```
 
-## Use the Storage Device as backup and reusable enviroment
-
-As you may want to keep a offline backup of your keys as well as a clean enviroment to be set up easily, you also might consider to keep your USB-Storage device including the keys in a save place. Therefore, just set your desired GNUPGHOME-Variable:
+Otherwise, to preserve the working environment, set the GnuPG directory to your home folder:
 
 ```console
 $ export GNUPGHOME=~/gnupg-workspace
-
-$ cd $GNUPGHOME
 ```
-**Remember** You must store the device in a secure place afterwards or destroy it physically (smash, burn, shred etc.) 
 
-## Harden your setup
+## Harden configuration
 
-Create a hardened configuration in the temporary directory with the following options:
+Create a hardened configuration in the temporary working directory with the following options:
 
 ```console
-$ wget https://raw.githubusercontent.com/drduh/config/master/gpg.conf
+$ wget -O $GNUPGHOME/gpg.conf https://raw.githubusercontent.com/drduh/config/master/gpg.conf
 
 $ grep -ve "^#" $GNUPGHOME/gpg.conf
 personal-cipher-preferences AES256 AES192 AES
@@ -373,8 +384,8 @@ verify-options show-uid-validity
 with-fingerprint
 require-cross-certification
 no-symkey-cache
-throw-keyids
 use-agent
+throw-keyids
 ```
 
 Disable networking for the remainder of the setup.
@@ -387,14 +398,14 @@ The first key to generate is the master key. It will be used for certification o
 
 You'll be prompted to enter and verify a passphrase - keep it handy as you'll need it multiple times later.
 
-To generate a strong passphrase which could be written down in a hidden or secure place; or memorized:
+Generate a strong passphrase which could be written down in a secure place or memorized:
 
 ```console
 $ gpg --gen-random --armor 0 24
 ydOmByxmDe63u7gqx2XI9eDgpvJwibNH
 ```
 
-On Linux or OpenBSD, select the password with the mouse to copy it to the clipboard and paste using the middle mouse button or `Shift`-`Insert`.
+On Linux or OpenBSD, select the password using the mouse or by double-clicking on it to copy to clipboard. Paste using the middle mouse button or `Shift`-`Insert`.
 
 Generate a new key with GPG, selecting `(8) RSA (set your own capabilities)`, `Certify` capability only and `4096` bit key size.
 
@@ -459,7 +470,7 @@ Key does not expire at all
 Is this correct? (y/N) y
 ```
 
-Select a name and email address - neither has to be valid nor existing.
+Input any name and email address:
 
 ```console
 GnuPG needs to construct a user ID to identify your key.
@@ -717,7 +728,7 @@ Finish by saving the keys.
 gpg> save
 ```
 
-## Add extra emails
+## Add extra emails (optional)
 
 ```console
 gpg> adduid
@@ -868,10 +879,10 @@ Even worse, we cannot advertise this fact in any way to those that are using our
 In order to create the revoke certificate:
 
 ``` console
-gpg --output revoke.asc --gen-revoke $KEYID
+$ gpg --gen-revoke $KEYID --output $GNUPGHOME/revoke.asc
 ```
 
-The newly created `revoke.asc` file should be stored (or printed) in a place that allows us to retrieve it in case our backup strategy fails.
+The `revoke.asc` certificate file should be stored (or printed) in a (secondary) place that allows retrieval in case the main backup fails.
 
 # Backup
 
@@ -885,52 +896,61 @@ Attach another external storage device and check its label:
 
 ```console
 $ sudo dmesg | tail
-usb-storage 4-2:1.0: USB Mass Storage device detected
-scsi host7: usb-storage 4-2:1.0
-scsi 7:0:0:0: Direct-Access     TS-RDF5  SD  Transcend    TS37 PQ: 0 ANSI: 6
-sd 7:0:0:0: Attached scsi generic sg1 type 0
-sd 7:0:0:0: [sdb] 31116288 512-byte logical blocks: (15.9 GB/14.8 GiB)
-sd 7:0:0:0: [sdb] Write Protect is off
-sd 7:0:0:0: [sdb] Mode Sense: 23 00 00 00
-sdb: sdb1
-sd 7:0:0:0: [sdb] Attached SCSI removable disk
+mmc0: new high speed SDHC card at address a001
+mmcblk0: mmc0:a001 SS16G 14.8 GiB
+
+$ sudo fdisk -l /dev/mmcblk0
+Disk /dev/mmcblk0: 14.9 GiB, 15931539456 bytes, 31116288 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
 ```
 
 Write it with random data to prepare for encryption:
 
 ```console
-$ sudo dd if=/dev/urandom of=/dev/sdb bs=4M status=progress
+$ sudo dd if=/dev/urandom of=/dev/mmcblk0 bs=4M status=progress
 ```
 
 Erase and create a new partition table:
 
 ```console
-$ sudo fdisk /dev/sdb
+$ sudo fdisk /dev/mmcblk0
+
 Welcome to fdisk (util-linux 2.33.1).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.
+Created a new DOS disklabel with disk identifier 0x3c1ad14a.
 
 Command (m for help): o
-Created a new DOS disklabel with disk identifier 0xeac7ee35.
+Created a new DOS disklabel with disk identifier 0xd756b789.
 
 Command (m for help): w
 The partition table has been altered.
 Calling ioctl() to re-read partition table.
 Syncing disks.
+
 ```
 
 Create a new partition with a 25 Megabyte size:
 
 ```console
-$ sudo fdisk /dev/sdb
+$ sudo fdisk /dev/mmcblk0
+
 Welcome to fdisk (util-linux 2.33.1).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
 
 Command (m for help): n
 Partition type
    p   primary (0 primary, 0 extended, 4 free)
    e   extended (container for logical partitions)
-Select (default p):
+Select (default p): p
 Partition number (1-4, default 1):
-First sector (2048-62980095, default 2048):
-Last sector, +sectors or +size{K,M,G,T,P} (2048-62980095, default 62980095): +25M
+First sector (2048-31116287, default 2048):
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-31116287, default 31116287): +25M
 
 Created a new partition 1 of type 'Linux' and of size 25 MiB.
 
@@ -943,29 +963,29 @@ Syncing disks.
 Use [LUKS](https://askubuntu.com/questions/97196/how-secure-is-an-encrypted-luks-filesystem) to encrypt the new partition:
 
 ```console
-$ sudo cryptsetup luksFormat /dev/sdb1
+$ sudo cryptsetup luksFormat /dev/mmcblk0p1
 
 WARNING!
 ========
-This will overwrite data on /dev/sdb1 irrevocably.
+This will overwrite data on /dev/mmcblk0p1 irrevocably.
 
 Are you sure? (Type uppercase yes): YES
-Enter passphrase:
+Enter passphrase for /dev/mmcblk0p1:
 Verify passphrase:
 ```
 
 Mount the partition:
 
 ```console
-$ sudo cryptsetup luksOpen /dev/sdb1 usb
-Enter passphrase for /dev/sdb1:
+$ sudo cryptsetup luksOpen /dev/mmcblk0p1 secret
+Enter passphrase for /dev/mmcblk0p1:
 ```
 
 Create a filesystem:
 
 ```console
-$ sudo mkfs.ext2 /dev/mapper/usb -L usb
-Creating filesystem with 10240 1k blocks and 2560 inodes
+$ sudo mkfs.ext2 /dev/mapper/secret -L gpg-$(date +%F)
+Creating filesystem with 9216 1k blocks and 2304 inodes
 Superblock backups stored on blocks:
         8193
 
@@ -977,17 +997,17 @@ Writing superblocks and filesystem accounting information: done
 Mount the filesystem and copy the temporary directory with the keyring:
 
 ```console
-$ sudo mkdir /mnt/encrypted-usb
+$ sudo mkdir /mnt/encrypted-storage
 
-$ sudo mount /dev/mapper/usb /mnt/encrypted-usb
+$ sudo mount /dev/mapper/secret /mnt/encrypted-storage
 
-$ sudo cp -avi $GNUPGHOME /mnt/encrypted-usb
+$ sudo cp -avi $GNUPGHOME /mnt/encrypted-storage/
 ```
 
 **Optional** Backup the OneRNG package:
 
 ```console
-$ sudo cp onerng_3.6-1_all.deb /mnt/encrypted-usb
+$ sudo cp onerng_3.6-1_all.deb /mnt/encrypted-storage/
 ```
 
 Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
@@ -995,9 +1015,9 @@ Keep the backup mounted if you plan on setting up two or more keys as `keytocard
 Unmount, close and disconnected the encrypted volume:
 
 ```console
-$ sudo umount /mnt/encrypted-usb
+$ sudo umount /mnt/encrypted-storage/
 
-$ sudo cryptsetup luksClose usb
+$ sudo cryptsetup luksClose secret
 ```
 
 Create another partition to store the public key, or skip this step if you plan on uploading it to a key server.
@@ -1005,7 +1025,7 @@ Create another partition to store the public key, or skip this step if you plan 
 **Important** Without the *public* key, you will not be able to use GPG to encrypt, decrypt, nor sign messages. However, you will still be able to use YubiKey for SSH authentication.
 
 ```console
-$ sudo fdisk /dev/sdb
+$ sudo fdisk /dev/mmcblk0
 
 Command (m for help): n
 Partition type
@@ -1023,7 +1043,7 @@ The partition table has been altered.
 Calling ioctl() to re-read partition table.
 Syncing disks.
 
-$ sudo mkfs.ext2 /dev/sdb2
+$ sudo mkfs.ext2 /dev/mmcblk0p2
 Creating filesystem with 10240 1k blocks and 2560 inodes
 Superblock backups stored on blocks:
         8193
@@ -1034,7 +1054,7 @@ Writing superblocks and filesystem accounting information: done
 
 $ sudo mkdir /mnt/public
 
-$ sudo mount /dev/sdb2 /mnt/public/
+$ sudo mount /dev/mmcblk0p2 /mnt/public/
 
 $ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).txt
 ```
@@ -1299,7 +1319,9 @@ ssb  rsa4096/0x3F29127E79649A3D
 
 ## Signing
 
-Select and move the signature key. You will be prompted for the key passphrase and Admin PIN.
+You will be prompted for the master key passphrase and Admin PIN.
+
+Select and transfer the signature key.
 
 ```console
 gpg> key 1
@@ -1378,7 +1400,11 @@ gpg> keytocard
 Please select where to store the key:
    (3) Authentication key
 Your selection? 3
+```
 
+Save and quit:
+
+```console
 gpg> save
 ```
 
@@ -1398,13 +1424,11 @@ ssb>  rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
 ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 ```
 
-# Multiple YubiKeys
+# Multiple keys
 
-If you have additional (e.g. backup) security devices, restore the USB backup and repeat the [Configure Smartcard](#configure-smartcard) steps.
+To provision additional security keys, restore the master key backup and repeat the [Configure Smartcard](#configure-smartcard) procedure.
 
 ```console
-$ cd
-
 $ mv -vi $GNUPGHOME $GNUPGHOME.1
 renamed '/tmp.FLZC0xcM' -> '/tmp.FLZC0xcM.1'
 
@@ -1418,10 +1442,10 @@ $ cd $GNUPGHOME
 
 Ensure you have:
 
-* Saved the encryption, signing and authentication sub-keys to YubiKey.
-* Saved the YubiKey PINs which you changed from defaults.
-* Saved the password to the master key.
-* Saved a copy of the master key, sub-keys and revocation certificates on an encrypted volume, to be stored offline.
+* Saved encryption, signing and authentication sub-keys to YubiKey (`gpg -K` should show `ssb>` for sub-keys).
+* Saved the YubiKey user and admin PINs which you changed from defaults.
+* Saved the password to the GPG master key.
+* Saved a copy of the master key, sub-keys and revocation certificate on an encrypted volume, to be stored offline.
 * Saved the password to that encrypted volume in a separate location.
 * Saved a copy of the public key somewhere easily accessible later.
 
@@ -1636,7 +1660,25 @@ Neither rotation method is superior and it's up to personal philosophy on identi
 
 ### Initial setup for rotating keys or renewing sub-keys
 
-To renew or rotate sub-keys, follow the same procedure to boot to a secure environment. Install required software and disconnect networking. Decrypt and mount the offline volume, then import the master key and configuration to a temporary working directory:
+To renew or rotate sub-keys, follow the same process as generating keys: boot to a secure environment, install required software and disconnect networking.
+
+Connect the offline secret storage device with the master keys and identify the disk label:
+
+```console
+$ sudo dmesg | tail
+mmc0: new high speed SDHC card at address a001
+mmcblk0: mmc0:a001 SS16G 14.8 GiB (ro)
+mmcblk0: p1 p2
+```
+
+Decrypt and mount the offline volume:
+
+```console
+$ sudo cryptsetup luksOpen /dev/mmcblk0p1 secret
+Enter passphrase for /dev/mmcblk0p1:
+```
+
+Import the master key and configuration to a temporary working directory:
 
 ```console
 $ export GNUPGHOME=$(mktemp -d)
@@ -2257,10 +2299,16 @@ scd apdu 00 44 00 00
 /echo Card has been successfully reset.
 ```
 
-Or you may do it via `ykman` if installed:
+Or use `ykman`:
 
 ```console
 $ ykman openpgp reset
+WARNING! This will delete all stored OpenPGP keys and data and restore factory settings? [y/N]: y
+Resetting OpenPGP data, don't remove your YubiKey...
+Success! All data has been cleared and default PINs are set.
+PIN:         123456
+Reset code:  NOT SET
+Admin PIN:   12345678
 ```
 
 # Notes
@@ -2303,6 +2351,8 @@ $ ykman openpgp reset
 - If it still fails, it may be useful to stop the background `sshd` daemon process service on the server (e.g. using `sudo systemctl stop sshd`) and instead start it in the foreground with extensive debugging output, using `/usr/sbin/sshd -eddd`. Note that the server will not fork and will only process one connection, therefore has to be re-started after every `ssh` test.
 
 - If you receive the error, `Please insert the card with serial number: *` see [management of multiple keys](#multiple-keys).
+
+- If you receive the error, `There is no assurance this key belongs to the named user` or `encryption failed: Unusable public key` use `gpg --edit-key` to set `trust` to `5 = I trust ultimately`.
 
 # Links
 
