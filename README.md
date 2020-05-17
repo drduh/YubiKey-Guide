@@ -1704,7 +1704,7 @@ Edit the master key:
 ```console
 $ export KEYID=0xFF3E7D88647EBCDB
 
-$ gpg --edit-key $KEYID
+$ gpg --expert --edit-key $KEYID
 
 Secret key is available
 [...]
