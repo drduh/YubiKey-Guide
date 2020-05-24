@@ -40,7 +40,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Encryption](#encryption-1)
   * [Authentication](#authentication-1)
 - [Verify card](#verify-card)
-- [Multiple keys](#multiple-keys)
+- [Multiple YubiKeys](#multiple-yubikeys)
 - [Cleanup](#cleanup)
 - [Using keys](#using-keys)
 - [Rotating keys](#rotating-keys)
@@ -63,7 +63,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
       - [Prerequisites](#prerequisites)
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
-- [Multiple Keys](#multiple-keys)
+- [Using Multiple Keys](#using-multiple-keys)
 - [Require touch](#require-touch)
 - [Email](#email)
   * [Mailvelope on macOS](#mailvelope-on-macos)
@@ -1433,7 +1433,7 @@ ssb>  rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
 ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 ```
 
-# Multiple keys
+# Multiple YubiKeys
 
 To provision additional security keys, restore the master key backup and repeat the [Configure Smartcard](#configure-smartcard) procedure.
 
@@ -2192,7 +2192,7 @@ On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwa
 
 **Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
 
-# Multiple Keys
+# Using Multiple Keys
 
 To use a single identity with multiple YubiKeys - or to replace a lost card with another - issue this command to switch keys:
 
@@ -2364,7 +2364,7 @@ Admin PIN:   12345678
 
 - If it still fails, it may be useful to stop the background `sshd` daemon process service on the server (e.g. using `sudo systemctl stop sshd`) and instead start it in the foreground with extensive debugging output, using `/usr/sbin/sshd -eddd`. Note that the server will not fork and will only process one connection, therefore has to be re-started after every `ssh` test.
 
-- If you receive the error, `Please insert the card with serial number: *` see [management of multiple keys](#multiple-keys).
+- If you receive the error, `Please insert the card with serial number: *` see [using of multiple keys](#using-multiple-keys).
 
 - If you receive the error, `There is no assurance this key belongs to the named user` or `encryption failed: Unusable public key` use `gpg --edit-key` to set `trust` to `5 = I trust ultimately`.
 
