@@ -881,7 +881,7 @@ Even worse, we cannot advertise this fact in any way to those that are using our
 To create the revocation certificate:
 
 ``` console
-$ gpg --gen-revoke $KEYID --output $GNUPGHOME/revoke.asc
+$ gpg --output $GNUPGHOME/revoke.asc --gen-revoke $KEYID
 ```
 
 The `revoke.asc` certificate file should be stored (or printed) in a (secondary) place that allows retrieval in case the main backup fails.
