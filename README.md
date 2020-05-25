@@ -7,7 +7,7 @@ Keys stored on YubiKey are [non-exportable](https://support.yubico.com/support/s
 If you have a comment or suggestion, please open an [Issue](https://github.com/drduh/YubiKey-Guide/issues) on GitHub.
 
 - [Purchase](#purchase)
-- [Download OS Image](#download-os-image)
+- [Prepare environment](#prepare-environment)
 - [Required software](#required-software)
   * [Debian and Ubuntu](#debian-and-ubuntu)
   * [Arch](#arch)
@@ -81,18 +81,26 @@ To verify a YubiKey is genuine, open a [browser with U2F support](https://suppor
 
 This website verifies YubiKey device attestation certificates signed by a set of Yubico certificate authorities, and helps mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
-# Download OS Image
+You will also need several small storage devices (microSD cards work well) for storing encrypted backups of your keys.
 
-You will need several small storage devices for booting a temporary operating system and creating backups of your private/public keys.
+# Prepare environment
 
-It is recommended to generate cryptographic keys and configure YubiKey from a secure operating system and using an ephemeral environment ("live image"), such as [Debian](https://www.debian.org/CD/live/), [Tails](https://tails.boum.org/index.en.html), or [OpenBSD](https://www.openbsd.org/) booted from a USB drive.
+To create cryptographic keys, a secure environment that can be reasonably assured to be free of adversarial control is recommended. Here is a general ranking of environments most to least likely to be compromised:
 
-Depending on your threat model and/or level of inherent trust in your own system, it may also be a valid option to run the live image within a virtual machine using [virt-manager](https://virt-manager.org/), VirtualBox, or VMWare software.
+1. Daily-use operating system
+1. Virtual machine on daily-use host OS (using [virt-manager](https://virt-manager.org/), VirtualBox, or VMWare)
+1. Separate hardened [Debian](https://www.debian.org/) or [OpenBSD](https://www.openbsd.org/) installation which can be dual booted
+1. Live image, such as [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html)
+1. Secure hardware/firmware ([Coreboot](https://www.coreboot.org/), [Intel ME removed](https://github.com/corna/me_cleaner))
 
-To use Debian, download the latest image:
+1. Dedicated air-gapped system with no networking capabilities
+
+This guide recommends using a bootable "live" Debian Linux image to provide such an environment, however, depending on your threat model, you may want to take fewer or more steps to secure it.
+
+To use Debian Live, download the latest image:
 
 ```console
-$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-10.3.0-amd64-xfce.iso
+$ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/debian-live-10.4.0-amd64-xfce.iso
 
 $ curl -LfO https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS
 
@@ -103,7 +111,7 @@ Verify the signature of the hashes file with GPG:
 
 ```console
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat Feb  8 18:02:16 2020 PST
+gpg: Signature made Sat 09 May 2020 05:17:57 PM PDT
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Can't check signature: No public key
 
@@ -113,7 +121,7 @@ gpg: Total number processed: 1
 gpg:               imported: 1
 
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat Feb  8 18:02:16 2020 PST
+gpg: Signature made Sat 09 May 2020 05:17:57 PM PDT
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>" [unknown]
 gpg: WARNING: This key is not certified with a trusted signature!
@@ -130,8 +138,8 @@ $ gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv DF9B9C49EAA9298432589D7
 Ensure the SHA512 hash of the live image matches the one in the signed file.
 
 ```console
-$ grep $(sha512sum debian-live-10.3.0-amd64-xfce.iso) SHA512SUMS
-SHA512SUMS:c6adede144eb32b7316b65342f7445cb13b95ef17551d47ce1a8468d3954710f5f68c979c1086aa1b94262c8bfd86679eb38b01731c7b9aaeaca690455f1ff7f  debian-live-10.3.0-amd64-xfce.iso
+$ grep $(sha512sum debian-live-10.4.0-amd64-xfce.iso) SHA512SUMS
+SHA512SUMS:2920f398c5e9036fcec8f71b2f28b0f2a85e3ab805e66088192dc56f679e5f59f26634e8bbde70badc3cf7ce353f54a2757b2017cbc3d3df9fb2b2065b3c1041  debian-live-10.4.0-amd64-xfce.iso
 ```
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
@@ -153,7 +161,7 @@ sd 2:0:0:0: [sdb] Write cache: disabled, read cache: enabled, doesn't support DP
 sdb: sdb1 sdb2
 sd 2:0:0:0: [sdb] Attached SCSI removable disk
 
-$ sudo dd if=debian-live-10.3.0-amd64-xfce.iso of=/dev/sdb bs=4M; sync
+$ sudo dd if=debian-live-10.4.0-amd64-xfce.iso of=/dev/sdb bs=4M; sync
 465+1 records in
 465+1 records out
 1951432704 bytes (2.0 GB, 1.8 GiB) copied, 42.8543 s, 45.5 MB/s
@@ -166,15 +174,13 @@ $ dmesg | tail -n2
 sd2 at scsibus4 targ 1 lun 0: <TS-RDF5, SD Transcend, TS3A> SCSI4 0/direct removable serial.0000000000000
 sd2: 15193MB, 512 bytes/sector, 31116288 sectors
 
-$ doas dd if=debian-live-10.3.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
+$ doas dd if=debian-live-10.4.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
 465+1 records in
 465+1 records out
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
 Shut down the computer and disconnect internal hard drives and all unnecessary peripheral devices. If being run within a VM, this part can be skipped as no such devices should be attached to the VM since the image will still be run as a "live image".
-
-If on physical hardware consider using secure hardware like a ThinkPad X230 running [Coreboot](https://www.coreboot.org/) and [cleaned of Intel ME](https://github.com/corna/me_cleaner).
 
 # Required software
 
@@ -194,6 +200,12 @@ $ sudo apt update
 $ sudo apt -y upgrade
 
 $ sudo apt -y install wget gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd secure-delete hopenpgp-tools yubikey-personalization
+```
+
+To download a copy of this guide:
+
+```console
+$ wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/README.md
 ```
 
 To install and use the `ykman` utility:
@@ -406,6 +418,13 @@ $ gpg --gen-random --armor 0 24
 ydOmByxmDe63u7gqx2XI9eDgpvJwibNH
 ```
 
+Use upper case letters for improved readability if they are written down:
+
+```console
+$ tr -dc '[:upper:]' < /dev/urandom | fold -w 20 | head -n1
+BSSYMUGGTJQVWZZWOPJG
+```
+
 On Linux or OpenBSD, select the password using the mouse or by double-clicking on it to copy to clipboard. Paste using the middle mouse button or `Shift`-`Insert`.
 
 Generate a new key with GPG, selecting `(8) RSA (set your own capabilities)`, `Certify` capability only and `4096` bit key size.
@@ -543,7 +562,7 @@ Use a 1 year expiration for sub-keys - they can be renewed using the offline mas
 
 ## Signing
 
-Create a [signing key](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623) by selecting `(4) RSA (sign only)`:
+Create a [signing key](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623) by selecting `addkey` then `(4) RSA (sign only)`:
 
 ```console
 gpg> addkey
@@ -1145,7 +1164,7 @@ $ sudo mkdir /mnt/public
 
 $ sudo mount /dev/mmcblk0p2 /mnt/public/
 
-$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).txt
+$ gpg --armor --export $KEYID | sudo tee /mnt/public/gpg-$KEYID-$(date +%F).txt
 ```
 
 **OpenBSD**
@@ -1194,7 +1213,7 @@ After some time, the public key will to propagate to [other](https://pgp.key-ser
 
 # Configure Smartcard
 
-Use GPG to configure YubiKey as a smartcard:
+Plug in a YubiKey and use GPG to configure it as a smartcard:
 
 ```console
 $ gpg --card-edit
@@ -1218,6 +1237,8 @@ Encryption key....: [none]
 Authentication key: [none]
 General key info..: [none]
 ```
+
+**Note** If the card is locked, see [Reset](#reset).
 
 **Windows**
 
@@ -2312,7 +2333,7 @@ scd apdu 00 44 00 00
 /echo Card has been successfully reset.
 ```
 
-Or use `ykman`:
+Or use `ykman` (sometimes in `~/.local/bin/`):
 
 ```console
 $ ykman openpgp reset
@@ -2367,6 +2388,8 @@ Admin PIN:   12345678
 - If you receive the error, `Please insert the card with serial number: *` see [using of multiple keys](#using-multiple-keys).
 
 - If you receive the error, `There is no assurance this key belongs to the named user` or `encryption failed: Unusable public key` use `gpg --edit-key` to set `trust` to `5 = I trust ultimately`.
+
+- If you receive the error, `gpg: 0x0000000000000000: skipped: Unusable public key` or `encryption failed: Unusable public key` the sub-key may be expired and can no longer be used to encrypt nor sign messages. It can still be used to decrypt and authenticate, however.
 
 # Links
 
