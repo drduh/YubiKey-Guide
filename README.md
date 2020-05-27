@@ -1246,7 +1246,7 @@ Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) applica
 
 ## Change PIN
 
-The default PIN is `123456` and default Admin PIN (PUK) is `12345678`. CCID-mode PINs can be up to 127 ASCII characters.
+The default PIN is `123456` and default Admin PIN (PUK) is `12345678`. CCID-mode PINs can be up to 127 ASCII characters. They have to be at least 6 (PIN) or 8 (PUK) ASCII characters.
 
 The Admin PIN is required for some card operations and to unblock a PIN that has been entered incorrectly more than three times. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for details.
 
@@ -2357,9 +2357,11 @@ Admin PIN:   12345678
 
 - Use `man gpg` to understand GPG options and command-line flags.
 
+- To get more information on potential errors, restart the `gpg-agent` process with debug output to the console with `pkill gpg-agent; gpg-agent --daemon --no-detach -v -v --debug-level advanced --homedir ~/.gnupg`.
+
 - If you encounter problems connecting to YubiKey with GPG - try unplugging and re-inserting YubiKey, and restarting the `gpg-agent` process.
 
-- If you receive the error, `gpg: decryption failed: secret key not available` - you likely need to install GnuPG version 2.x.
+- If you receive the error, `gpg: decryption failed: secret key not available` - you likely need to install GnuPG version 2.x. Another possibility is that there is a problem with the PIN, e.g. it is too short or blocked.
 
 - If you receive the error, `Yubikey core error: no yubikey present` - make sure the YubiKey is inserted correctly. It should blink once when plugged in.
 
@@ -2415,3 +2417,4 @@ Admin PIN:   12345678
 * https://www.hanselman.com/blog/HowToSetupSignedGitCommitsWithAYubiKeyNEOAndGPGAndKeybaseOnWindows.aspx
 * https://www.void.gr/kargig/blog/2013/12/02/creating-a-new-gpg-key-with-subkeys/
 * https://mlohr.com/gpg-agent-forwarding/
+* https://www.ingby.com/?p=293
