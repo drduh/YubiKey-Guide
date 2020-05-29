@@ -2256,19 +2256,19 @@ To require a touch for each key operation, install [YubiKey Manager](https://dev
 Authentication:
 
 ```console
-$ ykman openpgp set-touch aut on
+$ ykman openpgp set-touch aut fixed
 ```
 
 Signing:
 
 ```console
-$ ykman openpgp set-touch sig on
+$ ykman openpgp set-touch sig fixed
 ```
 
 Encryption:
 
 ```console
-$ ykman openpgp set-touch enc on
+$ ykman openpgp set-touch enc fixed
 ```
 
 YubiKey will blink when it is waiting for a touch. On Linux you can also use [yubikey-touch-detector](https://github.com/maximbaz/yubikey-touch-detector) to have an indicator or notification that YubiKey is waiting for a touch.
