@@ -2634,7 +2634,7 @@ To enable GnuPG support, one can just use the config file `gpg.rc` provided by m
 
 If PIN attempts are exceeded, the card is locked and must be [reset](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html) and set up again using the encrypted backup.
 
-Copy the following script to a file and run `gpg-connect-agent --run $file` to lock and terminate the card. Then re-insert YubiKey to reset.
+Copy the following script to a file and run `gpg-connect-agent -r $file` to lock and terminate the card. Then re-insert YubiKey to reset.
 
 ```console
 /hex
@@ -2663,6 +2663,13 @@ PIN:         123456
 Reset code:  NOT SET
 Admin PIN:   12345678
 ```
+
+
+# Recovery after reset
+
+If for whatever reason you need to reinstate your YubiKey from your master key backup (such as the one stored on an encrypted USB described in [Backup keys](#backup-keys)), follow the following steps in [Rotating keys](#rotating-keys) to setup your environment, and then follow the steps of again [Configure Smartcard](#configure-smartcard).
+
+Before you unmount your backup, ask yourself if you should make another one just in case.
 
 # Notes
 
