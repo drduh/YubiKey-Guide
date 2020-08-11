@@ -761,7 +761,7 @@ You selected this USER-ID:
     "Dr Duh <DrDuh@other.org>"
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
     created: 2017-10-09  expires: never       usage: S
@@ -774,7 +774,7 @@ ssb  rsa4096/0x3F29127E79649A3D
 
 gpg> trust
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
     created: 2017-10-09  expires: never       usage: S
@@ -799,7 +799,7 @@ Your decision? 5
 Do you really want to set this key to ultimate trust? (y/N) y
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: SC
+    created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
     created: 2017-10-09  expires: never       usage: S
@@ -813,7 +813,7 @@ ssb  rsa4096/0x3F29127E79649A3D
 gpg> uid 1
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-created: 2017-10-09  expires: never       usage: SC
+created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
     created: 2017-10-09  expires: never       usage: S
@@ -827,7 +827,7 @@ ssb  rsa4096/0x3F29127E79649A3D
 gpg> primary
 
 sec  rsa4096/0xFF3E7D88647EBCDB
-created: 2017-10-09  expires: never       usage: SC
+created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
 ssb  rsa4096/0xBECFA3C1AE191D15
     created: 2017-10-09  expires: never       usage: S
