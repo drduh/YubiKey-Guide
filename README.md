@@ -1878,13 +1878,13 @@ Disconnect the storage device and follow the original steps to transfer new keys
 
 # Adding notations
 
-Notations can be added to users ID(s) and can be used in conjunction with [Keyoxide](https://keyoxide.org) to create [OpenPGP identity proofs](https://keyoxide.org/guides/openpgp-proofs).
+Notations can be added to user ID(s) and can be used in conjunction with [Keyoxide](https://keyoxide.org) to create [OpenPGP identity proofs](https://keyoxide.org/guides/openpgp-proofs).
 
-Adding notations requires access to the master key, so we can follow these setup instructions taken from this [section](#setup-environment) from this guide.
+Adding notations requires access to the master key so we can follow the setup instructions taken from this [section](#setup-environment) of this guide.
 
 Please note that there is no need to connect the Yubikey to the setup environment and that we do not need to generate new keys, move keys to the YubiKey, or update any SSH public keys linked to the GPG key.
 
-After having completed the environment setup, it is possible to follow any of the guides listed under "Adding proofs" from the Keyoxide ["Guides"](https://keyoxide.org/guides/) page __up until the notation is saved using the `save` command__.
+After having completed the environment setup, it is possible to follow any of the guides listed under "Adding proofs" in the Keyoxide ["Guides"](https://keyoxide.org/guides/) page __up until the notation is saved using the `save` command__.
 
 At this point the public key can be exported:
 
