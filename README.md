@@ -1882,7 +1882,7 @@ Notations can be added to users ID(s) and can be used in conjunction with [Keyox
 
 The setup environment can be created by using this [section](#setup-environment) from this guide.
 
-After having completed the environment setup, it is possible to follow any of the guides listed under "Adding proofs" from the Keyoxide ["Guides"](https://keyoxide.org/guides/) page __up until the notation is saved using the `save` command`.
+After having completed the environment setup, it is possible to follow any of the guides listed under "Adding proofs" from the Keyoxide ["Guides"](https://keyoxide.org/guides/) page __up until the notation is saved using the `save` command__.
 
 At this point the public key can be exported:
 
