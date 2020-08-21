@@ -211,9 +211,9 @@ $ wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/README.md
 To install and use the `ykman` utility:
 
 ```console
-$ sudo apt -y install python-pip python-pyscard
+$ sudo apt -y install python3-pip python3-pyscard
 
-$ pip install yubikey-manager
+$ pip3 install yubikey-manager
 
 $ sudo service pcscd start
 
@@ -320,7 +320,7 @@ Most operating systems use software-based pseudorandom number generators. A hard
 Install and configure OneRNG software:
 
 ```console
-$ sudo apt -y install at rng-tools python-gnupg openssl
+$ sudo apt -y install at rng-tools python3-gnupg openssl
 
 $ wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.6-1_all.deb
 
