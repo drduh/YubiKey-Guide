@@ -47,6 +47,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Setup environment](#setup-environment)
   * [Renewing sub-keys](#renewing-sub-keys)
   * [Rotating keys](#rotating-keys-1)
+- [Adding notations](#adding-notations)
 - [SSH](#ssh)
   * [Create configuration](#create-configuration)
   * [Replace agents](#replace-agents)
@@ -1874,6 +1875,32 @@ $ sudo umount /mnt/public
 ```
 
 Disconnect the storage device and follow the original steps to transfer new keys (4, 5 and 6) to YubiKey, replacing existing ones. Reboot or securely erase the GPG temporary working directory.
+
+# Adding notations
+
+Notations can be added to user ID(s) and can be used in conjunction with [Keyoxide](https://keyoxide.org) to create [OpenPGP identity proofs](https://keyoxide.org/guides/openpgp-proofs).
+
+Adding notations requires access to the master key so we can follow the setup instructions taken from this [section](#setup-environment) of this guide.
+
+Please note that there is no need to connect the Yubikey to the setup environment and that we do not need to generate new keys, move keys to the YubiKey, or update any SSH public keys linked to the GPG key.
+
+After having completed the environment setup, it is possible to follow any of the guides listed under "Adding proofs" in the Keyoxide ["Guides"](https://keyoxide.org/guides/) page __up until the notation is saved using the `save` command__.
+
+At this point the public key can be exported:
+
+```console
+$ gpg --export $KEYID > pubkey.gpg
+```
+
+The public key can now be transferred to the computer where the GPG key is used and it is imported with:
+
+```console
+$ gpg --import pubkey.gpg
+```
+
+N.B.: The `showpref` command can be issued to ensure that the notions were correctly added.
+
+It is now possible to continue following the Keyoxide guide and upload the key to WKD or to keys.openpgp.org.
 
 # SSH
 
