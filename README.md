@@ -213,6 +213,8 @@ To install and use the `ykman` utility:
 ```console
 $ sudo apt -y install python-pip python-pyscard
 
+$ pip install PyOpenSSL
+
 $ pip install yubikey-manager
 
 $ sudo service pcscd start
