@@ -332,7 +332,7 @@ a9ccf7b04ee317dbfc91518542301e2d60ebe205d38e80563f29aac7cd845ccb  onerng_3.6-1_a
 
 $ sudo dpkg -i onerng_3.6-1_all.deb
 
-$ echo "HRNGDEVICE=/dev/ttyACM0" | sudo tee /etc/default/rng-tools
+$ echo "HRNGDEVICE=/dev/urandom" | sudo tee /etc/default/rng-tools
 ```
 
 Plug in the device and restart rng-tools:
