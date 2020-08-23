@@ -47,6 +47,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Setup environment](#setup-environment)
   * [Renewing sub-keys](#renewing-sub-keys)
   * [Rotating keys](#rotating-keys-1)
+- [Adding notations](#adding-notations)
 - [SSH](#ssh)
   * [Create configuration](#create-configuration)
   * [Replace agents](#replace-agents)
@@ -213,7 +214,10 @@ To install and use the `ykman` utility:
 ```console
 $ sudo apt -y install python3-pip python3-pyscard
 
+$ pip3 install PyOpenSSL
+
 $ pip3 install yubikey-manager
+
 
 $ sudo service pcscd start
 
@@ -315,13 +319,20 @@ $ cat /proc/sys/kernel/random/entropy_avail
 849
 ```
 
-Most operating systems use software-based pseudorandom number generators. A hardware random number generator like [OneRNG](https://onerng.info/onerng/) will [increase the speed](https://lwn.net/Articles/648550/) of entropy generation and possibly the quality.
+Most operating systems use software-based pseudorandom number generators. On newer machines there are CPU based hardware random number generators (HRNG) or you can use a separate hardware device like the White Noise or [OneRNG](https://onerng.info/onerng/) will [increase the speed](https://lwn.net/Articles/648550/) of entropy generation and possibly the quality.
 
-Install and configure OneRNG software:
+Install [rng-tools](https://wiki.archlinux.org/index.php/Rng-tools) software:
 
 ```console
 $ sudo apt -y install at rng-tools python3-gnupg openssl
+```
 
+If you have a hardware device other than the CPU based one, install the accompany software and point rng-tools to its `/dev/` device.
+
+OneRNG specific example:
+
+```
+$ sudo apt -y install python-gnupg
 $ wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.6-1_all.deb
 
 $ sha256sum onerng_3.6-1_all.deb
@@ -1874,6 +1885,32 @@ $ sudo umount /mnt/public
 ```
 
 Disconnect the storage device and follow the original steps to transfer new keys (4, 5 and 6) to YubiKey, replacing existing ones. Reboot or securely erase the GPG temporary working directory.
+
+# Adding notations
+
+Notations can be added to user ID(s) and can be used in conjunction with [Keyoxide](https://keyoxide.org) to create [OpenPGP identity proofs](https://keyoxide.org/guides/openpgp-proofs).
+
+Adding notations requires access to the master key so we can follow the setup instructions taken from this [section](#setup-environment) of this guide.
+
+Please note that there is no need to connect the Yubikey to the setup environment and that we do not need to generate new keys, move keys to the YubiKey, or update any SSH public keys linked to the GPG key.
+
+After having completed the environment setup, it is possible to follow any of the guides listed under "Adding proofs" in the Keyoxide ["Guides"](https://keyoxide.org/guides/) page __up until the notation is saved using the `save` command__.
+
+At this point the public key can be exported:
+
+```console
+$ gpg --export $KEYID > pubkey.gpg
+```
+
+The public key can now be transferred to the computer where the GPG key is used and it is imported with:
+
+```console
+$ gpg --import pubkey.gpg
+```
+
+N.B.: The `showpref` command can be issued to ensure that the notions were correctly added.
+
+It is now possible to continue following the Keyoxide guide and upload the key to WKD or to keys.openpgp.org.
 
 # SSH
 
