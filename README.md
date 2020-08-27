@@ -2285,20 +2285,52 @@ To require a touch for each key operation, install [YubiKey Manager](https://dev
 Authentication:
 
 ```console
-$ ykman openpgp set-touch aut fixed
+$ ykman openpgp set-touch aut on
 ```
 
 Signing:
 
 ```console
-$ ykman openpgp set-touch sig fixed
+$ ykman openpgp set-touch sig on
 ```
 
 Encryption:
 
 ```console
-$ ykman openpgp set-touch enc fixed
+$ ykman openpgp set-touch enc on
 ```
+
+Depending on how the YubiKey is going to be used, you may want to look at the policy options for each of these and adjust the above commands accordingly. They can be viewed with the following command:
+
+```
+$ ykman openpgp set-touch -h
+Usage: ykman openpgp set-touch [OPTIONS] KEY POLICY
+
+  Set touch policy for OpenPGP keys.
+
+  KEY     Key slot to set (sig, enc, aut or att).
+  POLICY  Touch policy to set (on, off, fixed, cached or cached-fixed).
+
+  The touch policy is used to require user interaction for all operations using the private key on the YubiKey. The touch policy is set indivdually for each key slot. To see the current touch policy, run
+
+      $ ykman openpgp info
+
+  Touch policies:
+
+  Off (default)   No touch required
+  On              Touch required
+  Fixed           Touch required, can't be disabled without a full reset
+  Cached          Touch required, cached for 15s after use
+  Cached-Fixed    Touch required, cached for 15s after use, can't be disabled
+                  without a full reset
+
+Options:
+  -a, --admin-pin TEXT  Admin PIN for OpenPGP.
+  -f, --force           Confirm the action without prompting.
+  -h, --help            Show this message and exit.
+```
+
+If the YubiKey is going to be used within an email client that opens and verifies encrypted mail, `Cached` or `Cached-Fixed` may be desirable.
 
 YubiKey will blink when it is waiting for a touch. On Linux you can also use [yubikey-touch-detector](https://github.com/maximbaz/yubikey-touch-detector) to have an indicator or notification that YubiKey is waiting for a touch.
 
