@@ -1500,6 +1500,8 @@ Reboot or [securely delete](http://srm.sourceforge.net/) `$GNUPGHOME` and remove
 $ sudo srm -r $GNUPGHOME || sudo rm -rf $GNUPGHOME
 
 $ gpg --delete-secret-key $KEYID
+
+$ unset GNUPGHOME
 ```
 
 **Important** Make sure you have securely erased all generated keys and revocation certificates if an ephemeral enviroment was not used!
