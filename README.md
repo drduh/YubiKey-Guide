@@ -139,8 +139,8 @@ $ gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv DF9B9C49EAA9298432589D7
 Ensure the SHA512 hash of the live image matches the one in the signed file.
 
 ```console
-$ grep $(sha512sum debian-live-10.4.0-amd64-xfce.iso) SHA512SUMS
-SHA512SUMS:2920f398c5e9036fcec8f71b2f28b0f2a85e3ab805e66088192dc56f679e5f59f26634e8bbde70badc3cf7ce353f54a2757b2017cbc3d3df9fb2b2065b3c1041  debian-live-10.4.0-amd64-xfce.iso
+$ grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
+SHA512SUMS:799ec1fdb098caa7b60b71ed1fdb1f6390a1c6717b4314265e7042fa271c84f67fff0d0380297f60c4bcd0c1001e08623ab3d2a2ad64079d83d1795c40eb7a0a  debian-live-10.5.0-amd64-xfce.iso
 ```
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
