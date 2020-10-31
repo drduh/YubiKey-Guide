@@ -2177,7 +2177,7 @@ The name slightly differs according to the model. Thanks to [Scott Hanselman](ht
 reader-port <your yubikey device's full name, e.g. Yubico YubiKey OTP+FIDO+CCID 0>
 ```
 
-* Edit `%APPDATA%/gnupg/gpg-agent.conf` to add:
+* Create or edit `%APPDATA%/gnupg/gpg-agent.conf` to add:
 
 ```
 enable-ssh-support
