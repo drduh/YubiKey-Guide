@@ -212,11 +212,12 @@ $ wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/README.md
 To install and use the `ykman` utility:
 
 ```console
-$ sudo apt -y install python-pip python-pyscard
+$ sudo apt -y install python3-pip python3-pyscard
 
-$ pip install PyOpenSSL
+$ pip3 install PyOpenSSL
 
-$ pip install yubikey-manager
+$ pip3 install yubikey-manager
+
 
 $ sudo service pcscd start
 
@@ -318,7 +319,7 @@ $ cat /proc/sys/kernel/random/entropy_avail
 849
 ```
 
-Most operating systems use software-based pseudorandom number generators. A hardware random number generator like [OneRNG](https://onerng.info/onerng/) will [increase the speed](https://lwn.net/Articles/648550/) of entropy generation and possibly the quality.
+Most operating systems use software-based pseudorandom number generators. On newer machines there are CPU based hardware random number generators (HRNG) or you can use a separate hardware device like the White Noise or [OneRNG](https://onerng.info/onerng/) will [increase the speed](https://lwn.net/Articles/648550/) of entropy generation and possibly the quality.
 
 From YubiKey firmware version 5.2.3 onwards - which introduces "Enhancements to OpenPGP 3.4 Support" - we can gather additional entropy from the YubiKey itself via the SmartCard interface.
 
@@ -332,11 +333,18 @@ This will seed the Linux kernel's PRNG with additional 512 bytes retrieved from 
 
 ## OneRNG
 
-Install and configure OneRNG software:
+Install [rng-tools](https://wiki.archlinux.org/index.php/Rng-tools) software:
 
 ```console
-$ sudo apt -y install at rng-tools python-gnupg openssl
+$ sudo apt -y install at rng-tools python3-gnupg openssl
+```
 
+If you have a hardware device other than the CPU based one, install the accompany software and point rng-tools to its `/dev/` device.
+
+OneRNG specific example:
+
+```
+$ sudo apt -y install python-gnupg
 $ wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.6-1_all.deb
 
 $ sha256sum onerng_3.6-1_all.deb
