@@ -2396,7 +2396,7 @@ Finally, install the [Mailvelope extension](https://chrome.google.com/webstore/d
 
 If PIN attempts are exceeded, the card is locked and must be [reset](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html) and set up again using the encrypted backup.
 
-Copy the following script to a file and run `gpg-connect-agent -R $file` to lock and terminate the card. Then re-insert YubiKey to reset.
+Copy the following script to a file and run `gpg-connect-agent --run $file` to lock and terminate the card. Then re-insert YubiKey to reset.
 
 ```console
 /hex
