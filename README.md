@@ -68,6 +68,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Require touch](#require-touch)
 - [Email](#email)
   * [Mailvelope on macOS](#mailvelope-on-macos)
+  * [Mutt](#mutt)
 - [Reset](#reset)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
@@ -2400,6 +2401,14 @@ $ sudo launchctl config user path /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 ```
 
 Finally, install the [Mailvelope extension](https://chrome.google.com/webstore/detail/mailvelope/kajibbejlbohfaggdiogboambcijhkke) from the Chrome app store.
+
+## Mutt
+
+Mutt has both CLI and TUI interfaces, and the latter provides powerful functions for daily email processing. In addition, PGP can be integrated such that signing/encryption/verifying/decryption can be done without leaving TUI.
+
+To enable GnuPG support, one can just use the config file `gpg.rc` provided by mutt, usually located at `/usr/share/doc/mutt/samples/gpg.rc` after installation. One only needs to edit the file on options like `pgp_default_key`, `pgp_sign_as` and `pgp_autosign`. After editting one can `source` this rcfile in their main `muttrc` to use it.
+
+Note that if one uses `pinentry-tty` as one's pinentry program in `gpg-agent.conf`, it would mess with one's Mutt TUI, as reported. This is because Mutt TUI uses curses while tty output may harm the format. It is recommended to use `pinentry-curses` or other graphic pinentry program.
 
 # Reset
 
