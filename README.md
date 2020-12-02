@@ -62,6 +62,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [OpenBSD](#openbsd-1)
   * [Windows](#windows-1)
     + [WSL](#wsl)
+      - [Use ssh-agent or use S.weasel-pegant](#use-ssh-agent-or-use-sweasel-pegant)
       - [Prerequisites](#prerequisites)
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
@@ -2212,6 +2213,12 @@ The goal here is to make the SSH client inside WSL work together with the Window
 
 **Note** this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See the [weasel-pageant](https://github.com/vuori/weasel-pageant) readme for further information.
 
+#### Use ssh-agent or use S.weasel-pegant
+
+One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` may be involved. Otherwise they are of no use or even harm the forwarding. See [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more info.
+
+Another way is to forward the gpg ssh socket, as described below.
+
 #### Prerequisites
 
 * Ubuntu 16.04 or newer for WSL
@@ -2229,7 +2236,6 @@ Display the SSH key with `$ ssh-add -l`
 Edit `~/.ssh/config` to add the following for each host you want to use agent forwarding:
 
 ```
-ForwardAgent yes
 RemoteForward <remote SSH socket path> /tmp/S.weasel-pageant
 ```
 
@@ -2237,17 +2243,15 @@ RemoteForward <remote SSH socket path> /tmp/S.weasel-pageant
 
 #### Remote host configuration
 
-You may have to add the following to the shell rc file. On Linux, this is only required on the laptop/workstation where the YubiKey is plugged in, and **NOT** on the remote host server that you connect to; in fact at least on some Linux distributions, changing SSH_AUTH_SOCK on the server breaks agent forwarding.
+You may have to add the following to the shell rc file. 
 
 ```
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-export GPG_TTY=$(tty)
 ```
 
 Add the following to `/etc/ssh/sshd_config`:
 
 ```
-AllowAgentForwarding yes
 StreamLocalBindUnlink yes
 ```
 
