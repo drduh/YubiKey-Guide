@@ -2124,6 +2124,8 @@ After typing or sourcing your shell rc file, with `ssh-add -l` you should find y
 
 **Note** In this process no gpg-agent in the remote is involved, hence `gpg-agent.conf` in the remote is of no use. Also pinentry is invoked locally.
 
+**Note** Agent forwarding may be chained through multiple hosts
+
 ## GitHub
 
 You can use YubiKey to sign GitHub commits and tags. It can also be used for GitHub SSH authentication, allowing you to push, pull, and commit without a password.
@@ -2331,6 +2333,8 @@ extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
 **Note** The pinentry program starts on *local* machine, not remote. Hence when there are needs to enter the pin you need to find the prompt on local machine.
 
 **Important** Any pinentry program except `pinentry-tty` or `pinentry-curses` may be used. This is because local `gpg-agent` may start headlessly (By systemd without `$GPG_TTY` set locally telling which tty it is on), thus failed to obtain the pin. Errors on the remote may be misleading saying that there is *IO Error* (Yes internally there is actually *IO Error* since it happens when writing to/reading from tty while finding no tty to use, but for end users this is not friendly).
+
+**Note** Agent forwarding may be chained through multiple hosts
 
 See [Issue #85](https://github.com/drduh/YubiKey-Guide/issues/85) for more information and troubleshooting.
 
