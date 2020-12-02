@@ -56,6 +56,8 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Connect with public key authentication](#connect-with-public-key-authentication)
   * [Import SSH keys](#import-ssh-keys)
   * [Remote machines (SSH Agent Forwarding)](#remote-machines-ssh-agent-forwarding)
+      - [Use ssh-agent](#use-ssh-agent)
+      - [Use S.gpg-agent.ssh](#use-sgpg-agentssh)
   * [GitHub](#github)
   * [OpenBSD](#openbsd-1)
   * [Windows](#windows-1)
@@ -63,7 +65,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
       - [Prerequisites](#prerequisites)
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
-- [Remote Machines (Agent Forwarding)](#remote-machines-agent-forwarding)
+- [Remote Machines (GPG Agent Forwarding)](#remote-machines-gpg-agent-forwarding)
   * [Steps for older distributions](#steps-for-older-distributions)
 - [Using Multiple Keys](#using-multiple-keys)
 - [Require touch](#require-touch)
@@ -1977,7 +1979,7 @@ export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
 ```
 
-Note that `SSH_AUTH_SOCK` normally only needs to be set on the *local* laptop (workstation), where the YubiKey is plugged in.  On the *remote* server that we SSH into, `ssh` will automatically set `SSH_AUTH_SOCK` to something like `/tmp/ssh-mXzCzYT2Np/agent.7541` when we connect.  We therefore do **NOT** manually set `SSH_AUTH_SOCK` on the server - doing so would break [SSH Agent Forwarding](#remote-machines-agent-forwarding).
+Note that `SSH_AUTH_SOCK` normally only needs to be set on the *local* laptop (workstation), where the YubiKey is plugged in.  On the *remote* server that we SSH into, `ssh` will automatically set `SSH_AUTH_SOCK` to something like `/tmp/ssh-mXzCzYT2Np/agent.7541` when we connect.  We therefore do **NOT** manually set `SSH_AUTH_SOCK` on the server - doing so would break [SSH Agent Forwarding](#remote-machines-gpg-agent-forwarding).
 
 
 ## Copy public key
@@ -2075,11 +2077,50 @@ When using the key `pinentry` will be invoked to request the key's passphrase. T
 
 **Note** SSH Agent Forwarding can [add additional risk](https://matrix.org/blog/2019/05/08/post-mortem-and-remediations-for-apr-11-security-incident/#ssh-agent-forwarding-should-be-disabled) - proceed with caution!
 
+There are two methods for ssh-agent forwarding, one is provided by OpenSSH and the other is provided by GnuPG.
+
+The latter one may be more insecure as raw socket is just forwarded (not like `S.gpg-agent.extra` with only limited functionality; if `ForwardAgent` implemented by OpenSSH is just forwarding the raw socket, then they are insecure to the same degree). But for the latter one, one convenience is that one may forward once and use this agent everywhere in the remote. So again, proceed with caution!
+
+For example, `tmux` does not have some environment variables like `$SSH_AUTH_SOCK` when you ssh into remote and attach an old `tmux` session. In this case if you use `ForwardAgent`, you need to find the socket manually and `export SSH_AUTH_SOCK=/tmp/ssh-agent-xxx/xxxx.socket` for each shell. But with `S.gpg-agent.ssh` in fixed place, one can just use it as ssh-agent in their shell rc file.
+
 ### Use ssh-agent 
+
+In the above steps, you have successfully configured a local ssh-agent.
 
 You should now be able use `ssh -A remote` on the _local_ machine to log into _remote_, and should then be able to use YubiKey as if it were connected to the remote machine. For example, using e.g. `ssh-add -l` on that remote machine should show the public key from the YubiKey (note `cardno:`).  (If you don't want to have to remember to use `ssh -A`, you can use `ForwardAgent yes` in `~/.ssh/config`.  As a security best practice, always use `ForwardAgent yes` only for a single `Hostname`, never for all servers.)
 
 ### Use S.gpg-agent.ssh
+
+First you need to go through [Remote Machines (GPG Agent Forwarding)](#remote-machines-gpg-agent-forwarding), know the conditions for gpg-agent forwarding and know the location of `S.gpg-agent.ssh` on both the local and the remote.
+
+You may use the command:
+
+```console
+$ gpgconf --list-dirs agent-ssh-socket
+```
+
+Then in your `.ssh/config` add one sentence for that remote
+
+```
+Host
+  Hostname remote-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
+  # RemoteForward [remote socket] [local socket]
+  # Note that ForwardAgent is not wanted here!
+```
+
+After successfully ssh into the remote, you should check that you have `/run/user/1000/gnupg/S.gpg-agent.ssh` lying there.
+
+The in the *remote* you can type in command line or configure in the shell rc file with
+
+```console
+export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
+```
+
+After typing or sourcing your shell rc file, with `ssh-add -l` you should find your ssh public key now.
+
+**Note** In this process no gpg-agent in the remote is involved, hence `gpg-agent.conf` in the remote is of no use. Also pinentry is invoked locally.
 
 ## GitHub
 
@@ -2221,11 +2262,11 @@ On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwa
 
 **Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
 
-# Remote Machines (Agent Forwarding)
+# Remote Machines (GPG Agent Forwarding)
 
 This section is different from ssh-agent forwarding in [SSH](#ssh) as gpg-agent forwarding has a broader usage, not only limited to ssh.
 
-To use YubiKey to sign a git commit on a remote host, or signing email/decrypt files on a remote host, configure and use GPG Agent Forwarding. To ssh through another network, especially to push to/pull from GitHub using ssh, see [Remote Machines](#SSH Agent Forwarding) for more info.
+To use YubiKey to sign a git commit on a remote host, or signing email/decrypt files on a remote host, configure and use GPG Agent Forwarding. To ssh through another network, especially to push to/pull from GitHub using ssh, see [Remote Machines (SSH Agent forwarding)](#remote-machines-ssh-agent-forwarding) for more info.
 
 To do this, you need access to the remote machine and the YubiKey has to be set up on the host machine.
 
