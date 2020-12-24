@@ -2234,7 +2234,7 @@ The goal here is to make the SSH client inside WSL work together with the Window
 
 #### Use ssh-agent or use S.weasel-pegant
 
-One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` may be involved. Otherwise they are of no use or even harm the forwarding. See [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more info.
+One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` in ssh/sshd config may be involved; However, if you use the other way(gpg ssh socket forwarding), you should not enable `ForwardAgent` in ssh config. See [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more info.
 
 Another way is to forward the gpg ssh socket, as described below.
 
