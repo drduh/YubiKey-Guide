@@ -58,6 +58,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Remote machines (SSH Agent Forwarding)](#remote-machines-ssh-agent-forwarding)
       - [Use ssh-agent](#use-ssh-agent)
       - [Use S.gpg-agent.ssh](#use-sgpg-agentssh)
+      - [Chained SSH Agent Forwarding](#chained-ssh-agent-forwarding)
   * [GitHub](#github)
   * [OpenBSD](#openbsd-1)
   * [Windows](#windows-1)
@@ -68,6 +69,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
       - [Remote host configuration](#remote-host-configuration)
 - [Remote Machines (GPG Agent Forwarding)](#remote-machines-gpg-agent-forwarding)
   * [Steps for older distributions](#steps-for-older-distributions)
+  * [Chained GPG Agent Forwarding](#chained-gpg-agent-forwarding)
 - [Using Multiple Keys](#using-multiple-keys)
 - [Require touch](#require-touch)
 - [Email](#email)
@@ -2124,7 +2126,22 @@ After typing or sourcing your shell rc file, with `ssh-add -l` you should find y
 
 **Note** In this process no gpg-agent in the remote is involved, hence `gpg-agent.conf` in the remote is of no use. Also pinentry is invoked locally.
 
-**Note** Agent forwarding may be chained through multiple hosts
+### Chained SSH Agent Forwarding
+
+If you use `ssh-agent` provided by OpenSSH and want to forward it into a *third* box, you can just `ssh -A third` on the *remote*.
+
+Meanwhile, if you use `S.gpg-agent.ssh`, assume you have gone through the steps above and have `S.gpg-agent.ssh` on the *remote*, and you would like to forward this agent into a *third* box, first you may need to configure `sshd_config` and `SSH_AUTH_SOCK` of *third* in the same way as *remote*, then in the ssh config of *remote*, add the following lines
+
+```console
+Host third
+  Hostname third-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
+  # RemoteForward [remote socket] [local socket]
+  # Note that ForwardAgent is not wanted here!
+```
+
+You should change the path according to `gpgconf --list-dirs agent-ssh-socket` on *remote* and *third*.
 
 ## GitHub
 
@@ -2267,7 +2284,7 @@ Log in to the remote host, you should have the pinentry dialog asking for the Yu
 
 On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwarding works!
 
-**Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
+**Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host. You may also read this part on [chained ssh agent forwarding](#chained-ssh-agent-forwarding).
 
 # Remote Machines (GPG Agent Forwarding)
 
@@ -2334,9 +2351,23 @@ extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
 
 **Important** Any pinentry program except `pinentry-tty` or `pinentry-curses` may be used. This is because local `gpg-agent` may start headlessly (By systemd without `$GPG_TTY` set locally telling which tty it is on), thus failed to obtain the pin. Errors on the remote may be misleading saying that there is *IO Error* (Yes internally there is actually *IO Error* since it happens when writing to/reading from tty while finding no tty to use, but for end users this is not friendly).
 
-**Note** Agent forwarding may be chained through multiple hosts
-
 See [Issue #85](https://github.com/drduh/YubiKey-Guide/issues/85) for more information and troubleshooting.
+
+## Chained GPG Agent Forwarding
+
+Assume you have gone through the steps above and have `S.gpg-agent` on the *remote*, and you would like to forward this agent into a *third* box, first you may need to configure `sshd_config` of *third* in the same way as *remote*, then in the ssh config of *remote*, add the following lines
+
+```console
+Host third
+  Hostname third-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent
+  # RemoteForward [remote socket] [local socket]
+```
+
+You should change the path according to `gpgconf --list-dirs agent-socket` on *remote* and *third*.
+
+**Note** On *local* you have `S.gpg-agent.extra` whereas on *remote* and *third*, you only have `S.gpg-agent`.
 
 # Using Multiple Keys
 
