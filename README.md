@@ -55,15 +55,21 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [(Optional) Save public key for identity file configuration](#optional-save-public-key-for-identity-file-configuration)
   * [Connect with public key authentication](#connect-with-public-key-authentication)
   * [Import SSH keys](#import-ssh-keys)
-  * [Remote Machines (Agent Forwarding)](#remote-machines-agent-forwarding)
-    + [Steps for older distributions](#steps-for-older-distributions)
+  * [Remote machines (SSH Agent Forwarding)](#remote-machines-ssh-agent-forwarding)
+      - [Use ssh-agent](#use-ssh-agent)
+      - [Use S.gpg-agent.ssh](#use-sgpg-agentssh)
+      - [Chained SSH Agent Forwarding](#chained-ssh-agent-forwarding)
   * [GitHub](#github)
   * [OpenBSD](#openbsd-1)
   * [Windows](#windows-1)
     + [WSL](#wsl)
+      - [Use ssh-agent or use S.weasel-pegant](#use-ssh-agent-or-use-sweasel-pegant)
       - [Prerequisites](#prerequisites)
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
+- [Remote Machines (GPG Agent Forwarding)](#remote-machines-gpg-agent-forwarding)
+  * [Steps for older distributions](#steps-for-older-distributions)
+  * [Chained GPG Agent Forwarding](#chained-gpg-agent-forwarding)
 - [Using Multiple Keys](#using-multiple-keys)
 - [Require touch](#require-touch)
 - [Email](#email)
@@ -1977,8 +1983,9 @@ export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
 ```
 
-Note that `SSH_AUTH_SOCK` normally only needs to be set on the *local* laptop (workstation), where the YubiKey is plugged in.  On the *remote* server that we SSH into, `ssh` will automatically set `SSH_AUTH_SOCK` to something like `/tmp/ssh-mXzCzYT2Np/agent.7541` when we connect.  We therefore do **NOT** manually set `SSH_AUTH_SOCK` on the server - doing so would break [SSH Agent Forwarding](#remote-machines-agent-forwarding).
+Note that if you use `ForwardAgent` for ssh-agent forwarding, `SSH_AUTH_SOCK` only needs to be set on the *local* laptop (workstation), where the YubiKey is plugged in.  On the *remote* server that we SSH into, `ssh` will automatically set `SSH_AUTH_SOCK` to something like `/tmp/ssh-mXzCzYT2Np/agent.7541` when we connect.  We therefore do **NOT** manually set `SSH_AUTH_SOCK` on the server - doing so would break [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding).
 
+If you use `S.gpg-agent.ssh` (see [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more info), `SSH_AUTH_SOCK` should also be set on the *remote*. However, `GPG_TTY` should not be set on the *remote*, explanation specified in that section.
 
 ## Copy public key
 
@@ -2071,66 +2078,71 @@ $ ssh-add -E md5 -l
 
 When using the key `pinentry` will be invoked to request the key's passphrase. The passphrase will be cached for up to 10 minutes idle time between uses, to a maximum of 2 hours.
 
-## Remote Machines (Agent Forwarding)
+## Remote Machines (SSH Agent Forwarding)
 
 **Note** SSH Agent Forwarding can [add additional risk](https://matrix.org/blog/2019/05/08/post-mortem-and-remediations-for-apr-11-security-incident/#ssh-agent-forwarding-should-be-disabled) - proceed with caution!
 
-To use YubiKey to sign a git commit on a remote host, or ssh through another network, configure and use Agent Forwarding.
+There are two methods for ssh-agent forwarding, one is provided by OpenSSH and the other is provided by GnuPG.
 
-To do this, you need access to the remote machine and the YubiKey has to be set up on the host machine.
+The latter one may be more insecure as raw socket is just forwarded (not like `S.gpg-agent.extra` with only limited functionality; if `ForwardAgent` implemented by OpenSSH is just forwarding the raw socket, then they are insecure to the same degree). But for the latter one, one convenience is that one may forward once and use this agent everywhere in the remote. So again, proceed with caution!
 
-On the remote machine, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink yes`
+For example, `tmux` does not have some environment variables like `$SSH_AUTH_SOCK` when you ssh into remote and attach an old `tmux` session. In this case if you use `ForwardAgent`, you need to find the socket manually and `export SSH_AUTH_SOCK=/tmp/ssh-agent-xxx/xxxx.socket` for each shell. But with `S.gpg-agent.ssh` in fixed place, one can just use it as ssh-agent in their shell rc file.
 
-**Optional** If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket on the remote machine before forwarding works. For example, `rm /run/user/1000/gnupg/S.gpg-agent`. Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
+### Use ssh-agent 
 
-Import public keys to the remote machine. This can be done by fetching from a keyserver. On the local machine, copy the public keyring to the remote machine:
-
-```console
-$ scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
-```
+In the above steps, you have successfully configured a local ssh-agent.
 
 You should now be able use `ssh -A remote` on the _local_ machine to log into _remote_, and should then be able to use YubiKey as if it were connected to the remote machine. For example, using e.g. `ssh-add -l` on that remote machine should show the public key from the YubiKey (note `cardno:`).  (If you don't want to have to remember to use `ssh -A`, you can use `ForwardAgent yes` in `~/.ssh/config`.  As a security best practice, always use `ForwardAgent yes` only for a single `Hostname`, never for all servers.)
 
-On modern distributions, such as Fedora 30, there is typically no need to also set `RemoteForward` in `~/.ssh/config` as detailed in the next chapter, because the right thing actually happens automatically.
+### Use S.gpg-agent.ssh
 
+First you need to go through [Remote Machines (GPG Agent Forwarding)](#remote-machines-gpg-agent-forwarding), know the conditions for gpg-agent forwarding and know the location of `S.gpg-agent.ssh` on both the local and the remote.
 
-### Steps for older distributions
-
-On the local machine, run:
-
-```console
-$ gpgconf --list-dirs agent-extra-socket
-```
-
-This should return a path to agent-extra-socket - `/run/user/1000/gnupg/S.gpg-agent.extra` - though on older Linux distros (and macOS) it may be `/home/<user>/.gnupg/S/gpg-agent.extra`
-
-Find the agent socket on the **remote** machine:
+You may use the command:
 
 ```console
-$ gpgconf --list-dirs agent-socket
+$ gpgconf --list-dirs agent-ssh-socket
 ```
 
-This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`
-
-Finally, enable agent forwarding for a given machine by adding the following to the local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
+Then in your `.ssh/config` add one sentence for that remote
 
 ```
 Host
   Hostname remote-host.tld
-  ForwardAgent yes
-  RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
   # RemoteForward [remote socket] [local socket]
+  # Note that ForwardAgent is not wanted here!
 ```
 
-If you're still having problems, it may be necessary to edit `gpg-agent.conf` file on both the remote and local machines to add the following information:
+After successfully ssh into the remote, you should check that you have `/run/user/1000/gnupg/S.gpg-agent.ssh` lying there.
 
-```
-enable-ssh-support
-pinentry-program /usr/bin/pinentry-curses
-extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
+The in the *remote* you can type in command line or configure in the shell rc file with
+
+```console
+export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 ```
 
-See [Issue #85](https://github.com/drduh/YubiKey-Guide/issues/85) for more information and troubleshooting.
+After typing or sourcing your shell rc file, with `ssh-add -l` you should find your ssh public key now.
+
+**Note** In this process no gpg-agent in the remote is involved, hence `gpg-agent.conf` in the remote is of no use. Also pinentry is invoked locally.
+
+### Chained SSH Agent Forwarding
+
+If you use `ssh-agent` provided by OpenSSH and want to forward it into a *third* box, you can just `ssh -A third` on the *remote*.
+
+Meanwhile, if you use `S.gpg-agent.ssh`, assume you have gone through the steps above and have `S.gpg-agent.ssh` on the *remote*, and you would like to forward this agent into a *third* box, first you may need to configure `sshd_config` and `SSH_AUTH_SOCK` of *third* in the same way as *remote*, then in the ssh config of *remote*, add the following lines
+
+```console
+Host third
+  Hostname third-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
+  # RemoteForward [remote socket] [local socket]
+  # Note that ForwardAgent is not wanted here!
+```
+
+You should change the path according to `gpgconf --list-dirs agent-ssh-socket` on *remote* and *third*.
 
 ## GitHub
 
@@ -2221,6 +2233,12 @@ The goal here is to make the SSH client inside WSL work together with the Window
 
 **Note** this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See the [weasel-pageant](https://github.com/vuori/weasel-pageant) readme for further information.
 
+#### Use ssh-agent or use S.weasel-pegant
+
+One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` in ssh/sshd config may be involved; However, if you use the other way(gpg ssh socket forwarding), you should not enable `ForwardAgent` in ssh config. See [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more info.
+
+Another way is to forward the gpg ssh socket, as described below.
+
 #### Prerequisites
 
 * Ubuntu 16.04 or newer for WSL
@@ -2238,7 +2256,6 @@ Display the SSH key with `$ ssh-add -l`
 Edit `~/.ssh/config` to add the following for each host you want to use agent forwarding:
 
 ```
-ForwardAgent yes
 RemoteForward <remote SSH socket path> /tmp/S.weasel-pageant
 ```
 
@@ -2246,17 +2263,15 @@ RemoteForward <remote SSH socket path> /tmp/S.weasel-pageant
 
 #### Remote host configuration
 
-You may have to add the following to the shell rc file. On Linux, this is only required on the laptop/workstation where the YubiKey is plugged in, and **NOT** on the remote host server that you connect to; in fact at least on some Linux distributions, changing SSH_AUTH_SOCK on the server breaks agent forwarding.
+You may have to add the following to the shell rc file. 
 
 ```
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-export GPG_TTY=$(tty)
 ```
 
 Add the following to `/etc/ssh/sshd_config`:
 
 ```
-AllowAgentForwarding yes
 StreamLocalBindUnlink yes
 ```
 
@@ -2270,7 +2285,90 @@ Log in to the remote host, you should have the pinentry dialog asking for the Yu
 
 On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwarding works!
 
-**Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host.
+**Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host. You may also read this part on [chained ssh agent forwarding](#chained-ssh-agent-forwarding).
+
+# Remote Machines (GPG Agent Forwarding)
+
+This section is different from ssh-agent forwarding in [SSH](#ssh) as gpg-agent forwarding has a broader usage, not only limited to ssh.
+
+To use YubiKey to sign a git commit on a remote host, or signing email/decrypt files on a remote host, configure and use GPG Agent Forwarding. To ssh through another network, especially to push to/pull from GitHub using ssh, see [Remote Machines (SSH Agent forwarding)](#remote-machines-ssh-agent-forwarding) for more info.
+
+To do this, you need access to the remote machine and the YubiKey has to be set up on the host machine.
+
+After gpg-agent forwarding, it is nearly the same as if YubiKey was inserted in the remote. Hence configurations except `gpg-agent.conf` for the remote can be the same as those for the local.
+
+**Important** `gpg-agent.conf` for the remote is of no use, hence `$GPG_TTY` is of no use too for the remote. The mechanism is that after forwarding, remote `gpg` directly communicates with `S.gpg-agent` without *starting* `gpg-agent` on the remote.
+
+On the remote machine, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink yes`
+
+**Optional** If you do not have root access to the remote machine to edit `/etc/ssh/sshd_config`, you will need to remove the socket (located at `gpgconf --list-dir agent-socket`) on the remote machine before forwarding works. For example, `rm /run/user/1000/gnupg/S.gpg-agent`. Further information can be found on the [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding).
+
+Import public keys to the remote machine. This can be done by fetching from a keyserver. On the local machine, copy the public keyring to the remote machine:
+
+```console
+$ scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
+```
+
+On modern distributions, such as Fedora 30, there is typically no need to also set `RemoteForward` in `~/.ssh/config` as detailed in the next chapter, because the right thing actually happens automatically.
+
+If any error happens (or there is no `gpg-agent.socket` in the remote) for modern distributions, you may go through the configuration steps in the next section.
+
+## Steps for older distributions
+
+On the local machine, run:
+
+```console
+$ gpgconf --list-dirs agent-extra-socket
+```
+
+This should return a path to agent-extra-socket - `/run/user/1000/gnupg/S.gpg-agent.extra` - though on older Linux distros (and macOS) it may be `/home/<user>/.gnupg/S/gpg-agent.extra`
+
+Find the agent socket on the **remote** machine:
+
+```console
+$ gpgconf --list-dirs agent-socket
+```
+
+This should return a path such as `/run/user/1000/gnupg/S.gpg-agent`
+
+Finally, enable agent forwarding for a given machine by adding the following to the local machine's ssh config file `~/.ssh/config` (your agent sockets may be different):
+
+```
+Host
+  Hostname remote-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent.extra
+  # RemoteForward [remote socket] [local socket]
+```
+
+If you're still having problems, it may be necessary to edit `gpg-agent.conf` file on the *local* machines to add the following information:
+
+```
+pinentry-program /usr/bin/pinentry-gtk-2
+extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
+```
+
+**Note** The pinentry program starts on *local* machine, not remote. Hence when there are needs to enter the pin you need to find the prompt on local machine.
+
+**Important** Any pinentry program except `pinentry-tty` or `pinentry-curses` may be used. This is because local `gpg-agent` may start headlessly (By systemd without `$GPG_TTY` set locally telling which tty it is on), thus failed to obtain the pin. Errors on the remote may be misleading saying that there is *IO Error* (Yes internally there is actually *IO Error* since it happens when writing to/reading from tty while finding no tty to use, but for end users this is not friendly).
+
+See [Issue #85](https://github.com/drduh/YubiKey-Guide/issues/85) for more information and troubleshooting.
+
+## Chained GPG Agent Forwarding
+
+Assume you have gone through the steps above and have `S.gpg-agent` on the *remote*, and you would like to forward this agent into a *third* box, first you may need to configure `sshd_config` of *third* in the same way as *remote*, then in the ssh config of *remote*, add the following lines
+
+```console
+Host third
+  Hostname third-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent /run/user/1000/gnupg/S.gpg-agent
+  # RemoteForward [remote socket] [local socket]
+```
+
+You should change the path according to `gpgconf --list-dirs agent-socket` on *remote* and *third*.
+
+**Note** On *local* you have `S.gpg-agent.extra` whereas on *remote* and *third*, you only have `S.gpg-agent`.
 
 # Using Multiple Keys
 
