@@ -436,9 +436,9 @@ If you want to use [Password Store](https://github.com/android-password-store/An
 [2](https://github.com/open-keychain/open-keychain/issues/1781)). For this 
 reason, I strongly recommended commenting `#throw-keyids` on your `gpg.conf`.
 
-Disable networking for the remainder of the setup.
-
 # Master key
+
+**Important: disable networking** for the remainder of the setup.
 
 The first key to generate is the master key. It will be used for certification only: to issue sub-keys that are used for encryption, signing and authentication.
 
