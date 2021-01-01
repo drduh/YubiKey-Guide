@@ -431,6 +431,11 @@ use-agent
 throw-keyids
 ```
 
+If you want to use [Password Store](https://github.com/android-password-store/Android-Password-Store) and/or [Openkeychain](https://www.openkeychain.org/) on Android, `throw-keyids` must be disabled 
+(see [1](https://github.com/android-password-store/Android-Password-Store/issues/173) or 
+[2](https://github.com/open-keychain/open-keychain/issues/1781)). For this 
+reason, I strongly recommended commenting `#throw-keyids` on your `gpg.conf`.
+
 Disable networking for the remainder of the setup.
 
 # Master key
