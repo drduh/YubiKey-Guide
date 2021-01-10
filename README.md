@@ -67,6 +67,8 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
       - [Prerequisites](#prerequisites)
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
+  * [macOS](#macos-1)
+      - setup LaunchAgent
 - [Remote Machines (GPG Agent Forwarding)](#remote-machines-gpg-agent-forwarding)
   * [Steps for older distributions](#steps-for-older-distributions)
   * [Chained GPG Agent Forwarding](#chained-gpg-agent-forwarding)
@@ -2293,6 +2295,64 @@ Log in to the remote host, you should have the pinentry dialog asking for the Yu
 On the remote host, type `ssh-add -l` - if you see the ssh key, that means forwarding works!
 
 **Note** Agent forwarding may be chained through multiple hosts - just follow the same [protocol](#remote-host-configuration) to configure each host. You may also read this part on [chained ssh agent forwarding](#chained-ssh-agent-forwarding).
+
+## macOS
+
+To use gui applications on macOS, [a little bit more setup is needed](https://jms1.net/yubikey/make-ssh-use-gpg-agent.md).
+
+Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent.plist` with the following contents:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>gnupg.gpg-agent</string>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>KeepAlive</key>
+        <false/>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/usr/local/MacGPG2/bin/gpg-connect-agent</string>
+            <string>/bye</string>
+        </array>
+    </dict>
+</plist>
+```
+
+```console
+launchctl load gnupg.gpg-agent.plist
+```
+
+Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist` with the following contens:
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/ProperyList-1.0/dtd">
+<plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>gnupg.gpg-agent-symlink</string>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/bin/sh</string>
+            <string>-c</string>
+            <string>/bin/ln -sf $HOME/.gnupg/S.gpg-agent.ssh $SSH_AUTH_SOCK</string>
+        </array>
+        <key>RunAtLoad</key>
+        <true/>
+    </dict>
+</plist>
+```
+
+```console
+launchctl load gnupg.gpg-agent-symlink.plist
+```
+
+You will need to either reboot, or log out and log back in, in order to activate these changes.
 
 # Remote Machines (GPG Agent Forwarding)
 
