@@ -393,7 +393,7 @@ An entropy pool value greater than 2000 is sufficient.
 Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs) and set it as the GnuPG directory:
 
 ```console
-$ export GNUPGHOME=$(mktemp -d)
+$ export GNUPGHOME=$(mktemp -d -t gnupg_$(date +%Y%m%d%H%M%s))
 ```
 
 Otherwise, to preserve the working environment, set the GnuPG directory to your home folder:
@@ -1745,7 +1745,7 @@ $ sudo mount /dev/mapper/secret /mnt/encrypted-storage
 Import the master key and configuration to a temporary working directory:
 
 ```console
-$ export GNUPGHOME=$(mktemp -d)
+$ export GNUPGHOME=$(mktemp -d -t gnupg_$(date +%Y%m%d%H%M%s))
 
 $ gpg --import /mnt/encrypted-storage/tmp.XXX/mastersub.key
 
