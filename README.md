@@ -68,7 +68,6 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
   * [macOS](#macos-1)
-      - setup LaunchAgent
 - [Remote Machines (GPG Agent Forwarding)](#remote-machines-gpg-agent-forwarding)
   * [Steps for older distributions](#steps-for-older-distributions)
   * [Chained GPG Agent Forwarding](#chained-gpg-agent-forwarding)
