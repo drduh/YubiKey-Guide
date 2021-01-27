@@ -210,6 +210,12 @@ $ sudo apt -y upgrade
 $ sudo apt -y install wget gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd secure-delete hopenpgp-tools yubikey-personalization
 ```
 
+With Ubuntu 18.04 you may additionally need:
+
+```console
+$ sudo apt -y install libssl-dev swig libpcsclite-dev
+```
+
 To download a copy of this guide:
 
 ```console
