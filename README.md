@@ -1851,7 +1851,7 @@ Please specify how long the key should be valid.
       <n>y = key expires in n years
 Key is valid for? (0)
 ```
-Follow these prompts to set a new expiration date, then `quit` to save your changes.
+Follow these prompts to set a new expiration date, then `save` to save your changes.
 
 Next, export your public key:
 
