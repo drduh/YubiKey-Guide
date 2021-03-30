@@ -1286,17 +1286,19 @@ Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) applica
 
 ## Change PIN
 
-Your Yubikey has 2 PINs: The user PIN, which is used for end-user functionality such as signing and encryption and an admin PIN which is required for updating your information on the Yubikey. Entering the user PIN incorrectly three times consecutively will cause the PIN to become blocked.
+The GPG interface is separate from other modules on a Yubikey such as the PIV interface. The GPG interface has its own PIN, PUK, and Admin PIN. It is highly encourage that you change all available PINs on the GPG interface.  Entering the user PIN incorrectly three times consecutively will cause the PIN to become blocked.  Entering the Admin PIN incorrectly three times destroys all GPG data. The Yubikey will have to be reconfigured.
 
-Name|Default Value
----|---
-PIN|`123456`
-Admin PIN|`12345678`
-PUK|`12345678`
+Name      | Default Value
+----------|--------------
+PIN       | `123456`
+Admin PIN | `12345678`
+PUK       | `12345678`
 
 CCID-mode PINs can be up to 127 ASCII characters. They have to be at least 6 (PIN) or 8 (PUK) ASCII characters. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for details.
 
-First set your admin and user PINs:
+
+The Admin PIN is required for some card operations such as changing the PUK, Admin PIN, and setting owner information. The PUK is used to unblock a PIN that has been entered incorrectly more than three times. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for details.
+
 
 ```console
 gpg/card> admin
