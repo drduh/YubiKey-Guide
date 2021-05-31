@@ -2685,6 +2685,17 @@ Admin PIN:   12345678
 - If you receive the error, `Please insert the card with serial number: *` see [using of multiple keys](#using-multiple-keys).
 
 - If you receive the error, `There is no assurance this key belongs to the named user` or `encryption failed: Unusable public key` use `gpg --edit-key` to set `trust` to `5 = I trust ultimately`.
+  - If, when you try the above `--edit-key` command, you get the error 
+    `Need the secret key to do this.`, you can manually specify trust for the key in
+    `~/.gnupg/gpg.conf` by using the `trust-key [your key ID]` directive.
+
+- If, when using a previously provisioned YubiKey on a new computer with `pass`, you see the
+  following error on `pass insert`:
+    ```
+    gpg: 0x0000000000000000: There is no assurance this key belongs to the named user
+    gpg: [stdin]: encryption failed: Unusable public key
+    ```
+    you need to adjust the trust associated with the key. See the above bullet.
 
 - If you receive the error, `gpg: 0x0000000000000000: skipped: Unusable public key` or `encryption failed: Unusable public key` the sub-key may be expired and can no longer be used to encrypt nor sign messages. It can still be used to decrypt and authenticate, however.
 
