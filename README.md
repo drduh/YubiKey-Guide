@@ -2511,33 +2511,33 @@ To require a touch for each key operation, install [YubiKey Manager](https://dev
 Authentication:
 
 ```console
-$ ykman openpgp set-touch aut on
+$ ykman openpgp keys set-touch aut on
 ```
 
 Signing:
 
 ```console
-$ ykman openpgp set-touch sig on
+$ ykman openpgp keys set-touch sig on
 ```
 
 Encryption:
 
 ```console
-$ ykman openpgp set-touch enc on
+$ ykman openpgp keys set-touch enc on
 ```
 
 Depending on how the YubiKey is going to be used, you may want to look at the policy options for each of these and adjust the above commands accordingly. They can be viewed with the following command:
 
 ```
-$ ykman openpgp set-touch -h
-Usage: ykman openpgp set-touch [OPTIONS] KEY POLICY
+$ ykman openpgp keys set-touch -h
+Usage: ykman openpgp keys set-touch [OPTIONS] KEY POLICY
 
   Set touch policy for OpenPGP keys.
 
   KEY     Key slot to set (sig, enc, aut or att).
   POLICY  Touch policy to set (on, off, fixed, cached or cached-fixed).
 
-  The touch policy is used to require user interaction for all operations using the private key on the YubiKey. The touch policy is set indivdually for each key slot. To see the current touch policy, run
+  The touch policy is used to require user interaction for all operations using the private key on the YubiKey. The touch policy is set individually for each key slot. To see the current touch policy, run
 
       $ ykman openpgp info
 
