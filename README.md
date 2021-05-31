@@ -1942,6 +1942,8 @@ It is now possible to continue following the Keyoxide guide and upload the key t
 
 # SSH
 
+_Note that if you want to use a **YubiKey ONLY for SSH** (and don't really care about PGP/GPG), then [since OpenSSH v8.2](https://www.openssh.com/txt/release-8.2) you alternatively can simply `ssh-keygen -t ed25519-sk` (without requiring anything else from this guide!), as explained [e.g. in this guide](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md)._
+
 [gpg-agent](https://wiki.archlinux.org/index.php/GnuPG#SSH_agent) supports the OpenSSH ssh-agent protocol (`enable-ssh-support`), as well as Putty's Pageant on Windows (`enable-putty-support`). This means it can be used instead of the traditional ssh-agent / pageant. There are some differences from ssh-agent, notably that gpg-agent does not _cache_ keys rather it converts, encrypts and stores them - persistently - as GPG keys and then makes them available to ssh clients. Any existing ssh private keys that you'd like to keep in `gpg-agent` should be deleted after they've been imported to the GPG agent.
 
 When importing the key to `gpg-agent`, you'll be prompted for a passphrase to protect that key within GPG's key store - you may want to use the same passphrase as the original's ssh version. GPG can both cache passphrases for a determined period (ref. `gpg-agent`'s various `cache-ttl` options), and since version 2.1 can store and fetch passphrases via the macOS keychain. Note than when removing the old private key after importing to `gpg-agent`, keep the `.pub` key file around for use in specifying ssh identities (e.g. `ssh -i /path/to/identity.pub`).
