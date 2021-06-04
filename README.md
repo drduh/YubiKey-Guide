@@ -1529,6 +1529,31 @@ $ cp -avi /mnt/encrypted-storage/tmp.XXX $GNUPGHOME
 $ cd $GNUPGHOME
 ```
 
+## Switching between two or more Yubikeys.
+	
+When you add a GPG key to a Yubikey using the *keytocard* command, GPG deletes the key form your keyring and adds a *stub* pointing to that exact Yubikey (the stub identifies the GPG KeyID and the Yubikey's serial number).
+	
+However, when you do this same operation for a second Yubikey, the stub in your keyring is overwritten by the *keytocard* operation and now the stub points to your second Yubikey. Adding more repeats this overwriting operation.
+
+In other words, the stub will point ONLY to the LAST Yubikey written to.
+	
+When using GPG key operations with the GPG key you placed onto the Yubikeys, GPG will request a specific Yubikey asking that you insert a Yubikey with a given serial number (referenced by the stub). GPG will not recognise another Yubikey with a different serial number without manual intervention.
+	
+You can force GPG to scan the card and re-create the stubs to point to another Yubikey. 
+
+Having created two (or more Yubikeys) with the same GPG key (as described above) where the stubs are pointing to the second Yubikey:
+	
+Insert the first Yubikey (which has a different serial numnber) and run the following command:
+	
+```console
+$  gpg-connect-agent "scd serialno" "learn --force" /bye
+```
+GPG will then scan your first Yubikey for GPG keys and recreate the stubs to point to the GPG keyID and Yubikey Serial number of this first Yubikey.
+	
+To return to using the second Yubikey just repeat (insert other Yubikey and re-run command).
+	
+Obviously this command is not easy to remember so it is recommended to either create a script or a shell alias to make this more user friendly.
+	
 # Cleanup
 
 Ensure you have:
