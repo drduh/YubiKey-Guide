@@ -87,7 +87,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 
 # Purchase
 
-All YubiKeys except the blue "security key" model are compatible with this guide. NEO models are limited to 2048-bit RSA keys. Compare YubiKeys [here](https://www.yubico.com/products/yubikey-hardware/compare-products-series/).
+All YubiKeys except the blue "security key" model are compatible with this guide. NEO models are limited to 2048-bit RSA keys. Compare YubiKeys [here](https://www.yubico.com/products/yubikey-hardware/compare-products-series/). Yubico have also just released a press release and blog post about supporting resident ssh keys on their Yubikeys including blue "security key 5 NFC" with OpenSSH 8.2 or later, see [here](https://www.yubico.com/blog/github-now-supports-ssh-security-keys/) for details.
 
 To verify a YubiKey is genuine, open a [browser with U2F support](https://support.yubico.com/support/solutions/articles/15000009591-how-to-confirm-your-yubico-device-is-genuine-with-u2f) to [https://www.yubico.com/genuine/](https://www.yubico.com/genuine/). Insert a Yubico device, and select *Verify Device* to begin the process. Touch the YubiKey when prompted, and if asked, allow it to see the make and model of the device. If you see *Verification complete*, the device is authentic.
 
@@ -1966,7 +1966,7 @@ It is now possible to continue following the Keyoxide guide and upload the key t
 
 # SSH
 
-_Note that if you want to use a **YubiKey ONLY for SSH** (and don't really care about PGP/GPG), then [since OpenSSH v8.2](https://www.openssh.com/txt/release-8.2) you alternatively can simply `ssh-keygen -t ed25519-sk` (without requiring anything else from this guide!), as explained [e.g. in this guide](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md)._
+_Note that if you want to use a **YubiKey ONLY for SSH** (and don't really care about PGP/GPG), then [since OpenSSH v8.2](https://www.openssh.com/txt/release-8.2) you alternatively can simply `ssh-keygen -t ed25519-sk` (without requiring anything else from this guide!), as explained [e.g. in this guide](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md). Yubico also recently announced support for resident ssh keys under OpenSSH 8.2+ on their blue "security key 5 nfc" as mentioned in their [blog post](https://www.yubico.com/blog/github-now-supports-ssh-security-keys/)._
 
 [gpg-agent](https://wiki.archlinux.org/index.php/GnuPG#SSH_agent) supports the OpenSSH ssh-agent protocol (`enable-ssh-support`), as well as Putty's Pageant on Windows (`enable-putty-support`). This means it can be used instead of the traditional ssh-agent / pageant. There are some differences from ssh-agent, notably that gpg-agent does not _cache_ keys rather it converts, encrypts and stores them - persistently - as GPG keys and then makes them available to ssh clients. Any existing ssh private keys that you'd like to keep in `gpg-agent` should be deleted after they've been imported to the GPG agent.
 
