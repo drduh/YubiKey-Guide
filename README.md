@@ -1337,7 +1337,7 @@ Your selection? q
 The PUK (Pin Unlock Key) can be used to reset the PIN if it is ever lost or becomes blocked after the maximum number of incorrect attempts (default 3). The default PUK is `12345678`. If the PUK is also entered incorrectly three times, the key is permanently irrecoverable. You can set your PUK to the same as your daily PIN, giving you a total of 6 attempts.
 
 ```console
-ykman piv change-puk
+ykman piv access change-puk
 
 Enter your current PUK:
 Enter your new PUK:
