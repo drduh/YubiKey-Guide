@@ -36,7 +36,6 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Export public keys](#export-public-keys)
 - [Configure Smartcard](#configure-smartcard)
   * [Change PIN](#change-pin)
-  * [Change PUK](#change-puk)
   * [Set information](#set-information)
 - [Transfer keys](#transfer-keys)
   * [Signing](#signing-1)
@@ -1286,19 +1285,19 @@ Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) applica
 
 ## Change PIN
 
-The GPG interface is separate from other modules on a Yubikey such as the PIV interface. The GPG interface has its own PIN, PUK, and Admin PIN. It is highly encourage that you change all available PINs on the GPG interface.  Entering the user PIN incorrectly three times consecutively will cause the PIN to become blocked.  Entering the Admin PIN incorrectly three times destroys all GPG data. The Yubikey will have to be reconfigured.
+The [GPG interface](https://developers.yubico.com/PGP/) is separate from other modules on a Yubikey such as the [PIV interface](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html).  The GPG interface has its own *PIN*, *Admin PIN*, and *Reset Code*. It is highly encourage that you change at least the *PIN* and  *Admin PIN* on the GPG interface.
 
-Name      | Default Value
-----------|--------------
-PIN       | `123456`
-Admin PIN | `12345678`
-PUK       | `12345678`
+Entering the user *PIN* incorrectly three times consecutively will cause the PIN to become blocked and can be unblocked with either the *Admin PIN* or *Reset Code*.  Entering the *Admin PIN* or *Reset Code* incorrectly three times consecutively destroys all GPG data.  The Yubikey will have to be reconfigured.
 
-CCID-mode PINs can be up to 127 ASCII characters. They have to be at least 6 (PIN) or 8 (PUK) ASCII characters. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for details.
+Name       | Default Value | Usage
+-----------|---------------|-------------------------------------------------------------
+PIN        | `123456`      | descrypt, authenticate (SSH)
+Admin PIN  | `12345678`    | reset *PIN*, change *Reset Code*, add keys and owner information
+Reset code | _**None**_      | reset *PIN* ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
+PINs/codes can be up to 127 ASCII characters. They have to be at least 6 (*PIN*) or 8 (*Admin PIN*, *Reset Code*) ASCII characters. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for details.
 
-The Admin PIN is required for some card operations such as changing the PUK, Admin PIN, and setting owner information. The PUK is used to unblock a PIN that has been entered incorrectly more than three times. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for details.
-
+To update the GPG PINs on the Yubikey:
 
 ```console
 gpg/card> admin
@@ -1334,17 +1333,10 @@ Q - quit
 Your selection? q
 ```
 
-## Change PUK
+The number of retry attempts can be changed with the following command, documented [here](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries):
 
-The PUK (Pin Unlock Key) can be used to reset the PIN if it is ever lost or becomes blocked after the maximum number of incorrect attempts (default 3). The default PUK is `12345678`. If the PUK is also entered incorrectly three times, the key is permanently irrecoverable. You can set your PUK to the same as your daily PIN, giving you a total of 6 attempts.
-
-```console
-ykman piv change-puk
-
-Enter your current PUK:
-Enter your new PUK:
-Repeat for confirmation:
-New PUK set.
+```bash
+ykman openpgp access set-retries 5 5 5
 ```
 
 ## Set information
@@ -2707,11 +2699,9 @@ Admin PIN:   12345678
 * https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO
 * https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/
 * https://blog.onefellow.com/post/180065697833/yubikey-forwarding-ssh-keys
-* https://developers.yubico.com/PGP/Card_edit.html
-* https://developers.yubico.com/PIV/Introduction/Admin_access.html
-* https://developers.yubico.com/yubico-piv-tool/YubiKey_PIV_introduction.html
+* https://developers.yubico.com/PGP/
+  * https://developers.yubico.com/PGP/Card_edit.html
 * https://developers.yubico.com/yubikey-personalization/
-* https://developers.yubico.com/yubikey-piv-manager/PIN_and_Management_Key.html
 * https://evilmartians.com/chronicles/stick-with-security-yubikey-ssh-gnupg-macos
 * https://gist.github.com/ageis/14adc308087859e199912b4c79c4aaa4
 * https://github.com/herlo/ssh-gpg-smartcard-config
