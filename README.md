@@ -1203,7 +1203,7 @@ $ sudo mkdir /mnt/public
 
 $ sudo mount /dev/mmcblk0p2 /mnt/public/
 
-$ gpg --armor --export $KEYID | sudo tee /mnt/public/gpg-$KEYID-$(date +%F).txt
+$ gpg --armor --export $KEYID | sudo tee /mnt/public/gpg-$KEYID-$(date +%F).asc
 ```
 
 **OpenBSD**
@@ -1225,7 +1225,7 @@ $ doas mkdir /mnt/public
 
 $ doas mount /dev/sd2b /mnt/public
 
-$ gpg --armor --export $KEYID | doas tee /mnt/public/$KEYID.txt
+$ gpg --armor --export $KEYID | doas tee /mnt/public/gpg-$KEYID-$(date +%F).asc
 ```
 
 **Windows**
@@ -1602,7 +1602,7 @@ $ doas mount /dev/sd2b /mnt
 Import the public key file:
 
 ```console
-$ gpg --import /mnt/0x*txt
+$ gpg --import /mnt/gpg-0x*.asc
 gpg: key 0xFF3E7D88647EBCDB: public key "Dr Duh <doc@duh.to>" imported
 gpg: Total number processed: 1
 gpg:               imported: 1
@@ -1896,16 +1896,16 @@ Key is valid for? (0)
 ```
 Follow these prompts to set a new expiration date, then `save` to save your changes.
 
-Next, export your public key:
+Next, export the public key:
 
 ```console
-$ gpg --export $KEYID > pubkey.gpg
+$ gpg --armor --export $KEYID > gpg-$KEYID-$(date +%F).asc
 ```
 
 Transfer that public key to the computer from which you use your GPG key, and then import it with:
 
 ```console
-$ gpg --import pubkey.gpg
+$ gpg --import gpg-0x*.asc
 ```
 
 This will extend the validity of your GPG key and will allow you to use it for SSH authorization.  Note that you do _not_ need to update the SSH public key located on remote servers.
@@ -1950,7 +1950,7 @@ $ sudo mkdir /mnt/public
 
 $ sudo mount /dev/mmcblk0p2 /mnt/public
 
-$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).txt
+$ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
 
 $ sudo umount /mnt/public
 ```
@@ -1970,13 +1970,13 @@ After having completed the environment setup, it is possible to follow any of th
 At this point the public key can be exported:
 
 ```console
-$ gpg --export $KEYID > pubkey.gpg
+$ gpg --export $KEYID > pubkey.asc
 ```
 
 The public key can now be transferred to the computer where the GPG key is used and it is imported with:
 
 ```console
-$ gpg --import pubkey.gpg
+$ gpg --import pubkey.asc
 ```
 
 N.B.: The `showpref` command can be issued to ensure that the notions were correctly added.
