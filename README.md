@@ -464,7 +464,9 @@ $ tr -dc '[:upper:]' < /dev/urandom | fold -w 20 | head -n1
 BSSYMUGGTJQVWZZWOPJG
 ```
 
-On Linux or OpenBSD, select the password using the mouse or by double-clicking on it to copy to clipboard. Paste using the middle mouse button or `Shift`-`Insert`.
+**Important** Save this credential in a permanent, secure place as it will be needed to issue new sub-keys after expiration, and to provision additional YubiKeys.
+
+**Tip** On Linux or OpenBSD, select the password using the mouse or by double-clicking on it to copy to clipboard. Paste using the middle mouse button or `Shift`-`Insert`.
 
 Generate a new key with GPG, selecting `(8) RSA (set your own capabilities)`, `Certify` capability only and `4096` bit key size.
 
