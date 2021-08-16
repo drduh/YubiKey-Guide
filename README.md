@@ -81,6 +81,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Reset](#reset)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
+- [Alternatives](#alternatives)
 - [Links](#links)
 
 
@@ -1287,17 +1288,19 @@ Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) applica
 
 ## Change PIN
 
-The [GPG interface](https://developers.yubico.com/PGP/) is separate from other modules on a Yubikey such as the [PIV interface](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html).  The GPG interface has its own *PIN*, *Admin PIN*, and *Reset Code*. It is highly encourage that you change at least the *PIN* and  *Admin PIN* on the GPG interface.
+The [GPG interface](https://developers.yubico.com/PGP/) is separate from other modules on a Yubikey such as the [PIV interface](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html). The GPG interface has its own *PIN*, *Admin PIN*, and *Reset Code* - these should be changed from default values!
 
-Entering the user *PIN* incorrectly three times consecutively will cause the PIN to become blocked and can be unblocked with either the *Admin PIN* or *Reset Code*.  Entering the *Admin PIN* or *Reset Code* incorrectly three times consecutively destroys all GPG data.  The Yubikey will have to be reconfigured.
+Entering the user *PIN* incorrectly three times will cause the PIN to become blocked; it can be unblocked with either the *Admin PIN* or *Reset Code*.
 
-Name       | Default Value | Usage
+Entering the *Admin PIN* or *Reset Code* incorrectly three times destroys all GPG data on the card. The Yubikey will have to be reconfigured.
+
+Name       | Default Value | Use
 -----------|---------------|-------------------------------------------------------------
-PIN        | `123456`      | descrypt, authenticate (SSH)
+PIN        | `123456`      | decrypt and authenticate (SSH)
 Admin PIN  | `12345678`    | reset *PIN*, change *Reset Code*, add keys and owner information
 Reset code | _**None**_      | reset *PIN* ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
-PINs/codes can be up to 127 ASCII characters. They have to be at least 6 (*PIN*) or 8 (*Admin PIN*, *Reset Code*) ASCII characters. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for details.
+Values are valid up to 127 ASCII characters and must be at least 6 (*PIN*) or 8 (*Admin PIN*, *Reset Code*) characters. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for details.
 
 To update the GPG PINs on the Yubikey:
 
@@ -1556,7 +1559,7 @@ Ensure you have:
 
 * Saved encryption, signing and authentication sub-keys to YubiKey (`gpg -K` should show `ssb>` for sub-keys).
 * Saved the YubiKey user and admin PINs which you changed from defaults.
-* Saved the password to the GPG master key.
+* Saved the password to the GPG master key in a *permanent* location.
 * Saved a copy of the master key, sub-keys and revocation certificate on an encrypted volume, to be stored offline.
 * Saved the password to that encrypted volume in a separate location.
 * Saved a copy of the public key somewhere easily accessible later.
@@ -2497,12 +2500,10 @@ To use a single identity with multiple YubiKeys - or to replace a lost card with
 $ gpg-connect-agent "scd serialno" "learn --force" /bye
 ```
 
-Alternatively, you could delete via a script the GnuPG shadowed key - where the card serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)).
-
-Put it somewhere in your `$PATH`. E.g.:
+Alternatively, use a script to delete the GnuPG shadowed key, where the card serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)):
 
 ```console
-$ cat >> ~/.scripts/remove-keygrips.sh <<EOF
+$ cat >> ~/scripts/remove-keygrips.sh <<EOF
 #!/usr/bin/env bash
 test ! "$@" && echo "Specify a key." && exit 1
 KEYGRIPS="$(gpg --with-keygrip --list-secret-keys $@ | grep Keygrip | awk '{print $3}')"
@@ -2513,8 +2514,10 @@ done
 
 gpg --card-status
 EOF
-$ chmod +x ~/.scripts/remove-keygrips.sh
-$ remove-keygrips.sh $KEYID
+
+$ chmod +x ~/scripts/remove-keygrips.sh
+
+$ ~/scripts/remove-keygrips.sh $KEYID
 ```
 
 See discussion in Issues [#19](https://github.com/drduh/YubiKey-Guide/issues/19) and [#112](https://github.com/drduh/YubiKey-Guide/issues/112) for more information and troubleshooting steps.
@@ -2721,6 +2724,10 @@ Admin PIN:   12345678
 - If you receive the error, `gpg: 0x0000000000000000: skipped: Unusable public key` or `encryption failed: Unusable public key` the sub-key may be expired and can no longer be used to encrypt nor sign messages. It can still be used to decrypt and authenticate, however.
 
 - Refer to Yubico article [Troubleshooting Issues with GPG](https://support.yubico.com/hc/en-us/articles/360013714479-Troubleshooting-Issues-with-GPG) for additional guidance.
+
+# Alternatives
+
+*TODO: Information about other ways to authenticate SSH (e.g., without GPG) and other YubiKey features*
 
 # Links
 
