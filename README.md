@@ -469,97 +469,37 @@ BSSYMUGGTJQVWZZWOPJG
 
 **Tip** On Linux or OpenBSD, select the password using the mouse or by double-clicking on it to copy to clipboard. Paste using the middle mouse button or `Shift`-`Insert`.
 
-Generate a new key with GPG, selecting `(8) RSA (set your own capabilities)`, `Certify` capability only and `4096` bit key size.
+Note: when creating the keys, we need to generate a lot of random bytes. It is a good idea to perform some other action (type on the keyboard, move the mouse, utilize the disks) during the prime generation; this gives the random number generator a better chance to gain enough entropy.
 
-Do not set the master key to expire - see [Note #3](#notes).
+To remove some complexity from the process we will create the keys using a template and the `--batch` parameter. For futher details, full GNUPG documentation can be found at: https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html
 
-```console
-$ gpg --expert --full-generate-key
+For your convenience you can start from this RSA4096 key template: [gen-params-rsa4096](contrib/gen-params-rsa4096). If you're using GnuPG v2.1.7 or newer we strongly recommend generating ED25519 keys ([gen-params-ed25519](contrib/gen-params-ed25519), the procedure is the same). These templates will not set the master key to expire - see [Note #3](#notes).
 
-Please select what kind of key you want:
-   (1) RSA and RSA (default)
-   (2) DSA and Elgamal
-   (3) DSA (sign only)
-   (4) RSA (sign only)
-   (7) DSA (set your own capabilities)
-   (8) RSA (set your own capabilities)
-   (9) ECC and ECC
-  (10) ECC (sign only)
-  (11) ECC (set your own capabilities)
-  (13) Existing key
-Your selection? 8
-
-Possible actions for a RSA key: Sign Certify Encrypt Authenticate
-Current allowed actions: Sign Certify Encrypt
-
-   (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
-   (A) Toggle the authenticate capability
-   (Q) Finished
-
-Your selection? E
-
-Possible actions for a RSA key: Sign Certify Encrypt Authenticate
-Current allowed actions: Sign Certify
-
-   (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
-   (A) Toggle the authenticate capability
-   (Q) Finished
-
-Your selection? S
-
-Possible actions for a RSA key: Sign Certify Encrypt Authenticate
-Current allowed actions: Certify
-
-   (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
-   (A) Toggle the authenticate capability
-   (Q) Finished
-
-Your selection? Q
-RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
-Requested keysize is 4096 bits
-Please specify how long the key should be valid.
-         0 = key does not expire
-      <n>  = key expires in n days
-      <n>w = key expires in n weeks
-      <n>m = key expires in n months
-      <n>y = key expires in n years
-Key is valid for? (0) 0
-Key does not expire at all
-Is this correct? (y/N) y
-```
-
-Input any name and email address:
+Generate a RSA4096 master key:
 
 ```console
-GnuPG needs to construct a user ID to identify your key.
-
-Real name: Dr Duh
-Email address: doc@duh.to
-Comment: [Optional - leave blank]
-You selected this USER-ID:
-    "Dr Duh <doc@duh.to>"
-
-Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? o
-
-We need to generate a lot of random bytes. It is a good idea to perform
-some other action (type on the keyboard, move the mouse, utilize the
-disks) during the prime generation; this gives the random number
-generator a better chance to gain enough entropy.
-
-gpg: /tmp.FLZC0xcM/trustdb.gpg: trustdb created
-gpg: key 0xFF3E7D88647EBCDB marked as ultimately trusted
-gpg: directory '/tmp.FLZC0xcM/openpgp-revocs.d' created
-gpg: revocation certificate stored as '/tmp.FLZC0xcM/openpgp-revocs.d/011CE16BD45B27A55BA8776DFF3E7D88647EBCDB.rev'
-public and secret key created and signed.
-
-pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
-      Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
-uid                              Dr Duh <doc@duh.to>
+$ gpg --batch --generate-key gen-params-rsa4096
+gpg: Generating a basic OpenPGP key
+gpg: key 0xEA5DE91459B80592 marked as ultimately trusted
+gpg: revocation certificate stored as '/tmp.FLZC0xcM/openpgp-revocs.d/D6F924841F78D62C65ABB9588B461860159FFB7B.rev'
+gpg: done
 ```
+
+Let's check the result:
+
+```console
+$ gpg --list-key
+gpg: checking the trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+/tmp.FLZC0xcM/pubring.kbx
+-------------------------------
+pub   rsa4096/0xFF3E7D88647EBCDB 2021-08-22 [C]
+       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
+uid                   [ultimate] Dr Duh <doc@duh.to>
+```
+
+The key fingerprint (`011C E16B D45B 27A5 5BA8 776D FF3E 7D88 647E BCDB`) will be used to create the three subkeys for signing, authentication and encryption.
 
 Export the key ID as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) (`KEYID`) for use later:
 
@@ -585,214 +525,57 @@ $ gpg  --default-key $OLDKEY --sign-key $KEYID
 
 # Sub-keys
 
-Edit the master key to add sub-keys:
+Now create the three subkeys for signing, authentication and encryption. Use a 1 year expiration for sub-keys - they can be renewed using the offline master key. See [rotating keys](#rotating-keys).
 
+We will use the the quick key manipulation interface of GNUPG (with `--quick-add-key`). See [the documentation](https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html#Unattended-GPG-key-generation).
+
+Create a [signing subkey](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623):
 ```console
-$ gpg --expert --edit-key $KEYID
-
-Secret key is available.
-
-sec  rsa4096/0xEA5DE91459B80592
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-[ultimate] (1). Dr Duh <doc@duh.to>
+$ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
+ rsa4096 sign 1y
 ```
 
-Use 4096-bit RSA keys.
-
-Use a 1 year expiration for sub-keys - they can be renewed using the offline master key. See [rotating keys](#rotating-keys).
-
-## Signing
-
-Create a [signing key](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623) by selecting `addkey` then `(4) RSA (sign only)`:
-
+Now create an [encryption subkey](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php):
 ```console
-gpg> addkey
-Key is protected.
-
-You need a passphrase to unlock the secret key for
-user: "Dr Duh <doc@duh.to>"
-4096-bit RSA key, ID 0xFF3E7D88647EBCDB, created 2016-05-24
-
-Please select what kind of key you want:
-   (3) DSA (sign only)
-   (4) RSA (sign only)
-   (5) Elgamal (encrypt only)
-   (6) RSA (encrypt only)
-   (7) DSA (set your own capabilities)
-   (8) RSA (set your own capabilities)
-Your selection? 4
-RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
-Requested keysize is 4096 bits
-Please specify how long the key should be valid.
-         0 = key does not expire
-      <n>  = key expires in n days
-      <n>w = key expires in n weeks
-      <n>m = key expires in n months
-      <n>y = key expires in n years
-Key is valid for? (0) 1y
-Key expires at Mon 10 Sep 2018 00:00:00 PM UTC
-Is this correct? (y/N) y
-Really create? (y/N) y
-We need to generate a lot of random bytes. It is a good idea to perform
-some other action (type on the keyboard, move the mouse, utilize the
-disks) during the prime generation; this gives the random number
-generator a better chance to gain enough entropy.
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S
-[ultimate] (1). Dr Duh <doc@duh.to>
+$ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
+ rsa4096 encrypt 1y
 ```
 
-## Encryption
-
-Next, create an [encryption key](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php) by selecting `(6) RSA (encrypt only)`:
-
+Finally, create an [authentication subkey](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for):
 ```console
-gpg> addkey
-Please select what kind of key you want:
-   (3) DSA (sign only)
-   (4) RSA (sign only)
-   (5) Elgamal (encrypt only)
-   (6) RSA (encrypt only)
-   (7) DSA (set your own capabilities)
-   (8) RSA (set your own capabilities)
-  (10) ECC (sign only)
-  (11) ECC (set your own capabilities)
-  (12) ECC (encrypt only)
-  (13) Existing key
-Your selection? 6
-RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
-Requested keysize is 4096 bits
-Please specify how long the key should be valid.
-         0 = key does not expire
-      <n>  = key expires in n days
-      <n>w = key expires in n weeks
-      <n>m = key expires in n months
-      <n>y = key expires in n years
-Key is valid for? (0) 1y
-Key expires at Mon 10 Sep 2018 00:00:00 PM UTC
-Is this correct? (y/N) y
-Really create? (y/N) y
-We need to generate a lot of random bytes. It is a good idea to perform
-some other action (type on the keyboard, move the mouse, utilize the
-disks) during the prime generation; this gives the random number
-generator a better chance to gain enough entropy.
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09       usage: E
-[ultimate] (1). Dr Duh <doc@duh.to>
+$ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
+ rsa4096 auth 1y
 ```
 
-## Authentication
-
-Finally, create an [authentication key](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for).
-
-GPG doesn't provide an authenticate-only key type, so select `(8) RSA (set your own capabilities)` and toggle the required capabilities until the only allowed action is `Authenticate`:
-
+Let's check the final result:
 ```console
-gpg> addkey
-Please select what kind of key you want:
-   (3) DSA (sign only)
-   (4) RSA (sign only)
-   (5) Elgamal (encrypt only)
-   (6) RSA (encrypt only)
-   (7) DSA (set your own capabilities)
-   (8) RSA (set your own capabilities)
-  (10) ECC (sign only)
-  (11) ECC (set your own capabilities)
-  (12) ECC (encrypt only)
-  (13) Existing key
-Your selection? 8
-
-Possible actions for a RSA key: Sign Encrypt Authenticate
-Current allowed actions: Sign Encrypt
-
-   (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
-   (A) Toggle the authenticate capability
-   (Q) Finished
-
-Your selection? S
-
-Possible actions for a RSA key: Sign Encrypt Authenticate
-Current allowed actions: Encrypt
-
-   (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
-   (A) Toggle the authenticate capability
-   (Q) Finished
-
-Your selection? E
-
-Possible actions for a RSA key: Sign Encrypt Authenticate
-Current allowed actions:
-
-   (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
-   (A) Toggle the authenticate capability
-   (Q) Finished
-
-Your selection? A
-
-Possible actions for a RSA key: Sign Encrypt Authenticate
-Current allowed actions: Authenticate
-
-   (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
-   (A) Toggle the authenticate capability
-   (Q) Finished
-
-Your selection? Q
-RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
-Requested keysize is 4096 bits
-Please specify how long the key should be valid.
-         0 = key does not expire
-      <n>  = key expires in n days
-      <n>w = key expires in n weeks
-      <n>m = key expires in n months
-      <n>y = key expires in n years
-Key is valid for? (0) 1y
-Key expires at Mon 10 Sep 2018 00:00:00 PM UTC
-Is this correct? (y/N) y
-Really create? (y/N) y
-We need to generate a lot of random bytes. It is a good idea to perform
-some other action (type on the keyboard, move the mouse, utilize the
-disks) during the prime generation; this gives the random number
-generator a better chance to gain enough entropy.
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09       usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
+$ gpg --list-keys
+/tmp.FLZC0xcM/pubring.kbx
+-------------------------------
+pub   rsa4096/0xFF3E7D88647EBCDB 2021-08-22 [C]
+      Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
+uid                   [ultimate] Dr Duh <doc@duh.to>
+sub   rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
+sub   rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
+sub   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 ```
 
-Finish by saving the keys.
+If you want to add an extra UID, open the keyring:
 
 ```console
-gpg> save
-```
+-gpg> save
+
 
 ## Add extra identities
 
-(Optional) To add additional email addresses or identities, use `adduid`:
+(Optional) To add additional email addresses or identities, use `adduid`.
+
+First open the keyring:
+```console
+$ gpg --expert --edit-key $KEYID
+```
+
+Then add the new identity:
 
 ```console
 gpg> adduid

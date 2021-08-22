@@ -1,0 +1,29 @@
+%echo Generating a OpenPGP key
+
+# uncomment the following line to remove asking for a passphrase
+#%no-protection
+
+Key-Type: RSA
+Key-Length: 4096
+# Key generated is a master key ("certificate")
+Key-Usage: cert
+
+# Parameters to generate a subkey
+# Subkey-Type: ELG-E
+# Subkey-Length: 4096
+# Choose one of following options
+# Subkey-Usage: encrypt
+# Subkey-Usage: sign
+# Subkey-Usage: auth
+
+# select a name and email address - neither has to be valid nor existing
+Name-Real: Dr Duh
+Name-Email: <doc@duh.to>
+
+# Do not set the key to expire
+Expire-Date: 0
+
+# Do a commit here, so that we can later print "done" :-)
+%commit
+
+%echo done
