@@ -445,7 +445,7 @@ Disable networking for the remainder of the setup.
 
 # Master key
 
-The first key to generate is the master key. It will be used for certification only: to issue sub-keys that are used for encryption, signing and authentication.
+The first key to be generated is the master key. It will be used for certification only when issuing sub-keys that are used for encryption, signing and authentication.
 
 **Important** The master key should be kept offline at all times and only accessed to revoke or issue new sub-keys. Keys can also be generated on the YubiKey itself to ensure no other copies exist.
 
@@ -1603,7 +1603,7 @@ Secret key is available
 
 ## Renewing sub-keys
 
-Renewing sub-keys is simpler: you do not need to generate new keys, move keys to the YubiKey, or update any SSH public keys linked to the GPG key.  All you need to do is to change the expiry time associated with the public key (which requires access to the master key you just loaded) and then to export that public key and import it on any computer where you wish to use the **GPG** (as distinct from the SSH) key.
+Renewing sub-keys is simpler: you do not need to generate new keys, move keys to the YubiKey, or update any SSH public keys linked to the GPG key. All you need to do is to change the expiry time associated with the public key (which requires access to the master key you just loaded) and then to export that public key and import it on any computer where you wish to use the **GPG** (as distinct from the SSH) key.
 
 To change the expiration date of all sub-keys, start by selecting all keys:
 
@@ -1669,7 +1669,7 @@ ssb*  rsa4096/0x3F29127E79649A3D
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
 
-Then, use the `expire` command to set a new expiration date.  (Despite the name, this will not cause currently valid keys to become expired).
+Then, use the `expire` command to set a new expiration date. (Despite the name, this will not cause currently valid keys to become expired).
 
 ```console
 gpg> expire
@@ -1696,11 +1696,11 @@ Transfer that public key to the computer from which you use your GPG key, and th
 $ gpg --import gpg-0x*.asc
 ```
 
-This will extend the validity of your GPG key and will allow you to use it for SSH authorization.  Note that you do _not_ need to update the SSH public key located on remote servers.
+This will extend the validity of your GPG key and will allow you to use it for SSH authorization. Note that you do _not_ need to update the SSH public key located on remote servers.
 
 ## Rotating keys
 
-Rotating keys is more a bit more involved.  First, follow the original steps to generate each sub-key. Previous sub-keys may be kept or deleted from the identity.
+Rotating keys is more a bit more involved. First, follow the original steps to generate each sub-key. Previous sub-keys may be kept or deleted from the identity.
 
 Finish by exporting new keys:
 
@@ -1830,7 +1830,7 @@ set -x SSH_AUTH_SOCK (gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
 ```
 
-Note that if you use `ForwardAgent` for ssh-agent forwarding, `SSH_AUTH_SOCK` only needs to be set on the *local* laptop (workstation), where the YubiKey is plugged in.  On the *remote* server that we SSH into, `ssh` will automatically set `SSH_AUTH_SOCK` to something like `/tmp/ssh-mXzCzYT2Np/agent.7541` when we connect.  We therefore do **NOT** manually set `SSH_AUTH_SOCK` on the server - doing so would break [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding).
+Note that `SSH_AUTH_SOCK` normally only needs to be set on the _local_ laptop (workstation), where the YubiKey is plugged in. On the _remote_ server that we SSH into, `ssh` will automatically set `SSH_AUTH_SOCK` to something like `/tmp/ssh-mXzCzYT2Np/agent.7541` when we connect. We therefore do **NOT** manually set `SSH_AUTH_SOCK` on the server - doing so would break [SSH Agent Forwarding](#remote-machines-agent-forwarding).
 
 If you use `S.gpg-agent.ssh` (see [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more info), `SSH_AUTH_SOCK` should also be set on the *remote*. However, `GPG_TTY` should not be set on the *remote*, explanation specified in that section.
 
@@ -1939,7 +1939,7 @@ For example, `tmux` does not have some environment variables like `$SSH_AUTH_SOC
 
 In the above steps, you have successfully configured a local ssh-agent.
 
-You should now be able use `ssh -A remote` on the _local_ machine to log into _remote_, and should then be able to use YubiKey as if it were connected to the remote machine. For example, using e.g. `ssh-add -l` on that remote machine should show the public key from the YubiKey (note `cardno:`).  (If you don't want to have to remember to use `ssh -A`, you can use `ForwardAgent yes` in `~/.ssh/config`.  As a security best practice, always use `ForwardAgent yes` only for a single `Hostname`, never for all servers.)
+You should now be able use `ssh -A remote` on the _local_ machine to log into _remote_, and should then be able to use YubiKey as if it were connected to the remote machine. For example, using e.g. `ssh-add -l` on that remote machine should show the public key from the YubiKey (note `cardno:`). (If you don't want to have to remember to use `ssh -A`, you can use `ForwardAgent yes` in `~/.ssh/config`. As a security best practice, always use `ForwardAgent yes` only for a single `Hostname`, never for all servers.)
 
 ### Use S.gpg-agent.ssh
 
