@@ -2535,19 +2535,19 @@ To require a touch for each key operation, install [YubiKey Manager](https://dev
 Authentication:
 
 ```console
-$ ykman openpgp keys set-touch aut on
+$ ykman openpgp keys set-touch AUT ON
 ```
 
 Signing:
 
 ```console
-$ ykman openpgp keys set-touch sig on
+$ ykman openpgp keys set-touch SIG ON
 ```
 
 Encryption:
 
 ```console
-$ ykman openpgp keys set-touch enc on
+$ ykman openpgp keys set-touch ENC ON
 ```
 
 Depending on how the YubiKey is going to be used, you may want to look at the policy options for each of these and adjust the above commands accordingly. They can be viewed with the following command:
