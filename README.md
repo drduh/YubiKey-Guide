@@ -79,6 +79,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Mailvelope on macOS](#mailvelope-on-macos)
   * [Mutt](#mutt)
 - [Reset](#reset)
+- [Recovery after reset](#recovery-after-reset)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
 - [Alternatives](#alternatives)
@@ -2664,10 +2665,9 @@ Reset code:  NOT SET
 Admin PIN:   12345678
 ```
 
-
 # Recovery after reset
 
-If for whatever reason you need to reinstate your YubiKey from your master key backup (such as the one stored on an encrypted USB described in [Backup keys](#backup-keys)), follow the following steps in [Rotating keys](#rotating-keys) to setup your environment, and then follow the steps of again [Configure Smartcard](#configure-smartcard).
+If for whatever reason you need to reinstate your YubiKey from your master key backup (such as the one stored on an encrypted USB described in [Backup](#backup)), follow the following steps in [Rotating keys](#rotating-keys) to setup your environment, and then follow the steps of again [Configure Smartcard](#configure-smartcard).
 
 Before you unmount your backup, ask yourself if you should make another one just in case.
 
