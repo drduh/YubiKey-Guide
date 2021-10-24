@@ -36,6 +36,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Export public keys](#export-public-keys)
 - [Configure Smartcard](#configure-smartcard)
   * [Change PIN](#change-pin)
+  * [Enable KDF](#enable-kdf)
   * [Set information](#set-information)
 - [Transfer keys](#transfer-keys)
   * [Signing](#signing-1)
@@ -1274,6 +1275,7 @@ Key attributes ...: rsa2048 rsa2048 rsa2048
 Max. PIN lengths .: 127 127 127
 PIN retry counter : 3 0 3
 Signature counter : 0
+KDF setting ......: off
 Signature key ....: [none]
 Encryption key....: [none]
 Authentication key: [none]
@@ -1285,6 +1287,16 @@ General key info..: [none]
 **Windows**
 
 Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this is not the similarly named older YubiKey NEO Manager) to enable CCID functionality.
+
+## Enable KDF
+Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing the PIN from being passed as plain text.
+
+```console
+gpg/card> admin
+Admin commands are allowed
+
+gpg/card> kdf-setup
+```
 
 ## Change PIN
 
@@ -1305,9 +1317,6 @@ Values are valid up to 127 ASCII characters and must be at least 6 (*PIN*) or 8 
 To update the GPG PINs on the Yubikey:
 
 ```console
-gpg/card> admin
-Admin commands are allowed
-
 gpg/card> passwd
 gpg: OpenPGP card no. D2760001240102010006055532110000 detected
 
@@ -1376,6 +1385,7 @@ Key attributes ...: rsa2048 rsa2048 rsa2048
 Max. PIN lengths .: 127 127 127
 PIN retry counter : 3 0 3
 Signature counter : 0
+KDF setting ......: on
 Signature key ....: [none]
 Encryption key....: [none]
 Authentication key: [none]
@@ -1681,6 +1691,7 @@ Key attributes ...: rsa4096 rsa4096 rsa4096
 Max. PIN lengths .: 127 127 127
 PIN retry counter : 3 3 3
 Signature counter : 0
+KDF setting ......: on
 Signature key ....: 07AA 7735 E502 C5EB E09E  B8B0 BECF A3C1 AE19 1D15
       created ....: 2016-05-24 23:22:01
 Encryption key....: 6F26 6F46 845B BEB8 BDF3  7E9B 5912 A795 E90D D2CF
