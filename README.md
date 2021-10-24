@@ -988,8 +988,8 @@ Be careful before using the write command.
 Device does not contain a recognized partition table.
 Created a new DOS disklabel with disk identifier 0x3c1ad14a.
 
-Command (m for help): o
-Created a new DOS disklabel with disk identifier 0xd756b789.
+Command (m for help): g
+Created a new GPT disklabel (GUID: 4E7495FD-85A3-3E48-97FC-2DD8D41516C3).
 
 Command (m for help): w
 The partition table has been altered.
@@ -1103,8 +1103,9 @@ $ doas disklabel -h sd2
 Initialize the disk by creating an `a` partition with FS type `RAID` and size of 25 Megabytes:
 
 ```console
-$ doas fdisk -iy sd2
+$ doas fdisk -giy sd2
 Writing MBR at offset 0.
+Writing GPT.
 
 $ doas disklabel -E sd2
 Label editor (enter '?' for help at any prompt)
@@ -1129,8 +1130,9 @@ softraid0: CRYPTO volume attached as sd3
 Create an `i` partition on the new crypto volume and the filesystem:
 
 ```console
-$ doas fdisk -iy sd3
+$ doas fdisk -giy sd3
 Writing MBR at offset 0.
+Writing GPT.
 
 $ doas disklabel -E sd3
 Label editor (enter '?' for help at any prompt)
