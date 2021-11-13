@@ -4,7 +4,7 @@ Keys stored on YubiKey are [non-exportable](https://support.yubico.com/support/s
 
 **New!** [drduh/Purse](https://github.com/drduh/Purse) is a password manager which uses GPG and YubiKey.
 
-**Security Note**: If you followed this guide before Jan 2021, your PUK (Pin Unblock Key) may be set to its default value of `12345678`. An attacker can use this to reset your PIN and use your Yubikey. Please see the [Change PUK](#change-puk) section for details on how to change your PUK.
+> **Security Note**: If you followed this guide before Jan 2021, your GPG *PIN* and *Admin PIN* may be set to their default values (`123456` and `12345678` respectively). This would allow an attacker to use your Yubikey or reset your PIN. Please see the [Change PIN](#change-pin) section for details on how to change your PINs.
 
 If you have a comment or suggestion, please open an [Issue](https://github.com/drduh/YubiKey-Guide/issues) on GitHub.
 
