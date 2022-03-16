@@ -463,7 +463,7 @@ ydOmByxmDe63u7gqx2XI9eDgpvJwibNH
 Use upper case letters for improved readability if they are written down:
 
 ```console
-$ tr -dc '[:upper:]' < /dev/urandom | fold -w 20 | head -n1
+$ LC_ALL=C tr -dc '[:upper:]' < /dev/urandom | fold -w 20 | head -n1
 BSSYMUGGTJQVWZZWOPJG
 ```
 
