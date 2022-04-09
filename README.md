@@ -1557,7 +1557,7 @@ You can force GPG to scan the card and re-create the stubs to point to another Y
 
 Having created two (or more Yubikeys) with the same GPG key (as described above) where the stubs are pointing to the second Yubikey:
 	
-Insert the first Yubikey (which has a different serial numnber) and run the following command:
+Insert the first Yubikey (which has a different serial number) and run the following command:
 	
 ```console
 $  gpg-connect-agent "scd serialno" "learn --force" /bye
