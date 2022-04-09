@@ -316,7 +316,7 @@ $ doas pkg_add gnupg pcsc-tools
 Download and install [Homebrew](https://brew.sh/) and the following packages:
 
 ```console
-$ brew install gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac
+$ brew install gnupg yubikey-personalization hopenpgp-tools ykman pinentry-mac wget
 ```
 
 **Note** An additional Python package dependency may need to be installed to use [`ykman`](https://support.yubico.com/support/solutions/articles/15000012643-yubikey-manager-cli-ykman-user-guide) - `pip install yubikey-manager`
