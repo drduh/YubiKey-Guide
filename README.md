@@ -363,13 +363,12 @@ If you have a hardware device other than the CPU based one, install the accompan
 OneRNG specific example:
 
 ```
-$ sudo apt -y install python-gnupg
-$ wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.6-1_all.deb
+$ wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.7-1_all.deb
 
-$ sha256sum onerng_3.6-1_all.deb
-a9ccf7b04ee317dbfc91518542301e2d60ebe205d38e80563f29aac7cd845ccb  onerng_3.6-1_all.deb
+$ sha256sum onerng_3.7-1_all.deb
+b7cda2fe07dce219a95dfeabeb5ee0f662f64ba1474f6b9dddacc3e8734d8f57  onerng_3.7-1_all.deb
 
-$ sudo dpkg -i onerng_3.6-1_all.deb
+$ sudo dpkg -i onerng_3.7-1_all.deb
 
 $ echo "HRNGDEVICE=/dev/ttyACM0" | sudo tee /etc/default/rng-tools
 ```
