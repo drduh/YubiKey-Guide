@@ -2395,7 +2395,7 @@ Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent.plist` with the following con
 ```
 
 ```console
-launchctl load gnupg.gpg-agent.plist
+launchctl load $HOME/Library/LaunchAgents/gnupg.gpg-agent.plist
 ```
 
 Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist` with the following contens:
@@ -2420,7 +2420,7 @@ Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist` with the follo
 ```
 
 ```console
-launchctl load gnupg.gpg-agent-symlink.plist
+launchctl load $HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist
 ```
 
 You will need to either reboot, or log out and log back in, in order to activate these changes.
