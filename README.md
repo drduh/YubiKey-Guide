@@ -12,6 +12,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Prepare environment](#prepare-environment)
 - [Required software](#required-software)
   * [Debian and Ubuntu](#debian-and-ubuntu)
+  * [Fedora](#fedora)
   * [Arch](#arch)
   * [RHEL7](#rhel7)
   * [NixOS](#nixos)
@@ -241,6 +242,15 @@ $ pip3 install yubikey-manager
 $ sudo service pcscd start
 
 $ ~/.local/bin/ykman openpgp info
+```
+
+## Fedora
+```console
+$ sudo dnf install wget
+$ wget https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-release-34-2.noarch.rpm
+$ sudo rpm -Uvh rpmsphere-release*rpm
+
+$ sudo dnf install gnupg2 dirmngr cryptsetup gnupg2-smime pcsc-tools opensc pcsc-lite secure-delete pgp-tools yubikey-personalization-gui
 ```
 
 ## Arch
