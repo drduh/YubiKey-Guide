@@ -2760,7 +2760,7 @@ Before you unmount your backup, ask yourself if you should make another one just
 
 # Alternatives
 
-*TODO: Information about other ways to authenticate SSH (e.g., without GPG) and other YubiKey features*
+* [`piv-agent`](https://github.com/smlx/piv-agent) is an SSH and GPG agent which you can use with your PIV hardware security device (e.g. a Yubikey).
 
 # Links
 
