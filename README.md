@@ -30,6 +30,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   * [Encryption](#encryption)
   * [Authentication](#authentication)
   * [Add extra identities](#add-extra-identities)
+- [Create keys with --batch and --quick-add-key](#create-keys-with---batch-and---quick-add-keys)
 - [Verify](#verify)
 - [Export secret keys](#export-secret-keys)
 - [Revocation certificate](#revocation-certificate)
@@ -803,8 +804,14 @@ gpg> save
 
 ## Add extra identities
 
-(Optional) To add additional email addresses or identities, use `adduid`:
+(Optional) To add additional email addresses or identities, use `adduid`.
 
+First open the keyring:
+```console
+$ gpg --expert --edit-key $KEYID
+```
+
+Then add the new identity:
 ```console
 gpg> adduid
 Real name: Dr Duh
@@ -895,6 +902,77 @@ gpg> save
 ```
 
 By default, the last identity added will be the primary user ID - use `primary` to change that.
+
+# Create keys with `--batch` and `--quick-add-keys`
+
+To remove some complexity from the process, we will show an alternate procedure to generate the keys using template files and the `--batch` parameter. For futher details, full GNUPG documentation can be found [at this link](https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html). This procedure will have just the same result as described above.
+
+For your convenience you can start from this RSA4096 key template: [gen-params-rsa4096](contrib/gen-params-rsa4096). If you're using GnuPG v2.1.7 or newer we strongly recommend generating ED25519 keys ([gen-params-ed25519](contrib/gen-params-ed25519), the procedure is the same). These templates will not set the master key to expire - see [Note #3](#notes).
+
+Generate a RSA4096 master key:
+
+```console
+$ gpg --batch --generate-key gen-params-rsa4096
+gpg: Generating a basic OpenPGP key
+gpg: key 0xEA5DE91459B80592 marked as ultimately trusted
+gpg: revocation certificate stored as '/tmp.FLZC0xcM/openpgp-revocs.d/D6F924841F78D62C65ABB9588B461860159FFB7B.rev'
+gpg: done
+```
+
+Let's check the result:
+
+```console
+$ gpg --list-key
+gpg: checking the trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+/tmp.FLZC0xcM/pubring.kbx
+-------------------------------
+pub   rsa4096/0xFF3E7D88647EBCDB 2021-08-22 [C]
+       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
+uid                   [ultimate] Dr Duh <doc@duh.to>
+```
+
+The key fingerprint (`011C E16B D45B 27A5 5BA8 776D FF3E 7D88 647E BCDB`) will be used to create the three subkeys for signing, authentication and encryption.
+
+Now create the three subkeys for signing, authentication and encryption. Use a 1 year expiration for sub-keys - they can be renewed using the offline master key, see [rotating keys](#rotating-keys).
+
+We will use the the quick key manipulation interface of GNUPG (with `--quick-add-key`), see [the documentation](https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html#Unattended-GPG-key-generation).
+
+Create a [signing subkey](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623):
+
+```console
+$ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
+  rsa4096 sign 1y
+```
+
+Now create an [encryption subkey](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php):
+
+```console
+$ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
+  rsa4096 encrypt 1y
+```
+
+Finally, create an [authentication subkey](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for):
+
+```console
+$ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
+  rsa4096 auth 1y
+```
+
+Let's check the final result:
+
+```console
+$ gpg --list-keys
+/tmp.FLZC0xcM/pubring.kbx
+-------------------------------
+pub   rsa4096/0xFF3E7D88647EBCDB 2021-08-22 [C]
+      Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
+uid                   [ultimate] Dr Duh <doc@duh.to>
+sub   rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
+sub   rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
+sub   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
+```
 
 # Verify
 
