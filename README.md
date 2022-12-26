@@ -108,7 +108,6 @@ To create cryptographic keys, a secure environment that can be reasonably assure
 1. Separate hardened [Debian](https://www.debian.org/) or [OpenBSD](https://www.openbsd.org/) installation which can be dual booted
 1. Live image, such as [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html)
 1. Secure hardware/firmware ([Coreboot](https://www.coreboot.org/), [Intel ME removed](https://github.com/corna/me_cleaner))
-
 1. Dedicated air-gapped system with no networking capabilities
 
 This guide recommends using a bootable "live" Debian Linux image to provide such an environment, however, depending on your threat model, you may want to take fewer or more steps to secure it.
@@ -127,7 +126,7 @@ Verify the signature of the hashes file with GPG:
 
 ```console
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat 09 May 2020 05:17:57 PM PDT
+gpg: Signature made Sat 17 Dec 2022 11:06:20 AM PST
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Can't check signature: No public key
 
@@ -137,7 +136,7 @@ gpg: Total number processed: 1
 gpg:               imported: 1
 
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat 09 May 2020 05:17:57 PM PDT
+gpg: Signature made Sat 17 Dec 2022 11:06:20 AM PST
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>" [unknown]
 gpg: WARNING: This key is not certified with a trusted signature!
@@ -151,11 +150,11 @@ If the public key cannot be received, try changing the DNS resolver and/or use a
 $ gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 ```
 
-Ensure the SHA512 hash of the live image matches the one in the signed file.
+Ensure the SHA512 hash of the live image matches the one in the signed file - if there following command produces output, it is correct:
 
 ```console
 $ grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
-SHA512SUMS:799ec1fdb098caa7b60b71ed1fdb1f6390a1c6717b4314265e7042fa271c84f67fff0d0380297f60c4bcd0c1001e08623ab3d2a2ad64079d83d1795c40eb7a0a  debian-live-10.5.0-amd64-xfce.iso
+SHA512SUMS:f9976e2090a54667a26554267941792c293628cceb643963e425bf90449e3c0eeb616e8ededc187070910401c8ab0348fdbc3292b6d04e29dcfb472ac258a542  debian-live-11.6.0-amd64-xfce.iso
 ```
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
@@ -177,7 +176,7 @@ sd 2:0:0:0: [sdb] Write cache: disabled, read cache: enabled, doesn't support DP
 sdb: sdb1 sdb2
 sd 2:0:0:0: [sdb] Attached SCSI removable disk
 
-$ sudo dd if=debian-live-10.4.0-amd64-xfce.iso of=/dev/sdb bs=4M; sync
+$ sudo dd if=debian-live-*-amd64-xfce.iso of=/dev/sdb bs=4M status=progress ; sync
 465+1 records in
 465+1 records out
 1951432704 bytes (2.0 GB, 1.8 GiB) copied, 42.8543 s, 45.5 MB/s
@@ -190,7 +189,7 @@ $ dmesg | tail -n2
 sd2 at scsibus4 targ 1 lun 0: <TS-RDF5, SD Transcend, TS3A> SCSI4 0/direct removable serial.0000000000000
 sd2: 15193MB, 512 bytes/sector, 31116288 sectors
 
-$ doas dd if=debian-live-10.4.0-amd64-xfce.iso of=/dev/rsd2c bs=4m
+$ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 465+1 records in
 465+1 records out
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
@@ -208,29 +207,19 @@ Open the terminal and install required software packages.
 
 ## Debian and Ubuntu
 
-**Note** Live Ubuntu images [may require modification](https://github.com/drduh/YubiKey-Guide/issues/116) to `/etc/apt/sources.list`
-
 ```console
-$ sudo apt update
-
-$ sudo apt -y upgrade
+$ sudo apt update ; sudo apt -y upgrade
 
 $ sudo apt -y install wget gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd secure-delete hopenpgp-tools yubikey-personalization
 ```
 
-You may additionally need (particularly for Ubuntu 18.04 and 20.04):
+**Note** Live Ubuntu images [may require modification](https://github.com/drduh/YubiKey-Guide/issues/116) to `/etc/apt/sources.list` and may need additional packages:
 
 ```console
 $ sudo apt -y install libssl-dev swig libpcsclite-dev
 ```
 
-To download a copy of this guide:
-
-```console
-$ wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/README.md
-```
-
-To install and use the `ykman` utility:
+**Optional** Install the `ykman` utility, which will allow you to enable touch policies (requires admin PIN):
 
 ```console
 $ sudo apt -y install python3-pip python3-pyscard
@@ -239,13 +228,13 @@ $ pip3 install PyOpenSSL
 
 $ pip3 install yubikey-manager
 
-
 $ sudo service pcscd start
 
 $ ~/.local/bin/ykman openpgp info
 ```
 
 ## Fedora
+
 ```console
 $ sudo dnf install wget
 $ wget https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-release-34-2.noarch.rpm
@@ -481,23 +470,18 @@ You may also need more recent versions of [yubikey-personalization](https://deve
 
 Generating cryptographic keys requires high-quality [randomness](https://www.random.org/randomness/), measured as entropy.
 
-To check the available entropy available on Linux:
-
-```console
-$ cat /proc/sys/kernel/random/entropy_avail
-849
-```
-
 Most operating systems use software-based pseudorandom number generators. On newer machines there are CPU based hardware random number generators (HRNG) or you can use a separate hardware device like the White Noise or [OneRNG](https://onerng.info/onerng/) will [increase the speed](https://lwn.net/Articles/648550/) of entropy generation and possibly the quality.
 
-From YubiKey firmware version 5.2.3 onwards - which introduces "Enhancements to OpenPGP 3.4 Support" - we can gather additional entropy from the YubiKey itself via the SmartCard interface.
+YubiKey firmware version 5.2.3 introduced "Enhancements to OpenPGP 3.4 Support" - which can optionally gather additional entropy from YubiKey via the SmartCard interface.
 
 ## YubiKey
 
 To feed the system's PRNG with entropy generated by the YubiKey itself, issue:
+
 ```console
 $ echo "SCD RANDOM 512" | gpg-connect-agent | sudo tee /dev/random | hexdump -C
 ```
+
 This will seed the Linux kernel's PRNG with additional 512 bytes retrieved from the YubiKey.
 
 ## OneRNG
@@ -530,22 +514,6 @@ $ sudo atd
 
 $ sudo service rng-tools restart
 ```
-
-Test by emptying `/dev/random` - the light on the device will dim briefly:
-
-```console
-$ cat /dev/random >/dev/null
-[Press Control-C]
-```
-
-After a few seconds, verify the available entropy pool is quickly re-seeded:
-
-```console
-$ cat /proc/sys/kernel/random/entropy_avail
-3049
-```
-
-An entropy pool value greater than 2000 is sufficient.
 
 # Creating keys
 
@@ -592,7 +560,7 @@ use-agent
 throw-keyids
 ```
 
-Disable networking for the remainder of the setup.
+**Important** Disable networking for the remainder of the setup.
 
 # Master key
 
@@ -616,13 +584,13 @@ $ LC_ALL=C tr -dc '[:upper:]' < /dev/urandom | fold -w 20 | head -n1
 BSSYMUGGTJQVWZZWOPJG
 ```
 
-**Important** Save this credential in a permanent, secure place as it will be needed to issue new sub-keys after expiration, and to provision additional YubiKeys.
+**Important** Save this credential in a permanent, secure place as it will be needed to issue new sub-keys after expiration, and to provision additional YubiKeys, as well as to your Debian Live environment clipboard, as you'll need it several times throughout to generate keys.
 
 **Tip** On Linux or OpenBSD, select the password using the mouse or by double-clicking on it to copy to clipboard. Paste using the middle mouse button or `Shift`-`Insert`.
 
 Generate a new key with GPG, selecting `(8) RSA (set your own capabilities)`, `Certify` capability only and `4096` bit key size.
 
-Do not set the master key to expire - see [Note #3](#notes).
+Do **not** set the master (certify) key to expire - see [Note #3](#notes).
 
 ```console
 $ gpg --expert --full-generate-key
@@ -683,7 +651,7 @@ Key does not expire at all
 Is this correct? (y/N) y
 ```
 
-Input any name and email address:
+Input any name and email address (it doesn't have to be valid):
 
 ```console
 GnuPG needs to construct a user ID to identify your key.
@@ -1234,20 +1202,16 @@ Create a new partition with a 25 Megabyte size:
 ```console
 $ sudo fdisk /dev/mmcblk0
 
-Welcome to fdisk (util-linux 2.33.1).
+Welcome to fdisk (util-linux 2.36.1).
 Changes will remain in memory only, until you decide to write them.
 Be careful before using the write command.
 
 Command (m for help): n
-Partition type
-   p   primary (0 primary, 0 extended, 4 free)
-   e   extended (container for logical partitions)
-Select (default p): p
-Partition number (1-4, default 1):
-First sector (2048-31116287, default 2048):
-Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-31116287, default 31116287): +25M
+Partition number (1-128, default 1):
+First sector (2048-30261214, default 2048):
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-30261214, default 30261214): +25M
 
-Created a new partition 1 of type 'Linux' and of size 25 MiB.
+Created a new partition 1 of type 'Linux filesystem' and of size 25 MiB.
 
 Command (m for help): w
 The partition table has been altered.
@@ -1255,7 +1219,7 @@ Calling ioctl() to re-read partition table.
 Syncing disks.
 ```
 
-Use [LUKS](https://askubuntu.com/questions/97196/how-secure-is-an-encrypted-luks-filesystem) to encrypt the new partition:
+Use [LUKS](https://askubuntu.com/questions/97196/how-secure-is-an-encrypted-luks-filesystem) to encrypt the new partition. Generate a different password which will be used to protect the filesystem:
 
 ```console
 $ sudo cryptsetup luksFormat /dev/mmcblk0p1
@@ -1276,20 +1240,13 @@ $ sudo cryptsetup luksOpen /dev/mmcblk0p1 secret
 Enter passphrase for /dev/mmcblk0p1:
 ```
 
-Create a filesystem:
+Create an ext2 filesystem:
 
 ```console
 $ sudo mkfs.ext2 /dev/mapper/secret -L gpg-$(date +%F)
-Creating filesystem with 9216 1k blocks and 2304 inodes
-Superblock backups stored on blocks:
-        8193
-
-Allocating group tables: done
-Writing inode tables: done
-Writing superblocks and filesystem accounting information: done
 ```
 
-Mount the filesystem and copy the temporary directory with the keyring:
+Mount the filesystem and copy the temporary GnuPG directory with keyring:
 
 ```console
 $ sudo mkdir /mnt/encrypted-storage
@@ -1302,7 +1259,7 @@ $ sudo cp -avi $GNUPGHOME /mnt/encrypted-storage/
 **Optional** Backup the OneRNG package:
 
 ```console
-$ sudo cp onerng_3.6-1_all.deb /mnt/encrypted-storage/
+$ sudo cp onerng_3.7-1_all.deb /mnt/encrypted-storage/
 ```
 
 **Note** If you plan on setting up multiple keys, keep the backup mounted or remember to terminate the gpg process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
@@ -1410,16 +1367,16 @@ Create another partition on the removable storage device to store the public key
 ```console
 $ sudo fdisk /dev/mmcblk0
 
-Command (m for help): n
-Partition type
-   p   primary (1 primary, 0 extended, 3 free)
-   e   extended (container for logical partitions)
-Select (default p):
-Partition number (2-4, default 2):
-First sector (22528-31116287, default 22528):
-Last sector, +sectors or +size{K,M,G,T,P} (22528-31116287, default 31116287): +25M
+Welcome to fdisk (util-linux 2.36.1).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
 
-Created a new partition 2 of type 'Linux' and of size 25 MiB.
+Command (m for help): n
+Partition number (2-128, default 2):
+First sector (53248-30261214, default 53248):
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (53248-30261214, default 30261214): +25M
+
+Created a new partition 2 of type 'Linux filesystem' and of size 25 MiB.
 
 Command (m for help): w
 The partition table has been altered.
@@ -1427,13 +1384,6 @@ Calling ioctl() to re-read partition table.
 Syncing disks.
 
 $ sudo mkfs.ext2 /dev/mmcblk0p2
-Creating filesystem with 10240 1k blocks and 2560 inodes
-Superblock backups stored on blocks:
-        8193
-
-Allocating group tables: done
-Writing inode tables: done
-Writing superblocks and filesystem accounting information: done
 
 $ sudo mkdir /mnt/public
 
@@ -1492,14 +1442,16 @@ Plug in a YubiKey and use GPG to configure it as a smartcard:
 
 ```console
 $ gpg --card-edit
+
 Reader ...........: Yubico Yubikey 4 OTP U2F CCID
 Application ID ...: D2760001240102010006055532110000
+Application type .: OpenPGP
 Version ..........: 3.4
 Manufacturer .....: Yubico
 Serial number ....: 05553211
 Name of cardholder: [not set]
 Language prefs ...: [not set]
-Sex ..............: unspecified
+Salutation .......:
 URL of public key : [not set]
 Login data .......: [not set]
 Signature PIN ....: not forced
@@ -1528,6 +1480,7 @@ Admin commands are allowed
 Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this is not the similarly named older YubiKey NEO Manager) to enable CCID functionality.
 
 ## Enable KDF
+
 Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing the PIN from being passed as plain text. Note that this requires a relatively new version of GnuPG to work, and may not be compatible with other GPG clients (notably mobile clients). These incompatible clients will be unable to use the YubiKey GPG functions as the PIN will always be rejected. If you are not sure you will only be using your YubiKey on supported platforms, it may be better to skip this step.
 
 ```console
@@ -1583,10 +1536,10 @@ Q - quit
 Your selection? q
 ```
 
-The number of retry attempts can be changed with the following command, documented [here](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries):
+**Note** The number of retry attempts can be changed later with the following command, documented [here](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries):
 
 ```bash
-ykman openpgp access set-retries 5 5 5 -f -a YOUR_ADMIN_PIN
+$ ykman openpgp access set-retries 5 5 5 -f -a YOUR_ADMIN_PIN
 ```
 
 ## Set information
@@ -1801,16 +1754,16 @@ Obviously this command is not easy to remember so it is recommended to either cr
 	
 # Cleanup
 
-Ensure you have:
+Before finishing the setup, ensure you have done the following:
 
 * Saved encryption, signing and authentication sub-keys to YubiKey (`gpg -K` should show `ssb>` for sub-keys).
-* Saved the YubiKey user and admin PINs which you changed from defaults.
-* Saved the password to the GPG master key in a *permanent* location.
+* Saved the YubiKey user and admin PINs which are different and were changed from default values.
+* Saved the password to the GPG master key in a secure, long-term location.
 * Saved a copy of the master key, sub-keys and revocation certificate on an encrypted volume, to be stored offline.
-* Saved the password to that encrypted volume in a separate location.
+* Saved the password to that LUKS-encrypted volume in a secure, long-term location (separate from the device itself).
 * Saved a copy of the public key somewhere easily accessible later.
 
-Reboot or [securely delete](http://srm.sourceforge.net/) `$GNUPGHOME` and remove the secret keys from the GPG keyring:
+Now reboot or [securely delete](http://srm.sourceforge.net/) `$GNUPGHOME` and remove the secret keys from the GPG keyring:
 
 ```console
 $ gpg --delete-secret-key $KEYID
