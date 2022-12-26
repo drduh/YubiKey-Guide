@@ -1808,9 +1808,9 @@ Ensure you have:
 Reboot or [securely delete](http://srm.sourceforge.net/) `$GNUPGHOME` and remove the secret keys from the GPG keyring:
 
 ```console
-$ sudo srm -r $GNUPGHOME || sudo rm -rf $GNUPGHOME
-
 $ gpg --delete-secret-key $KEYID
+
+$ sudo srm -r $GNUPGHOME || sudo rm -rf $GNUPGHOME
 
 $ unset GNUPGHOME
 ```
