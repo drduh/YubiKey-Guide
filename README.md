@@ -2988,6 +2988,7 @@ Before you unmount your backup, ask yourself if you should make another one just
 # Alternatives
 
 * [`piv-agent`](https://github.com/smlx/piv-agent) is an SSH and GPG agent which you can use with your PIV hardware security device (e.g. a Yubikey).
+* [`keytotpm`](https://www.gnupg.org/documentation/manuals/gnupg/OpenPGP-Key-Management.html) is an option to use GnuPG with TPM systems.
 
 # Links
 
