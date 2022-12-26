@@ -1581,7 +1581,7 @@ Your selection? q
 The number of retry attempts can be changed with the following command, documented [here](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries):
 
 ```bash
-ykman openpgp set-pin-retries 5 5 5
+ykman openpgp access set-retries 5 5 5 -f -a YOUR_ADMIN_PIN
 ```
 
 ## Set information
