@@ -2545,7 +2545,7 @@ Now you can use PuTTY for public key SSH authentication. When the server asks fo
 The goal here is to make the SSH client inside WSL work together with the Windows agent you are using (gpg-agent.exe in our case). Here is what we are going to achieve:
 ![WSL agent architecture](media/schema_gpg.png)
 
-**Note** this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See the [weasel-pageant](https://github.com/vuori/weasel-pageant) readme for further information.
+**Note** this works only for SSH agent forwarding. Real GPG forwarding (encryption/decryption) is actually not supported. See [weasel-pageant](https://github.com/vuori/weasel-pageant) for further information or consider using [wsl2-ssh-pageant](https://github.com/BlackReloaded/wsl2-ssh-pageant) which supports both SSH and GPG agent forwarding.
 
 #### Use ssh-agent or use S.weasel-pegant
 
