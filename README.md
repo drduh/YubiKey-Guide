@@ -1303,7 +1303,7 @@ $ sudo cp -avi $GNUPGHOME /mnt/encrypted-storage/
 $ sudo cp onerng_3.6-1_all.deb /mnt/encrypted-storage/
 ```
 
-Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
+**Note** If you plan on setting up multiple keys, keep the backup mounted or remember to terminate the gpg process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
 
 Unmount, close and disconnect the encrypted volume:
 
@@ -1312,7 +1312,6 @@ $ sudo umount /mnt/encrypted-storage/
 
 $ sudo cryptsetup luksClose secret
 ```
-
 
 **OpenBSD**
 
@@ -1386,7 +1385,7 @@ $ doas mount /dev/sd3i /mnt/encrypted-storage
 $ doas cp -avi $GNUPGHOME /mnt/encrypted-storage
 ```
 
-Keep the backup mounted if you plan on setting up two or more keys as `keytocard` **will [delete](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html) the local copy** on save.
+**Note** If you plan on setting up multiple keys, keep the backup mounted or remember to terminate the gpg process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
 
 Otherwise, unmount and disconnect the encrypted volume:
 
@@ -1513,6 +1512,13 @@ Authentication key: [none]
 General key info..: [none]
 ```
 
+Enter administrative mode:
+
+```console
+gpg/card> admin
+Admin commands are allowed
+```
+
 **Note** If the card is locked, see [Reset](#reset).
 
 **Windows**
@@ -1523,9 +1529,6 @@ Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) applica
 Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing the PIN from being passed as plain text. Note that this requires a relatively new version of GnuPG to work, and may not be compatible with other GPG clients (notably mobile clients). These incompatible clients will be unable to use the YubiKey GPG functions as the PIN will always be rejected. If you are not sure you will only be using your YubiKey on supported platforms, it may be better to skip this step.
 
 ```console
-gpg/card> admin
-Admin commands are allowed
-
 gpg/card> kdf-setup
 ```
 
@@ -2470,10 +2473,13 @@ To authenticate:
 
 Run the following commands:
 
-	> git config --global core.sshcommand 'plink -agent'
-	> git config --global gpg.program 'C:\Program Files (x86)\GnuPG\bin\gpg.exe'
+```console
+git config --global core.sshcommand "plink -agent"
 
-You can then change the repository url to `git@github.com:USERNAME/repository` and any authenticated commands will be authorized by YubiKey.
+git config --global gpg.program 'C:\Program Files (x86)\GnuPG\bin\gpg.exe'
+```
+
+You can then change the repository URL to `git@github.com:USERNAME/repository` and any authenticated commands will be authorized by YubiKey.
 
 **Note** If you encounter the error `gpg: signing failed: No secret key` - run `gpg --card-status` with YubiKey plugged in and try the git command again.
 
@@ -2747,8 +2753,8 @@ Alternatively, use a script to delete the GnuPG shadowed key, where the card ser
 ```console
 $ cat >> ~/scripts/remove-keygrips.sh <<EOF
 #!/usr/bin/env bash
-test ! "$@" && echo "Specify a key." && exit 1
-KEYGRIPS="$(gpg --with-keygrip --list-secret-keys $@ | grep Keygrip | awk '{print $3}')"
+(( $# )) || { echo "Specify a key." >&2; exit 1; }
+KEYGRIPS=$(gpg --with-keygrip --list-secret-keys "$@" | awk '/Keygrip/ { print $3 }')
 for keygrip in $KEYGRIPS
 do
     rm "$HOME/.gnupg/private-keys-v1.d/$keygrip.key" 2> /dev/null
