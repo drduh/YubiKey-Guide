@@ -11,83 +11,85 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Purchase](#purchase)
 - [Prepare environment](#prepare-environment)
 - [Required software](#required-software)
-  * [Debian and Ubuntu](#debian-and-ubuntu)
-  * [Fedora](#fedora)
-  * [Arch](#arch)
-  * [RHEL7](#rhel7)
-  * [NixOS](#nixos)
-  * [OpenBSD](#openbsd)
-  * [macOS](#macos)
-  * [Windows](#windows)
+  - [Debian and Ubuntu](#debian-and-ubuntu)
+  - [Fedora](#fedora)
+  - [Arch](#arch)
+  - [RHEL7](#rhel7)
+  - [NixOS](#nixos)
+  - [OpenBSD](#openbsd)
+  - [macOS](#macos)
+  - [Windows](#windows)
 - [Entropy](#entropy)
+  - [YubiKey](#yubikey)
+  - [OneRNG](#onerng)
 - [Creating keys](#creating-keys)
-  * [Temporary working directory](#temporary-working-directory)
-  * [Harden configuration](#harden-configuration)
+  - [Temporary working directory](#temporary-working-directory)
+  - [Harden configuration](#harden-configuration)
 - [Master key](#master-key)
 - [Sign with existing key](#sign-with-existing-key)
 - [Sub-keys](#sub-keys)
-  * [Signing](#signing)
-  * [Encryption](#encryption)
-  * [Authentication](#authentication)
-  * [Add extra identities](#add-extra-identities)
+  - [Signing](#signing)
+  - [Encryption](#encryption)
+  - [Authentication](#authentication)
+  - [Add extra identities](#add-extra-identities)
 - [Verify](#verify)
 - [Export secret keys](#export-secret-keys)
 - [Revocation certificate](#revocation-certificate)
 - [Backup](#backup)
 - [Export public keys](#export-public-keys)
 - [Configure Smartcard](#configure-smartcard)
-  * [Change PIN](#change-pin)
-  * [Enable KDF](#enable-kdf)
-  * [Set information](#set-information)
+  - [Enable KDF](#enable-kdf)
+  - [Change PIN](#change-pin)
+  - [Set information](#set-information)
 - [Transfer keys](#transfer-keys)
-  * [Signing](#signing-1)
-  * [Encryption](#encryption-1)
-  * [Authentication](#authentication-1)
+  - [Signing](#signing)
+  - [Encryption](#encryption)
+  - [Authentication](#authentication)
 - [Verify card](#verify-card)
 - [Multiple YubiKeys](#multiple-yubikeys)
+  - [Switching between two or more Yubikeys](#switching-between-two-or-more-yubikeys)
 - [Cleanup](#cleanup)
 - [Using keys](#using-keys)
 - [Rotating keys](#rotating-keys)
-  * [Setup environment](#setup-environment)
-  * [Renewing sub-keys](#renewing-sub-keys)
-  * [Rotating keys](#rotating-keys-1)
+  - [Setup environment](#setup-environment)
+  - [Renewing sub-keys](#renewing-sub-keys)
+  - [Rotating keys](#rotating-keys)
 - [Adding notations](#adding-notations)
 - [SSH](#ssh)
-  * [Create configuration](#create-configuration)
-  * [Replace agents](#replace-agents)
-  * [Copy public key](#copy-public-key)
-  * [(Optional) Save public key for identity file configuration](#optional-save-public-key-for-identity-file-configuration)
-  * [Connect with public key authentication](#connect-with-public-key-authentication)
-  * [Import SSH keys](#import-ssh-keys)
-  * [Remote machines (SSH Agent Forwarding)](#remote-machines-ssh-agent-forwarding)
-      - [Use ssh-agent](#use-ssh-agent)
-      - [Use S.gpg-agent.ssh](#use-sgpg-agentssh)
-      - [Chained SSH Agent Forwarding](#chained-ssh-agent-forwarding)
-  * [GitHub](#github)
-  * [OpenBSD](#openbsd-1)
-  * [Windows](#windows-1)
-    + [WSL](#wsl)
+  - [Create configuration](#create-configuration)
+  - [Replace agents](#replace-agents)
+  - [Copy public key](#copy-public-key)
+  - [(Optional) Save public key for identity file configuration](#optional-save-public-key-for-identity-file-configuration)
+  - [Connect with public key authentication](#connect-with-public-key-authentication)
+  - [Import SSH keys](#import-ssh-keys)
+  - [Remote Machines (SSH Agent Forwarding)](#remote-machines-ssh-agent-forwarding)
+    - [Use ssh-agent](#use-ssh-agent)
+    - [Use S.gpg-agent.ssh](#use-sgpg-agentssh)
+    - [Chained SSH Agent Forwarding](#chained-ssh-agent-forwarding)
+  - [GitHub](#github)
+  - [OpenBSD](#openbsd)
+  - [Windows](#windows)
+    - [WSL](#wsl)
       - [Use ssh-agent or use S.weasel-pegant](#use-ssh-agent-or-use-sweasel-pegant)
       - [Prerequisites](#prerequisites)
       - [WSL configuration](#wsl-configuration)
       - [Remote host configuration](#remote-host-configuration)
-  * [macOS](#macos-1)
+  - [macOS](#macos)
 - [Remote Machines (GPG Agent Forwarding)](#remote-machines-gpg-agent-forwarding)
-  * [Steps for older distributions](#steps-for-older-distributions)
-  * [Chained GPG Agent Forwarding](#chained-gpg-agent-forwarding)
+  - [Steps for older distributions](#steps-for-older-distributions)
+  - [Chained GPG Agent Forwarding](#chained-gpg-agent-forwarding)
 - [Using Multiple Keys](#using-multiple-keys)
 - [Require touch](#require-touch)
 - [Email](#email)
-  * [Mailvelope on macOS](#mailvelope-on-macos)
-  * [Mutt](#mutt)
+  - [Mailvelope on macOS](#mailvelope-on-macos)
+  - [Mutt](#mutt)
 - [Reset](#reset)
 - [Recovery after reset](#recovery-after-reset)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
 - [Alternatives](#alternatives)
-  * [Create keys with batch](#create-keys-with-batch)
+  - [Create keys with batch](#create-keys-with-batch)
 - [Links](#links)
-
 
 # Purchase
 
@@ -2113,7 +2115,7 @@ It is now possible to continue following the Keyoxide guide and upload the key t
 
 # SSH
 
-_Note that if you want to use a **YubiKey ONLY for SSH** (and don't really care about PGP/GPG), then [since OpenSSH v8.2](https://www.openssh.com/txt/release-8.2) you alternatively can simply `ssh-keygen -t ed25519-sk` (without requiring anything else from this guide!), as explained [e.g. in this guide](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md). Yubico also recently announced support for resident ssh keys under OpenSSH 8.2+ on their blue "security key 5 nfc" as mentioned in their [blog post](https://www.yubico.com/blog/github-now-supports-ssh-security-keys/)._
+**Tip** If you want to use a YubiKey for SSH only (and don't really care about PGP/GPG), then [since OpenSSH v8.2](https://www.openssh.com/txt/release-8.2) you alternatively can simply `ssh-keygen -t ed25519-sk` (without requiring anything else from this guide!), as explained [in this guide](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md). Yubico also recently announced support for resident ssh keys under OpenSSH 8.2+ on their blue "security key 5 nfc" as mentioned in their [blog post](https://www.yubico.com/blog/github-now-supports-ssh-security-keys/)._
 
 [gpg-agent](https://wiki.archlinux.org/index.php/GnuPG#SSH_agent) supports the OpenSSH ssh-agent protocol (`enable-ssh-support`), as well as Putty's Pageant on Windows (`enable-putty-support`). This means it can be used instead of the traditional ssh-agent / pageant. There are some differences from ssh-agent, notably that gpg-agent does not _cache_ keys rather it converts, encrypts and stores them - persistently - as GPG keys and then makes them available to ssh clients. Any existing ssh private keys that you'd like to keep in `gpg-agent` should be deleted after they've been imported to the GPG agent.
 
@@ -2714,7 +2716,7 @@ YubiKey will blink when it is waiting for a touch. On Linux you can also use [yu
 
 GPG keys on YubiKey can be used with ease to encrypt and/or sign emails and attachments using [Thunderbird](https://www.thunderbird.net/), [Enigmail](https://www.enigmail.net) and [Mutt](http://www.mutt.org/). Thunderbird supports OAuth 2 authentication and can be used with Gmail. See [this guide](https://ssd.eff.org/en/module/how-use-pgp-linux) from EFF for detailed instructions. Mutt has OAuth 2 support since version 2.0.
 
-## Mailvelope on macOS
+## Mailvelope
 
 [Mailvelope](https://www.mailvelope.com/en) allows GPG keys on YubiKey to be used with Gmail and others.
 
@@ -2790,7 +2792,7 @@ Reset code:  NOT SET
 Admin PIN:   12345678
 ```
 
-# Recovery after reset
+## Recovery after reset
 
 If for whatever reason you need to reinstate your YubiKey from your master key backup (such as the one stored on an encrypted USB described in [Backup](#backup)), follow the following steps in [Rotating keys](#rotating-keys) to setup your environment, and then follow the steps of again [Configure Smartcard](#configure-smartcard).
 
@@ -2846,13 +2848,12 @@ Before you unmount your backup, ask yourself if you should make another one just
 
 - If, when you try the above `--edit-key` command, you get the error `Need the secret key to do this` - manually specify trust for the key in `~/.gnupg/gpg.conf` by using the `trust-key [key ID]` directive.
 
-- If, when using a previously provisioned YubiKey on a new computer with `pass`, you see the
-  following error on `pass insert`:
-    ```
-    gpg: 0x0000000000000000: There is no assurance this key belongs to the named user
-    gpg: [stdin]: encryption failed: Unusable public key
-    ```
-    you need to adjust the trust associated with the key. See the above bullet.
+- If, when using a previously provisioned YubiKey on a new computer with `pass`, you see the following error on `pass insert`, you need to adjust the trust associated with the key. See the note above.
+
+```
+gpg: 0x0000000000000000: There is no assurance this key belongs to the named user
+gpg: [stdin]: encryption failed: Unusable public key
+```
 
 - If you receive the error, `gpg: 0x0000000000000000: skipped: Unusable public key`, `signing failed: Unusable secret key`, or `encryption failed: Unusable public key` the sub-key may be expired and can no longer be used to encrypt nor sign messages. It can still be used to decrypt and authenticate, however.
 
@@ -2867,7 +2868,7 @@ Before you unmount your backup, ask yourself if you should make another one just
 
 ## Create keys with batch
 
-Keys can also be generated using template files and the `--batch` parameter - see [GnuPG documentation](https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html)
+Keys can also be generated using template files and the `batch` parameter - see [GnuPG documentation](https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html).
 
 Start from the [gen-params-rsa4096](contrib/gen-params-rsa4096) template. If you're using GnuPG v2.1.7 or newer, you can also use the ([gen-params-ed25519](contrib/gen-params-ed25519) template. These templates will not set the master key to expire - see [Note #3](#notes).
 
@@ -2922,6 +2923,7 @@ $ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
   rsa4096 auth 1y
 ```
 
+Continue with the Verify section of this guide.
 
 # Links
 
