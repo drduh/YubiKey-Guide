@@ -1303,7 +1303,7 @@ $ sudo cp -avi $GNUPGHOME /mnt/encrypted-storage/
 $ sudo cp onerng_3.6-1_all.deb /mnt/encrypted-storage/
 ```
 
-If you plan on setting up multiple keys, keep the backup mounted or remember to terminate the gpg process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
+**Note** If you plan on setting up multiple keys, keep the backup mounted or remember to terminate the gpg process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
 
 Unmount, close and disconnect the encrypted volume:
 
@@ -1385,7 +1385,7 @@ $ doas mount /dev/sd3i /mnt/encrypted-storage
 $ doas cp -avi $GNUPGHOME /mnt/encrypted-storage
 ```
 
-If you plan on setting up multiple keys, keep the backup mounted or remember to terminate the gpg process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
+**Note** If you plan on setting up multiple keys, keep the backup mounted or remember to terminate the gpg process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
 
 Otherwise, unmount and disconnect the encrypted volume:
 
@@ -2753,8 +2753,8 @@ Alternatively, use a script to delete the GnuPG shadowed key, where the card ser
 ```console
 $ cat >> ~/scripts/remove-keygrips.sh <<EOF
 #!/usr/bin/env bash
-test ! "$@" && echo "Specify a key." && exit 1
-KEYGRIPS="$(gpg --with-keygrip --list-secret-keys $@ | grep Keygrip | awk '{print $3}')"
+(( $# )) || { echo "Specify a key." >&2; exit 1; }
+KEYGRIPS=$(gpg --with-keygrip --list-secret-keys "$@" | awk '/Keygrip/ { print $3 }')
 for keygrip in $KEYGRIPS
 do
     rm "$HOME/.gnupg/private-keys-v1.d/$keygrip.key" 2> /dev/null
