@@ -584,7 +584,7 @@ BSSYMUGGTJQVWZZWOPJG
 
 **Tip** On Linux or OpenBSD, select the password using the mouse or by double-clicking on it to copy to clipboard. Paste using the middle mouse button or `Shift`-`Insert`.
 
-Generate a new key with GPG, selecting `(8) RSA (set your own capabilities)`, `Certify` capability only and `4096` bit key size.
+Generate a new key with GPG, selecting `(11) ECC (set your own capabilities)` and `Certify` capability only (or `(8) RSA (set your own capabilities)` and `4096` bit key size).
 
 Do **not** set the master (certify) key to expire - see [Note #3](#notes).
 
@@ -602,40 +602,36 @@ Please select what kind of key you want:
   (10) ECC (sign only)
   (11) ECC (set your own capabilities)
   (13) Existing key
-Your selection? 8
+  (14) Existing key from card
+Your selection? 11
 
-Possible actions for a RSA key: Sign Certify Encrypt Authenticate
-Current allowed actions: Sign Certify Encrypt
-
-   (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
-   (A) Toggle the authenticate capability
-   (Q) Finished
-
-Your selection? E
-
-Possible actions for a RSA key: Sign Certify Encrypt Authenticate
+Possible actions for a ECDSA/EdDSA key: Sign Certify Authenticate
 Current allowed actions: Sign Certify
 
    (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
    (A) Toggle the authenticate capability
    (Q) Finished
 
 Your selection? S
 
-Possible actions for a RSA key: Sign Certify Encrypt Authenticate
+Possible actions for a ECDSA/EdDSA key: Sign Certify Authenticate
 Current allowed actions: Certify
 
    (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
    (A) Toggle the authenticate capability
    (Q) Finished
 
 Your selection? Q
-RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
-Requested keysize is 4096 bits
+Please select which elliptic curve you want:
+   (1) Curve 25519
+   (3) NIST P-256
+   (4) NIST P-384
+   (5) NIST P-521
+   (6) Brainpool P-256
+   (7) Brainpool P-384
+   (8) Brainpool P-512
+   (9) secp256k1
+Your selection? 1
 Please specify how long the key should be valid.
          0 = key does not expire
       <n>  = key expires in n days
@@ -671,7 +667,7 @@ gpg: directory '/tmp.FLZC0xcM/openpgp-revocs.d' created
 gpg: revocation certificate stored as '/tmp.FLZC0xcM/openpgp-revocs.d/011CE16BD45B27A55BA8776DFF3E7D88647EBCDB.rev'
 public and secret key created and signed.
 
-pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
+pub   ed25519/0xFF3E7D88647EBCDB 2023-01-01 [C]
       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
 uid                              Dr Duh <doc@duh.to>
 ```
@@ -695,7 +691,7 @@ $ gpg --export-secret-keys --armor --output /tmp/new.sec
 Then sign the new key:
 
 ```console
-$ gpg  --default-key $OLDKEY --sign-key $KEYID
+$ gpg --default-key $OLDKEY --sign-key $KEYID
 ```
 
 # Sub-keys
@@ -707,65 +703,17 @@ $ gpg --expert --edit-key $KEYID
 
 Secret key is available.
 
-sec  rsa4096/0xEA5DE91459B80592
-    created: 2017-10-09  expires: never       usage: C
+sec  ed25519/0xFF3E7D88647EBCDB
+    created: 2023-01-01  expires: never       usage: C
     trust: ultimate      validity: ultimate
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
-
-Use 4096-bit RSA keys.
 
 Use a 1 year expiration for sub-keys - they can be renewed using the offline master key. See [rotating keys](#rotating-keys).
 
 ## Signing
 
-Create a [signing key](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623) by selecting `addkey` then `(4) RSA (sign only)`:
-
-```console
-gpg> addkey
-Key is protected.
-
-You need a passphrase to unlock the secret key for
-user: "Dr Duh <doc@duh.to>"
-4096-bit RSA key, ID 0xFF3E7D88647EBCDB, created 2016-05-24
-
-Please select what kind of key you want:
-   (3) DSA (sign only)
-   (4) RSA (sign only)
-   (5) Elgamal (encrypt only)
-   (6) RSA (encrypt only)
-   (7) DSA (set your own capabilities)
-   (8) RSA (set your own capabilities)
-Your selection? 4
-RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
-Requested keysize is 4096 bits
-Please specify how long the key should be valid.
-         0 = key does not expire
-      <n>  = key expires in n days
-      <n>w = key expires in n weeks
-      <n>m = key expires in n months
-      <n>y = key expires in n years
-Key is valid for? (0) 1y
-Key expires at Mon 10 Sep 2018 00:00:00 PM UTC
-Is this correct? (y/N) y
-Really create? (y/N) y
-We need to generate a lot of random bytes. It is a good idea to perform
-some other action (type on the keyboard, move the mouse, utilize the
-disks) during the prime generation; this gives the random number
-generator a better chance to gain enough entropy.
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S
-[ultimate] (1). Dr Duh <doc@duh.to>
-```
-
-## Encryption
-
-Next, create an [encryption key](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php) by selecting `(6) RSA (encrypt only)`:
+Create a signing key by selecting `addkey` then `(10) ECC (sign only)` (or `(4) RSA (sign only)`):
 
 ```console
 gpg> addkey
@@ -780,10 +728,18 @@ Please select what kind of key you want:
   (11) ECC (set your own capabilities)
   (12) ECC (encrypt only)
   (13) Existing key
-Your selection? 6
-RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
-Requested keysize is 4096 bits
+  (14) Existing key from card
+Your selection? 10
+Please select which elliptic curve you want:
+   (1) Curve 25519
+   (3) NIST P-256
+   (4) NIST P-384
+   (5) NIST P-521
+   (6) Brainpool P-256
+   (7) Brainpool P-384
+   (8) Brainpool P-512
+   (9) secp256k1
+Your selection? 1
 Please specify how long the key should be valid.
          0 = key does not expire
       <n>  = key expires in n days
@@ -791,7 +747,7 @@ Please specify how long the key should be valid.
       <n>m = key expires in n months
       <n>y = key expires in n years
 Key is valid for? (0) 1y
-Key expires at Mon 10 Sep 2018 00:00:00 PM UTC
+Key expires at Tue 01 Jan 2024 00:00:00 PM UTC
 Is this correct? (y/N) y
 Really create? (y/N) y
 We need to generate a lot of random bytes. It is a good idea to perform
@@ -799,13 +755,65 @@ some other action (type on the keyboard, move the mouse, utilize the
 disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09       usage: E
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C   
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S   
+[ultimate] (1). Dr Duh <doc@duh.to>
+```
+
+## Encryption
+
+Next, create an encryption key by selecting `(12) ECC (encrypt only)`:
+
+```console
+gpg> addkey
+Please select what kind of key you want:
+   (3) DSA (sign only)
+   (4) RSA (sign only)
+   (5) Elgamal (encrypt only)
+   (6) RSA (encrypt only)
+   (7) DSA (set your own capabilities)
+   (8) RSA (set your own capabilities)
+  (10) ECC (sign only)
+  (11) ECC (set your own capabilities)
+  (12) ECC (encrypt only)
+  (13) Existing key
+  (14) Existing key from card
+Your selection? 12
+Please select which elliptic curve you want:
+   (1) Curve 25519
+   (3) NIST P-256
+   (4) NIST P-384
+   (5) NIST P-521
+   (6) Brainpool P-256
+   (7) Brainpool P-384
+   (8) Brainpool P-512
+   (9) secp256k1
+Your selection? 1
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Key is valid for? (0) 1y
+Key expires at Tue 01 Jan 2024 00:00:00 PM UTC
+Is this correct? (y/N) y
+Really create? (y/N) y
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action (type on the keyboard, move the mouse, utilize the
+disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
 
@@ -813,7 +821,7 @@ ssb  rsa4096/0x5912A795E90DD2CF
 
 Finally, create an [authentication key](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for).
 
-GPG doesn't provide an authenticate-only key type, so select `(8) RSA (set your own capabilities)` and toggle the required capabilities until the only allowed action is `Authenticate`:
+GPG doesn't provide an authenticate-only key type, so select `(11) ECC (set your own capabilities)` (or `(8) RSA (set your own capabilities)`) and toggle the required capabilities until the only allowed action is `Authenticate`:
 
 ```console
 gpg> addkey
@@ -828,50 +836,45 @@ Please select what kind of key you want:
   (11) ECC (set your own capabilities)
   (12) ECC (encrypt only)
   (13) Existing key
-Your selection? 8
+  (14) Existing key from card
+Your selection? 11
 
-Possible actions for a RSA key: Sign Encrypt Authenticate
-Current allowed actions: Sign Encrypt
+Possible actions for a ECDSA/EdDSA key: Sign Authenticate
+Current allowed actions: Sign 
 
    (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
    (A) Toggle the authenticate capability
    (Q) Finished
 
 Your selection? S
 
-Possible actions for a RSA key: Sign Encrypt Authenticate
-Current allowed actions: Encrypt
-
-   (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
-   (A) Toggle the authenticate capability
-   (Q) Finished
-
-Your selection? E
-
-Possible actions for a RSA key: Sign Encrypt Authenticate
+Possible actions for a ECDSA/EdDSA key: Sign Authenticate
 Current allowed actions:
 
    (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
    (A) Toggle the authenticate capability
    (Q) Finished
 
 Your selection? A
 
-Possible actions for a RSA key: Sign Encrypt Authenticate
+Possible actions for a ECDSA/EdDSA key: Sign Authenticate
 Current allowed actions: Authenticate
 
    (S) Toggle the sign capability
-   (E) Toggle the encrypt capability
    (A) Toggle the authenticate capability
    (Q) Finished
 
 Your selection? Q
-RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
-Requested keysize is 4096 bits
+Please select which elliptic curve you want:
+   (1) Curve 25519
+   (3) NIST P-256
+   (4) NIST P-384
+   (5) NIST P-521
+   (6) Brainpool P-256
+   (7) Brainpool P-384
+   (8) Brainpool P-512
+   (9) secp256k1
+Your selection? 1
 Please specify how long the key should be valid.
          0 = key does not expire
       <n>  = key expires in n days
@@ -879,7 +882,7 @@ Please specify how long the key should be valid.
       <n>m = key expires in n months
       <n>y = key expires in n years
 Key is valid for? (0) 1y
-Key expires at Mon 10 Sep 2018 00:00:00 PM UTC
+Key expires at Tue 01 Jan 2024 00:00:00 PM UTC
 Is this correct? (y/N) y
 Really create? (y/N) y
 We need to generate a lot of random bytes. It is a good idea to perform
@@ -887,15 +890,15 @@ some other action (type on the keyboard, move the mouse, utilize the
 disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09       usage: A
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
 
@@ -923,28 +926,28 @@ Comment:
 You selected this USER-ID:
     "Dr Duh <DrDuh@other.org>"
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
+sec  ed25519/0xFF3E7D88647EBCDB
+    created: 2023-01-01  expires: never       usage: C
     trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 [ unknown] (2). Dr Duh <DrDuh@other.org>
 
 gpg> trust
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 [ unknown] (2). Dr Duh <DrDuh@other.org>
 
@@ -961,43 +964,43 @@ Please decide how far you trust this user to correctly verify other users' keys
 Your decision? 5
 Do you really want to set this key to ultimate trust? (y/N) y
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 [ unknown] (2). Dr Duh <DrDuh@other.org>
 
 gpg> uid 1
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1)* Dr Duh <doc@duh.to>
 [ unknown] (2). Dr Duh <DrDuh@other.org>
 
 gpg> primary
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1)* Dr Duh <doc@duh.to>
 [ unknown] (2)  Dr Duh <DrDuh@other.org>
 
@@ -1014,12 +1017,12 @@ List the generated secret keys and verify the output:
 $ gpg -K
 /tmp.FLZC0xcM/pubring.kbx
 -------------------------------------------------------------------------
-sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
+sec   ed25519/0xFF3E7D88647EBCDB 2023-01-01 [C]
       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
 uid                            Dr Duh <doc@duh.to>
-ssb   rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
-ssb   rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
-ssb   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
+ssb   ed25519/0xBECFA3C1AE191D15 2023-01-01 [S] [expires: 2024-01-01]
+ssb   cv25519/0x5912A795E90DD2CF 2023-01-01 [E] [expires: 2024-01-01]
+ssb   ed25519/0x3F29127E79649A3D 2023-01-01 [A] [expires: 2024-01-01]
 ```
 
 Add any additional identities or email addresses you wish to associate using the `adduid` command.
@@ -1508,6 +1511,45 @@ General key info..: [none]
 gpg/card> quit
 ```
 
+## Use ECC rather than RSA
+
+```console
+gpg/card> key-attr
+Changing card key attribute for: Signature key
+Please select what kind of key you want:
+   (1) RSA
+   (2) ECC
+Your selection? 2
+Please select which elliptic curve you want:
+   (1) Curve 25519
+   (4) NIST P-384
+Your selection? 1
+The card will now be re-configured to generate a key of type: ed25519
+Note: There is no guarantee that the card supports the requested size.
+      If the key generation does not succeed, please check the
+      documentation of your card to see what sizes are allowed.
+Changing card key attribute for: Encryption key
+Please select what kind of key you want:
+   (1) RSA
+   (2) ECC
+Your selection? 2
+Please select which elliptic curve you want:
+   (1) Curve 25519
+   (4) NIST P-384
+Your selection? 1
+The card will now be re-configured to generate a key of type: cv25519
+Changing card key attribute for: Authentication key
+Please select what kind of key you want:
+   (1) RSA
+   (2) ECC
+Your selection? 2
+Please select which elliptic curve you want:
+   (1) Curve 25519
+   (4) NIST P-384
+Your selection? 1
+The card will now be re-configured to generate a key of type: ed25519
+```
+
 # Transfer keys
 
 **Important** Transferring keys to YubiKey using `keytocard` is a destructive, one-way operation only. Make sure you've made a backup before proceeding: `keytocard` converts the local, on-disk key into a stub, which means the on-disk copy is no longer usable to transfer to subsequent security key devices or mint additional keys.
@@ -1519,15 +1561,15 @@ $ gpg --edit-key $KEYID
 
 Secret key is available.
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
 
@@ -1540,15 +1582,15 @@ Select and transfer the signature key.
 ```console
 gpg> key 1
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb* rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb* ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 
 gpg> keytocard
@@ -1571,15 +1613,15 @@ gpg> key 1
 
 gpg> key 2
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb* rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb* cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 
 gpg> keytocard
@@ -1599,15 +1641,15 @@ gpg> key 2
 
 gpg> key 3
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb* rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A
+sec  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+ssb  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+ssb* ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 
 gpg> keytocard
@@ -1630,12 +1672,12 @@ Verify the sub-keys have been moved to YubiKey as indicated by `ssb>`:
 $ gpg -K
 /tmp.FLZC0xcM/pubring.kbx
 -------------------------------------------------------------------------
-sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
+sec   ed25519/0xFF3E7D88647EBCDB 2023-01-01 [C]
       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
 uid                            Dr Duh <doc@duh.to>
-ssb>  rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
-ssb>  rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
-ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
+ssb>  ed25519/0xBECFA3C1AE191D15 2023-01-01 [S] [expires: 2024-01-01]
+ssb>  cv25519/0x5912A795E90DD2CF 2023-01-01 [E] [expires: 2024-01-01]
+ssb>  ed25519/0x3F29127E79649A3D 2023-01-01 [A] [expires: 2024-01-01]
 ```
 
 # Multiple YubiKeys
@@ -1756,11 +1798,15 @@ $ export KEYID=0xFF3E7D88647EBCDB
 $ gpg --edit-key $KEYID
 
 gpg> trust
-pub  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never       usage: C
-                               trust: unknown       validity: unknown
-sub  4096R/0xBECFA3C1AE191D15  created: 2017-10-09  expires: 2018-10-09  usage: S
-sub  4096R/0x5912A795E90DD2CF  created: 2017-10-09  expires: 2018-10-09  usage: E
-sub  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09  usage: A
+pub  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: unknown       validity: unknown
+sub  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+sub  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+sub  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
 [ unknown] (1). Dr Duh <doc@duh.to>
 
 Please decide how far you trust this user to correctly verify other users' keys
@@ -1776,12 +1822,16 @@ Please decide how far you trust this user to correctly verify other users' keys
 Your decision? 5
 Do you really want to set this key to ultimate trust? (y/N) y
 
-pub  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never       usage: C
-                               trust: ultimate      validity: unknown
-sub  4096R/0xBECFA3C1AE191D15  created: 2017-10-09  expires: 2018-10-09  usage: S
-sub  4096R/0x5912A795E90DD2CF  created: 2017-10-09  expires: 2018-10-09  usage: E
-sub  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09  usage: A
-[ unknown] (1). Dr Duh <doc@duh.to>
+pub  ed25519/0xFF3E7D88647EBCDB
+     created: 2023-01-01  expires: never       usage: C
+     trust: ultimate       validity: ultimate
+sub  ed25519/0xBECFA3C1AE191D15
+     created: 2023-01-01  expires: 2024-01-01  usage: S
+sub  cv25519/0x5912A795E90DD2CF
+     created: 2023-01-01  expires: 2024-01-01  usage: E
+sub  ed25519/0x3F29127E79649A3D
+     created: 2023-01-01  expires: 2024-01-01  usage: A
+[ultimate] (1). Dr Duh <doc@duh.to>
 
 gpg> quit
 ```
@@ -1801,24 +1851,24 @@ Sex ..............: unspecified
 URL of public key : [not set]
 Login data .......: doc@duh.to
 Signature PIN ....: not forced
-Key attributes ...: rsa4096 rsa4096 rsa4096
+Key attributes ...: ed25519 cv25519 ed25519
 Max. PIN lengths .: 127 127 127
 PIN retry counter : 3 3 3
 Signature counter : 0
 KDF setting ......: on
 Signature key ....: 07AA 7735 E502 C5EB E09E  B8B0 BECF A3C1 AE19 1D15
-      created ....: 2016-05-24 23:22:01
+      created ....: 2023-01-01 23:22:01
 Encryption key....: 6F26 6F46 845B BEB8 BDF3  7E9B 5912 A795 E90D D2CF
-      created ....: 2016-05-24 23:29:03
+      created ....: 2023-01-01 23:29:03
 Authentication key: 82BE 7837 6A3F 2E7B E556  5E35 3F29 127E 7964 9A3D
-      created ....: 2016-05-24 23:36:40
+      created ....: 2023-01-01 23:36:40
 General key info..: pub  4096R/0xBECFA3C1AE191D15 2016-05-24 Dr Duh <doc@duh.to>
-sec#  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never
-ssb>  4096R/0xBECFA3C1AE191D15  created: 2017-10-09  expires: 2018-10-09
+sec#  ed25519/0xFF3E7D88647EBCDB  created: 2023-01-01  expires: never
+ssb>  ed25519/0xBECFA3C1AE191D15  created: 2023-01-01  expires: 2024-01-01
                       card-no: 0006 05553211
-ssb>  4096R/0x5912A795E90DD2CF  created: 2017-10-09  expires: 2018-10-09
+ssb>  cv25519/0x5912A795E90DD2CF  created: 2023-01-01  expires: 2024-01-01
                       card-no: 0006 05553211
-ssb>  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09
+ssb>  ed25519/0x3F29127E79649A3D  created: 2023-01-01  expires: 2024-01-01
                       card-no: 0006 05553211
 ```
 
@@ -1858,8 +1908,8 @@ Verify the signature:
 
 ```console
 $ gpg --verify signed.txt
-gpg: Signature made Wed 25 May 2016 00:00:00 AM UTC
-gpg:                using RSA key 0xBECFA3C1AE191D15
+gpg: Signature made Sun  1 Jan 2023 00:00:00 AM UTC
+gpg:                using EDDSA key 0xBECFA3C1AE191D15
 gpg: Good signature from "Dr Duh <doc@duh.to>" [ultimate]
 Primary key fingerprint: 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
      Subkey fingerprint: 07AA 7735 E502 C5EB E09E  B8B0 BECF A3C1 AE19 1D15
@@ -1886,7 +1936,7 @@ document.pdf -> document.pdf.1580000000.enc
 $ reveal document.pdf.1580000000.enc
 gpg: anonymous recipient; trying secret key 0xFF3E7D88647EBCDB ...
 gpg: okay, we are the anonymous recipient.
-gpg: encrypted with RSA key, ID 0x0000000000000000
+gpg: encrypted with ECDH key, ID 0x0000000000000000
 document.pdf.1580000000.enc -> document.pdf
 ```
 
@@ -1954,14 +2004,14 @@ $ gpg --edit-key $KEYID
 
 Secret key is available.
 
-sec  rsa4096/0xFF3E7D88647EBCDB
+sec  ed25519/0xFF3E7D88647EBCDB
     created: 2017-10-09  expires: never       usage: C
     trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
+ssb  ed25519/0xBECFA3C1AE191D15
     created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
+ssb  cv25519/0x5912A795E90DD2CF
     created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
+ssb  ed25519/0x3F29127E79649A3D
     created: 2017-10-09  expires: 2018-10-09  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 
@@ -1969,14 +2019,14 @@ gpg> key 1
 
 Secret key is available.
 
-sec  rsa4096/0xFF3E7D88647EBCDB
+sec  ed25519/0xFF3E7D88647EBCDB
      created: 2017-10-09  expires: never       usage: C
      trust: ultimate      validity: ultimate
-ssb* rsa4096/0xBECFA3C1AE191D15
+ssb* ed25519/0xBECFA3C1AE191D15
      created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
+ssb  cv25519/0x5912A795E90DD2CF
      created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
+ssb  ed25519/0x3F29127E79649A3D
      created: 2017-10-09  expires: 2018-10-09  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 
@@ -1984,14 +2034,14 @@ gpg> key 2
 
 Secret key is available.
 
-sec  rsa4096/0xFF3E7D88647EBCDB
+sec  ed25519/0xFF3E7D88647EBCDB
      created: 2017-10-09  expires: never       usage: C
      trust: ultimate      validity: ultimate
-ssb* rsa4096/0xBECFA3C1AE191D15
+ssb* ed25519/0xBECFA3C1AE191D15
      created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb* rsa4096/0x5912A795E90DD2CF
+ssb* cv25519/0x5912A795E90DD2CF
      created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
+ssb  ed25519/0x3F29127E79649A3D
      created: 2017-10-09  expires: 2018-10-09  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 
@@ -1999,14 +2049,14 @@ gpg> key 3
 
 Secret key is available.
 
-sec   rsa4096/0xFF3E7D88647EBCDB
+sec   ed25519/0xFF3E7D88647EBCDB
       created: 2017-10-09  expires: never       usage: C
       trust: ultimate      validity: ultimate
-ssb*  rsa4096/0xBECFA3C1AE191D15
+ssb*  ed25519/0xBECFA3C1AE191D15
       created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb*  rsa4096/0x5912A795E90DD2CF
+ssb*  cv25519/0x5912A795E90DD2CF
       created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb*  rsa4096/0x3F29127E79649A3D
+ssb*  ed25519/0x3F29127E79649A3D
       created: 2017-10-09  expires: 2018-10-09  usage: A
 [ultimate] (1). Dr Duh <doc@duh.to>
 ```
@@ -2042,7 +2092,7 @@ This will extend the validity of your GPG key and will allow you to use it for S
 
 ## Rotating keys
 
-Rotating keys is more a bit more involved.  First, follow the original steps to generate each sub-key. Previous sub-keys may be kept or deleted from the identity.
+Rotating keys is involing a bit more work. First, follow the original steps to generate each sub-key. Previous sub-keys may be kept or deleted from the identity.
 
 Finish by exporting new keys:
 
@@ -2870,12 +2920,12 @@ gpg: [stdin]: encryption failed: Unusable public key
 
 Keys can also be generated using template files and the `batch` parameter - see [GnuPG documentation](https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html).
 
-Start from the [gen-params-rsa4096](contrib/gen-params-rsa4096) template. If you're using GnuPG v2.1.7 or newer, you can also use the ([gen-params-ed25519](contrib/gen-params-ed25519) template. These templates will not set the master key to expire - see [Note #3](#notes).
+Start from the [gen-params-ed25519](contrib/gen-params-ed25519) template. If you're using GnuPG v2.1.7 or newer, you can also use the ([gen-params-rsa4096](contrib/gen-params-rsa4096) template. These templates will not set the master key to expire - see [Note #3](#notes).
 
 Generate master key:
 
 ```console
-$ gpg --batch --generate-key gen-params-rsa4096
+$ gpg --batch --generate-key gen-params-ed25519
 gpg: Generating a basic OpenPGP key
 gpg: key 0xEA5DE91459B80592 marked as ultimately trusted
 gpg: revocation certificate stored as '/tmp.FLZC0xcM/openpgp-revocs.d/D6F924841F78D62C65ABB9588B461860159FFB7B.rev'
@@ -2891,7 +2941,7 @@ gpg: marginals needed: 3  completes needed: 1  trust model: pgp
 gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
 /tmp.FLZC0xcM/pubring.kbx
 -------------------------------
-pub   rsa4096/0xFF3E7D88647EBCDB 2021-08-22 [C]
+pub   ed25519/0xFF3E7D88647EBCDB 2023-01-01 [C]
        Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
 uid                   [ultimate] Dr Duh <doc@duh.to>
 ```
@@ -2906,21 +2956,21 @@ Create a [signing subkey](https://stackoverflow.com/questions/5421107/can-rsa-be
 
 ```console
 $ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
-  rsa4096 sign 1y
+  ed25519 sign 1y
 ```
 
 Now create an [encryption subkey](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php):
 
 ```console
 $ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
-  rsa4096 encrypt 1y
+  cv25519 encrypt 1y
 ```
 
 Finally, create an [authentication subkey](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for):
 
 ```console
 $ gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
-  rsa4096 auth 1y
+  ed25519 auth 1y
 ```
 
 Continue with the Verify section of this guide.
