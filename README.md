@@ -2861,6 +2861,24 @@ gpg: [stdin]: encryption failed: Unusable public key
 
 - Refer to Yubico article [Troubleshooting Issues with GPG](https://support.yubico.com/hc/en-us/articles/360013714479-Troubleshooting-Issues-with-GPG) for additional guidance.
 
+- If, when you try the above `--card-status` command, you get receive the error, `gpg: selecting card failed: No such device` or `gpg: OpenPGP card not available: No such device`, it's possible that the latest release of pcscd is now requires polkit rules to operate properly. Create the following file to allow users in the `wheel` group to use the card. Be sure to restart pcscd when you're done to allow the new rules to take effect.
+```
+cat << EOF >  /etc/polkit-1/rules.d/99-pcscd.rules
+polkit.addRule(function(action, subject) {
+        if (action.id == "org.debian.pcsc-lite.access_card" &&
+                subject.isInGroup("wheel")) {
+                return polkit.Result.YES;
+        }
+});
+polkit.addRule(function(action, subject) {
+        if (action.id == "org.debian.pcsc-lite.access_pcsc" &&
+                subject.isInGroup("wheel")) {
+                return polkit.Result.YES;
+        }
+});
+EOF
+```
+
 # Alternatives
 
 * [`piv-agent`](https://github.com/smlx/piv-agent) is an SSH and GPG agent which you can use with your PIV hardware security device (e.g. a Yubikey).
