@@ -2675,8 +2675,10 @@ $ ykman openpgp keys set-touch sig on
 Encryption:
 
 ```console
-$ ykman openpgp keys set-touch enc on
+$ ykman openpgp keys set-touch dec on
 ```
+
+**Note** Versions of YubiKey Manager before 5.1.0 use `enc` instead of `dec` for encryption.
 
 Depending on how the YubiKey is going to be used, you may want to look at the policy options for each of these and adjust the above commands accordingly. They can be viewed with the following command:
 
@@ -2684,28 +2686,27 @@ Depending on how the YubiKey is going to be used, you may want to look at the po
 $ ykman openpgp keys set-touch -h
 Usage: ykman openpgp keys set-touch [OPTIONS] KEY POLICY
 
-  Set touch policy for OpenPGP keys.
+  Set the touch policy for OpenPGP keys.
 
-  KEY     Key slot to set (sig, enc, aut or att).
-  POLICY  Touch policy to set (on, off, fixed, cached or cached-fixed).
-
-  The touch policy is used to require user interaction for all operations using the private key on the YubiKey. The touch policy is set individually for each key slot. To see the current touch policy, run
-
-      $ ykman openpgp info
+  The touch policy is used to require user interaction for all operations using the private key on the YubiKey. The touch policy is set
+  individually for each key slot. To see the current touch policy, run the "openpgp info" subcommand.
 
   Touch policies:
 
-  Off (default)   No touch required
-  On              Touch required
-  Fixed           Touch required, can't be disabled without a full reset
-  Cached          Touch required, cached for 15s after use
-  Cached-Fixed    Touch required, cached for 15s after use, can't be disabled
-                  without a full reset
+  Off (default)   no touch required
+  On              touch required
+  Fixed           touch required, can't be disabled without deleting the private key
+  Cached          touch required, cached for 15s after use
+  Cached-Fixed    touch required, cached for 15s after use, can't be disabled
+                  without deleting the private key
+
+  KEY     key slot to set (sig, dec, aut or att)
+  POLICY  touch policy to set (on, off, fixed, cached or cached-fixed)
 
 Options:
-  -a, --admin-pin TEXT  Admin PIN for OpenPGP.
-  -f, --force           Confirm the action without prompting.
-  -h, --help            Show this message and exit.
+  -a, --admin-pin TEXT  Admin PIN for OpenPGP
+  -f, --force           confirm the action without prompting
+  -h, --help            show this message and exit
 ```
 
 If the YubiKey is going to be used within an email client that opens and verifies encrypted mail, `Cached` or `Cached-Fixed` may be desirable.
