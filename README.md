@@ -215,6 +215,25 @@ $ sudo apt update ; sudo apt -y upgrade
 $ sudo apt -y install wget gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd secure-delete hopenpgp-tools yubikey-personalization
 ```
 
+**Note**
+As of 2023 June, the `hopenpgp-tools` is not part of the latest Debian 12 stable package repositories.
+
+To install it, go to [https://packages.debian.org/sid/hopenpgp-tools](https://packages.debian.org/sid/hopenpgp-tools) to select your architecture and then an ftp server.
+
+Edit `/etc/apt/sources.list` and add the ftp server:
+```
+deb http://ftp.debian.org/debian sid main
+```
+
+and then add this to `/etc/apt/preferences` (or a fragment, e.g. `/etc/apt/preferences.d/00-sid`) so that APT still prioritizes packages from the stable repository over sid.
+
+```
+Package: *
+Pin: release n=sid
+Pin-Priority: 10
+```
+
+
 **Note** Live Ubuntu images [may require modification](https://github.com/drduh/YubiKey-Guide/issues/116) to `/etc/apt/sources.list` and may need additional packages:
 
 ```console
