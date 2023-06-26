@@ -2044,7 +2044,7 @@ Alternatively, use a public key server (it will update the key if already on the
 $ gpg --send-key $KEYID
 ```console
 
-and import the newly  on any computer where you wish to use it (it will update the key if previously imported):
+and import the newly updated key on any computer where you wish to use it (it will update the key if previously imported):
 
 ```console
 $ gpg --recv $KEYID
