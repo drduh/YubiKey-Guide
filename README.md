@@ -1733,7 +1733,7 @@ If you need to set up a second host when you are travelling and don't have ready
 	``` console
 	$ gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv $KEYID
 	```
-	
+
 3. Set ultimate trust:
 
 	``` console
@@ -1761,7 +1761,7 @@ Another approach is to add the URL of your public key to your YubiKey:
 
 2. Construct the URL (based on [Shaw 2003](https://datatracker.ietf.org/doc/html/draft-shaw-openpgp-hkp-00)):
 
-	```
+	``` console
 	$ [[ ! "$KEYID" =~ ^"0x" ]] && KEYID="0x${KEYID}"
 	$ URL="hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=${KEYID}"
 	$ echo $URL
@@ -1771,16 +1771,16 @@ Another approach is to add the URL of your public key to your YubiKey:
 3. Insert your YubiKey into a USB port.
 4. Add the URL to your YubiKey (will prompt for your YubiKey's admin PIN):
 
-	```
+	``` console
 	$ gpg --edit-card
 	gpg/card> admin
 	gpg/card> url
 	URL to retrieve public key: hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF3E7D88647EBCDB
 	gpg/card> quit
 	```
-	
+
 	Note:
-	
+
 	* You do not have to use a *keyserver* URL. You can export your public key as an armored ASCII file and upload it to any place on the web where it can be downloaded using HTTP/HTTPS.
 
 Once the URL of your public key is present on your YubiKey, setting up a new host becomes:
@@ -1789,7 +1789,7 @@ Once the URL of your public key is present on your YubiKey, setting up a new hos
 
 2. Use the `fetch` sub-command to retrieve your public key using the URL stored on the card:
 
-	```
+	``` console
 	$ gpg --edit-card
 	
 	gpg/card> fetch
@@ -1801,9 +1801,9 @@ Once the URL of your public key is present on your YubiKey, setting up a new hos
 	
 	gpg/card> quit
 	```
-	
+
 	This step also imports the private key stubs from the YubiKey.
-	
+
 3. Define your KEYID (which appears in the output in the previous step):
 
 	``` console
@@ -1819,7 +1819,7 @@ Once the URL of your public key is present on your YubiKey, setting up a new hos
 	Do you really want to set this key to ultimate trust? (y/N) y
 	gpg> quit
 	```
-	
+
 # Cleanup
 
 Before finishing the setup, ensure you have done the following:
