@@ -1750,6 +1750,75 @@ If you need to set up a second host when you are travelling and don't have ready
 	``` console
 	$ gpg --card-status
 	```
+
+Another approach is to add the URL of your public key to your YubiKey:
+
+1. Define your KEYID. For example:
+
+	``` console
+	$ KEYID=0xFF3E7D88647EBCDB
+	``` 
+
+2. Construct the URL (based on [Shaw 2003](https://datatracker.ietf.org/doc/html/draft-shaw-openpgp-hkp-00)):
+
+	```
+	$ [[ ! "$KEYID" =~ ^"0x" ]] && KEYID="0x${KEYID}"
+	$ URL="hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=${KEYID}"
+	$ echo $URL
+	hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF3E7D88647EBCDB
+	```
+
+3. Insert your YubiKey into a USB port.
+4. Add the URL to your YubiKey (will prompt for your YubiKey's admin PIN):
+
+	```
+	$ gpg --edit-card
+	gpg/card> admin
+	gpg/card> url
+	URL to retrieve public key: hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF3E7D88647EBCDB
+	gpg/card> quit
+	```
+	
+	Note:
+	
+	* You do not have to use a *keyserver* URL. You can export your public key as an armored ASCII file and upload it to any place on the web where it can be downloaded using HTTP/HTTPS.
+
+Once the URL of your public key is present on your YubiKey, setting up a new host becomes:
+
+1. Insert your YubiKey into a USB port.
+
+2. Use the `fetch` sub-command to retrieve your public key using the URL stored on the card:
+
+	```
+	$ gpg --edit-card
+	
+	gpg/card> fetch
+	gpg: requesting key from 'hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF3E7D88647EBCDB'
+	gpg: /home/pi/.gnupg/trustdb.gpg: trustdb created
+	gpg: key FF3E7D88647EBCDB: public key "Dr Duh <doc@duh.to>" imported
+	gpg: Total number processed: 1
+	gpg:               imported: 1
+	
+	gpg/card> quit
+	```
+	
+	This step also imports the private key stubs from the YubiKey.
+	
+3. Define your KEYID (which appears in the output in the previous step):
+
+	``` console
+	$ export KEYID=0xFF3E7D88647EBCDB
+	``` 
+
+4. Set ultimate trust:
+
+	``` console
+	$ gpg --edit-key $KEYID
+	gpg> trust
+	Your decision? 5
+	Do you really want to set this key to ultimate trust? (y/N) y
+	gpg> quit
+	```
 	
 # Cleanup
 
