@@ -48,6 +48,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Verify card](#verify-card)
 - [Multiple YubiKeys](#multiple-yubikeys)
   - [Switching between two or more Yubikeys](#switching-between-two-or-more-yubikeys)
+- [Multiple Hosts](#multiple-hosts)
 - [Cleanup](#cleanup)
 - [Using keys](#using-keys)
 - [Rotating keys](#rotating-keys)
@@ -1679,7 +1680,149 @@ GPG will then scan your first Yubikey for GPG keys and recreate the stubs to poi
 To return to using the second Yubikey just repeat (insert other Yubikey and re-run command).
 	
 Obviously this command is not easy to remember so it is recommended to either create a script or a shell alias to make this more user friendly.
+
+# Multiple Hosts
+
+It can be convenient to use your YubiKey on multiple hosts:
+
+* a desktop plus a laptop
+* home and work computers
+* an environment like [Tails](https://tails.boum.org)
+
+The simplest way to set up a second host is to begin by exporting your public key and trust settings on the host where your YubiKey is already working:
+
+``` console
+$ gpg --armor --export $KEYID > gpg-public-key-$KEYID.asc
+$ gpg --export-ownertrust > gpg-owner-trust.txt
+```
+
+Move both files to the second host. Then, on the second host:
+
+1. Define your KEYID. For example:
+
+	``` console
+	$ export KEYID=0xFF3E7D88647EBCDB
+	``` 
+
+2. Import your public key:
+
+	``` console
+	$ gpg --import gpg-public-key-$KEYID.asc
+	```
+
+3. Import the trust settings:
+
+	``` console
+	$ gpg --import-ownertrust < gpg-owner-trust.txt
+	```
+
+4. Insert your YubiKey into a USB port.
+5. Import the private key stubs from the YubiKey:
+
+	``` console
+	$ gpg --card-status
+	```
+
+If you need to set up a second host when you are travelling and don't have ready access to your primary host, you can import your public key from a key-server and set trust manually:
+
+1. Define your KEYID. For example:
+
+	``` console
+	$ export KEYID=0xFF3E7D88647EBCDB
+	``` 
+
+2. Fetch the public key from a key-server. For example:
+
+	``` console
+	$ gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv $KEYID
+	```
+
+3. Set ultimate trust:
+
+	``` console
+	$ gpg --edit-key $KEYID
+	gpg> trust
+	Your decision? 5
+	Do you really want to set this key to ultimate trust? (y/N) y
+	gpg> quit
+	```
+
+4. Insert your YubiKey into a USB port.
+5. Import the private key stubs from the YubiKey:
+
+	``` console
+	$ gpg --card-status
+	```
+
+Another approach is to add the URL of your public key to your YubiKey:
+
+1. Define your KEYID. For example:
+
+	``` console
+	$ KEYID=0xFF3E7D88647EBCDB
+	``` 
+
+2. Construct the URL (based on [Shaw 2003](https://datatracker.ietf.org/doc/html/draft-shaw-openpgp-hkp-00)):
+
+	``` console
+	$ [[ ! "$KEYID" =~ ^"0x" ]] && KEYID="0x${KEYID}"
+	$ URL="hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=${KEYID}"
+	$ echo $URL
+	hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF3E7D88647EBCDB
+	```
+
+3. Insert your YubiKey into a USB port.
+4. Add the URL to your YubiKey (will prompt for your YubiKey's admin PIN):
+
+	``` console
+	$ gpg --edit-card
+	gpg/card> admin
+	gpg/card> url
+	URL to retrieve public key: hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF3E7D88647EBCDB
+	gpg/card> quit
+	```
+
+	Note:
+
+	* You do not have to use a *keyserver* URL. You can export your public key as an armored ASCII file and upload it to any place on the web where it can be downloaded using HTTP/HTTPS.
+
+Once the URL of your public key is present on your YubiKey, setting up a new host becomes:
+
+1. Insert your YubiKey into a USB port.
+
+2. Use the `fetch` sub-command to retrieve your public key using the URL stored on the card:
+
+	``` console
+	$ gpg --edit-card
 	
+	gpg/card> fetch
+	gpg: requesting key from 'hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF3E7D88647EBCDB'
+	gpg: /home/pi/.gnupg/trustdb.gpg: trustdb created
+	gpg: key FF3E7D88647EBCDB: public key "Dr Duh <doc@duh.to>" imported
+	gpg: Total number processed: 1
+	gpg:               imported: 1
+	
+	gpg/card> quit
+	```
+
+	This step also imports the private key stubs from the YubiKey.
+
+3. Define your KEYID (which appears in the output in the previous step):
+
+	``` console
+	$ export KEYID=0xFF3E7D88647EBCDB
+	``` 
+
+4. Set ultimate trust:
+
+	``` console
+	$ gpg --edit-key $KEYID
+	gpg> trust
+	Your decision? 5
+	Do you really want to set this key to ultimate trust? (y/N) y
+	gpg> quit
+	```
+
 # Cleanup
 
 Before finishing the setup, ensure you have done the following:
