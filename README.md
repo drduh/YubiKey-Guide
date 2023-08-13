@@ -53,7 +53,7 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
 - [Rotating keys](#rotating-keys)
   - [Setup environment](#setup-environment)
   - [Renewing sub-keys](#renewing-sub-keys)
-  - [Rotating keys](#rotating-keys)
+  - [Rotating keys](#rotating-keys-1)
 - [Adding notations](#adding-notations)
 - [SSH](#ssh)
   - [Create configuration](#create-configuration)
@@ -79,6 +79,9 @@ If you have a comment or suggestion, please open an [Issue](https://github.com/d
   - [Steps for older distributions](#steps-for-older-distributions)
   - [Chained GPG Agent Forwarding](#chained-gpg-agent-forwarding)
 - [Using Multiple Keys](#using-multiple-keys)
+- [Adding an identity](#adding-an-identity)
+  - [Add an identity to your master key](#add-an-identity-to-your-master-key)
+  - [Updating your YubiKey](#updating-your-yubikey)
 - [Require touch](#require-touch)
 - [Email](#email)
   - [Mailvelope on macOS](#mailvelope-on-macos)
@@ -2649,6 +2652,128 @@ $ ~/scripts/remove-keygrips.sh $KEYID
 ```
 
 See discussion in Issues [#19](https://github.com/drduh/YubiKey-Guide/issues/19) and [#112](https://github.com/drduh/YubiKey-Guide/issues/112) for more information and troubleshooting steps.
+
+# Adding an identity
+
+You may need to add an identity after you've created, backed up, and moved your keys to your YubiKey. To do so, you'll need to first add the identity to your master key, and then reset your YubiKey and use `keytocard` to move the subkeys to your card again.
+
+## Add an identity to your master key
+
+To add another identity to your GPG key, follow the same process as generating keys: boot to a secure environment, install required software and disconnect networking.
+
+Connect the offline secret storage device with the master keys and identify the disk label:
+
+```console
+$ sudo dmesg | tail
+mmc0: new high speed SDHC card at address a001
+mmcblk0: mmc0:a001 SS16G 14.8 GiB (ro)
+mmcblk0: p1 p2
+```
+
+Decrypt and mount the offline volume:
+
+```console
+$ sudo cryptsetup luksOpen /dev/mmcblk0p1 secret
+Enter passphrase for /dev/mmcblk0p1:
+
+$ sudo mount /dev/mapper/secret /mnt/encrypted-storage
+```
+
+Restore your backup to a temporary directory:
+
+```console
+$ export GNUPGHOME=$(mktemp -d -t gnupg_$(date +%Y%m%d%H%M)_XXX)
+
+$ cp -avi /mnt/encrypted-storage/tmp.XXX/* $GNUPGHOME
+```
+
+Edit your master key to add your new identity:
+
+```console
+$ KEYID=«your keyID»
+$ gpg --expert --edit-key $KEYID
+
+gpg> adduid
+Real name: «your name»
+Email address: «user@domain.tld»
+Comment: «something»
+You selected this USER-ID:
+      "«your name» («something») <«user@domain.tld»>"
+
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? O
+
+gpg> trust
+
+Please decide how far you trust this user to correctly verify other users' keys
+(by looking at passports, checking fingerprints from different sources, etc.)
+
+  1 = I don't know or won't say
+  2 = I do NOT trust
+  3 = I trust marginally
+  4 = I trust fully
+  5 = I trust ultimately
+  m = back to the main menu
+
+Your decision? 5
+Do you really want to set this key to ultimate trust? (y/N) y
+
+gpg> save
+```
+
+Now, re-export your master and sub keys:
+
+```console
+$ gpg --armor --export-secret-keys $KEYID > $GNUPGHOME/mastersub.key
+
+$ gpg --armor --export-secret-subkeys $KEYID > $GNUPGHOME/sub.key
+```
+
+And your public key:
+
+```console
+$ gpg --armor --export $KEYID | sudo tee /mnt/public/gpg-$KEYID-$(date +%F).asc
+```
+
+As before, on Windows, note that using any extension other than `.gpg` or attempting IO redirection to a file will garble the secret key, making it impossible to import it again at a later date:
+
+```console
+$ gpg -o \path\to\dir\mastersub.gpg --armor --export-secret-keys $KEYID
+
+$ gpg -o \path\to\dir\sub.gpg --armor --export-secret-subkeys $KEYID
+
+$ gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
+```
+
+Copy the **new** temporary working directory to encrypted offline storage, which should still be mounted:
+
+```console
+$ sudo cp -avi $GNUPGHOME /mnt/encrypted-storage
+```
+
+There should now be at least two versions of the master and sub-keys backed up:
+
+```console
+$ ls /mnt/encrypted-storage
+lost+found  tmp.ykhTOGjR36  tmp.2gyGnyCiHs
+```
+
+Unmount and close the encrypted volume:
+
+```console
+$ sudo umount /mnt/encrypted-storage
+
+$ sudo cryptsetup luksClose /dev/mapper/secret
+```
+
+## Updating your YubiKey
+
+Now that your keys have been updated with your new identity, you have to move them onto your YubiKey. To do so, you need to first [reset](#reset) the OpenPGP applet on your YubiKey, and then follow the steps to [configure your smartcard](#configure-smartcard) again.
+
+Now you can [transfer the keys](#transfer-keys) to your YubiKey. Once you've done so, be sure to reboot or securely erase the GPG temporary working directory, and `unset GNUPGHOME`.
+
+Finally, re-import the public key, as described in the [using keys](#using-keys) section.
+
+Run `gpg -K` to confirm that your new identity is listed.
 
 # Require touch
 
