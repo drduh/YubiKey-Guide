@@ -254,6 +254,9 @@ $ sudo service pcscd start
 $ ~/.local/bin/ykman openpgp info
 ```
 
+**Note** Debian 12 doesn't recommend installing non-Debian packaged Python applications globally. But fortunately, it isn't even necessary as `yubikey-manager` is available in the stable main repository:
+`$ sudo apt install yubikey-manager`.
+
 ## Fedora
 
 ```console
