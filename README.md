@@ -3214,6 +3214,7 @@ Continue with the Verify section of this guide.
 
 # Links
 
+* [Minimal key management tool written for this guide](https://gitlab.com/lsasolutions/makegpg)
 * https://alexcabal.com/creating-the-perfect-gpg-keypair/
 * https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO
 * https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/
