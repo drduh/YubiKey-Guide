@@ -472,7 +472,7 @@ in {
 Build the installer and copy it to a USB drive.
 
 ```console
-$ nix build -f yubikey-installer.nix -o installer nixos-yubikey
+$ nix-build yubikey-installer.nix --out-link installer --attr nixos-yubikey
 
 $ sudo cp -v installer/iso/*.iso /dev/sdb; sync
 'installer/iso/nixos-yubikey-22.05beta-248980.gfedcba-x86_64-linux.iso' -> '/dev/sdb'
