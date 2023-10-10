@@ -243,7 +243,7 @@ $ ~/.local/bin/ykman openpgp info
 
 ```console
 $ sudo dnf install wget
-$ wget https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-release-34-2.noarch.rpm
+$ wget https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-release-38-1.noarch.rpm
 $ sudo rpm -Uvh rpmsphere-release*rpm
 
 $ sudo dnf install gnupg2 dirmngr cryptsetup gnupg2-smime pcsc-tools opensc pcsc-lite secure-delete pgp-tools yubikey-personalization-gui
