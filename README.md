@@ -2202,7 +2202,7 @@ Key is valid for? (0)
 ```
 Follow these prompts to set a new expiration date, then `save` to save your changes.
 
-Next, export the public key:
+Next, [export the public key](#export-public-keys):
 
 ```console
 $ gpg --armor --export $KEYID > gpg-$KEYID-$(date +%F).asc
@@ -2212,6 +2212,18 @@ Transfer that public key to the computer from which you use your GPG key, and th
 
 ```console
 $ gpg --import gpg-0x*.asc
+```
+
+Alternatively, use a public key server (it will update the key if already on the server):
+
+```console
+$ gpg --send-key $KEYID
+```
+
+and import the newly updated key on any computer where you wish to use it (it will update the key if previously imported):
+
+```console
+$ gpg --recv $KEYID
 ```
 
 This will extend the validity of your GPG key and will allow you to use it for SSH authorization.  Note that you do _not_ need to update the SSH public key located on remote servers.
