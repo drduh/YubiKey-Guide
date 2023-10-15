@@ -323,13 +323,43 @@ let
       };
 
     in {
-      nixpkgs.config = { allowBroken = true; };
+      nixpkgs.overlays = [
+        # hopenpgp-tools in nixpkgs 23.05 is out-of-date and has a broken build
+        (final: prev: {
+          haskellPackages = prev.haskellPackages.override {
+            overrides = hsFinal: hsPrev:
+              let
+                optparse-applicative =
+                  final.haskell.lib.overrideCabal hsPrev.optparse-applicative
+                  (oldAttrs: {
+                    version = "0.18.1.0";
+                    sha256 =
+                      "sha256-Y4EatP0m6Cm4hoNkMlqIvjrMeYGfW7UAWy3TuWHsxJE=";
+                    libraryHaskellDepends =
+                      (oldAttrs.libraryHaskellDepends or [ ])
+                      ++ (with hsFinal; [
+                        text
+                        prettyprinter
+                        prettyprinter-ansi-terminal
+                      ]);
+                  });
+                hopenpgp-tools =
+                  (final.haskell.lib.overrideCabal hsPrev.hopenpgp-tools
+                    (oldAttrs: {
+                      version = "0.23.8";
+                      sha256 =
+                        "sha256-FYvlVE0o/LOYk3a2rucAqm7tg5D/uNQRRrCu/wlDNAE=";
+                      broken = false;
+                    })).override { inherit optparse-applicative; };
+              in { inherit hopenpgp-tools; };
+          };
+        })
+      ];
 
       isoImage.isoBaseName = lib.mkForce "nixos-yubikey";
       # Uncomment this to disable compression and speed up image creation time
       #isoImage.squashfsCompression = "gzip -Xcompression-level 1";
 
-      boot.kernelPackages = linuxPackages_latest;
       # Always copytoram so that, if the image is booted from, e.g., a
       # USB stick, nothing is mistakenly written to persistent storage.
       boot.kernelParams = [ "copytoram" ];
@@ -442,7 +472,7 @@ in {
 Build the installer and copy it to a USB drive.
 
 ```console
-$ nix build -f yubikey-installer.nix -o installer nixos-yubikey
+$ nix-build yubikey-installer.nix --out-link installer --attr nixos-yubikey
 
 $ sudo cp -v installer/iso/*.iso /dev/sdb; sync
 'installer/iso/nixos-yubikey-22.05beta-248980.gfedcba-x86_64-linux.iso' -> '/dev/sdb'
