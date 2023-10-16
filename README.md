@@ -132,7 +132,7 @@ Verify the signature of the hashes file with GPG:
 
 ```console
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat 17 Dec 2022 11:06:20 AM PST
+gpg: Signature made Sat 07 Oct 2023 01:24:57 PM PDT
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Can't check signature: No public key
 
@@ -142,7 +142,7 @@ gpg: Total number processed: 1
 gpg:               imported: 1
 
 $ gpg --verify SHA512SUMS.sign SHA512SUMS
-gpg: Signature made Sat 17 Dec 2022 11:06:20 AM PST
+gpg: Signature made Sat 07 Oct 2023 01:24:57 PM PDT
 gpg:                using RSA key DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>" [unknown]
 gpg: WARNING: This key is not certified with a trusted signature!
@@ -160,7 +160,7 @@ Ensure the SHA512 hash of the live image matches the one in the signed file - if
 
 ```console
 $ grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
-SHA512SUMS:f9976e2090a54667a26554267941792c293628cceb643963e425bf90449e3c0eeb616e8ededc187070910401c8ab0348fdbc3292b6d04e29dcfb472ac258a542  debian-live-11.6.0-amd64-xfce.iso
+SHA512SUMS:3c74715380c804798d892f55ebe4d2f79ae266be93df2468a066c192cfe1af6ddae3139e1937d5cbfa2fccb6fe291920148401de30f504c0876be2f141811ff1  debian-live-12.2.0-amd64-xfce.iso
 ```
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
@@ -214,7 +214,9 @@ Open the terminal and install required software packages.
 ## Debian and Ubuntu
 
 ```console
-$ sudo apt update ; sudo apt -y upgrade
+$ sudo apt update
+
+$ sudo apt -y upgrade
 
 $ sudo apt -y install wget gnupg2 gnupg-agent dirmngr cryptsetup scdaemon pcscd secure-delete hopenpgp-tools yubikey-personalization
 ```
@@ -265,7 +267,9 @@ $ ~/.local/bin/ykman openpgp info
 
 ```console
 $ sudo dnf install wget
+
 $ wget https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-release-38-1.noarch.rpm
+
 $ sudo rpm -Uvh rpmsphere-release*rpm
 
 $ sudo dnf install gnupg2 dirmngr cryptsetup gnupg2-smime pcsc-tools opensc pcsc-lite secure-delete pgp-tools yubikey-personalization-gui
@@ -1417,7 +1421,7 @@ $ gpg --keyserver hkps://keyserver.ubuntu.com:443 --send-key $KEYID
 Or if [uploading to keys.openpgp.org](https://keys.openpgp.org/about/usage):
 
 ```console
-gpg --send-key $KEYID | curl -T - https://keys.openpgp.org
+$ gpg --send-key $KEYID | curl -T - https://keys.openpgp.org
 ```
 
 # Configure Smartcard
