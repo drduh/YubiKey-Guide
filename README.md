@@ -2,11 +2,11 @@ This is a guide to using [YubiKey](https://www.yubico.com/products/yubikey-hardw
 
 Keys stored on YubiKey are [non-exportable](http://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-) (as opposed to file-based keys that are stored on disk) and are convenient for everyday use. Instead of having to remember and enter passphrases to unlock SSH/GPG keys, YubiKey needs only a physical touch after being unlocked with a PIN. All signing and encryption operations happen on the card, rather than in OS memory.
 
-**Tip** [drduh/Purse](https://github.com/drduh/Purse) is a password manager which uses GPG and YubiKey to securely store and read credentials.
-
-> **Security Note**: If you followed this guide before Jan 2021, your GPG *PIN* and *Admin PIN* may be set to their default values (`123456` and `12345678` respectively). This would allow an attacker to use your Yubikey or reset your PIN. Please see the [Change PIN](#change-pin) section for details on how to change your PINs.
+**Security Note**: If you followed this guide before Jan 2021, your GPG *PIN* and *Admin PIN* may be set to their default values (`123456` and `12345678` respectively). This would allow an attacker to use your Yubikey or reset your PIN. Please see the [Change PIN](#change-pin) section for details on how to change your PINs.
 
 If you have a comment or suggestion, please open an [Issue](https://github.com/drduh/YubiKey-Guide/issues) on GitHub.
+
+**Tip** [drduh/Purse](https://github.com/drduh/Purse) is a password manager which uses GPG and YubiKey to securely store and read credentials.
 
 - [Purchase](#purchase)
 - [Prepare environment](#prepare-environment)
@@ -602,6 +602,7 @@ charset utf-8
 fixed-list-mode
 no-comments
 no-emit-version
+no-greeting
 keyid-format 0xlong
 list-options show-uid-validity
 verify-options show-uid-validity
@@ -612,7 +613,7 @@ use-agent
 throw-keyids
 ```
 
-**Important** Disable networking for the remainder of the setup.
+**Tip** Networking can be disabled for the remainder of the setup.
 
 # Master key
 
@@ -646,7 +647,6 @@ Do **not** set the master (certify) key to expire - see [Note #3](#notes).
 
 ```console
 $ gpg --expert --full-generate-key
-
 Please select what kind of key you want:
    (1) RSA and RSA (default)
    (2) DSA and Elgamal
@@ -658,6 +658,7 @@ Please select what kind of key you want:
   (10) ECC (sign only)
   (11) ECC (set your own capabilities)
   (13) Existing key
+  (14) Existing key from card
 Your selection? 8
 
 Possible actions for a RSA key: Sign Certify Encrypt Authenticate
@@ -1408,14 +1409,16 @@ $ gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
 ```console
 $ gpg --send-key $KEYID
 
-$ gpg --keyserver pgp.mit.edu --send-key $KEYID
-
 $ gpg --keyserver keys.gnupg.net --send-key $KEYID
 
 $ gpg --keyserver hkps://keyserver.ubuntu.com:443 --send-key $KEYID
 ```
 
-After some time, the public key will propagate to [other](https://pgp.key-server.io/pks/lookup?search=doc%40duh.to&fingerprint=on&op=vindex) [servers](https://pgp.mit.edu/pks/lookup?search=doc%40duh.to&op=index).
+Or if [uploading to keys.openpgp.org](https://keys.openpgp.org/about/usage):
+
+```console
+gpg --send-key $KEYID | curl -T - https://keys.openpgp.org
+```
 
 # Configure Smartcard
 
@@ -2320,8 +2323,6 @@ $ gpg --import pubkey.asc
 ```
 
 N.B.: The `showpref` command can be issued to ensure that the notions were correctly added.
-
-It is now possible to continue following the Keyoxide guide and upload the key to WKD or to keys.openpgp.org.
 
 # SSH
 
