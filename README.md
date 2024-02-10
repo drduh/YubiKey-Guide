@@ -1930,7 +1930,7 @@ $ chmod 600 gpg.conf
 Set the following option. This avoids the problem where GnuPG will prompt, repeatedly, for the insertion of an already-inserted YubiKey:
 
 ```console
-$ echo "disable-ccid" >>~/scdaemon.conf
+$ echo "disable-ccid" >>scdaemon.conf
 ```
 
 >  The `disable-ccid` option is only required for GnuPG versions 2.3 or later. However, setting this option does not appear to interfere with the operation of earlier versions of GnuPG so it is recommended for all installations.
