@@ -1720,13 +1720,33 @@ $ unset GNUPGHOME
 
 # Using keys
 
+The following command creates and initialises the `~/.gnupg` if it does not exist already:
+
+```console
+$ gpg -k
+```
+
+Change your working directory:
+
+```console
+$ cd ~/.gnupg
+```
+
 Download [drduh/config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf):
 
 ```console
-$ cd ~/.gnupg ; wget https://raw.githubusercontent.com/drduh/config/master/gpg.conf
+$ wget https://raw.githubusercontent.com/drduh/config/master/gpg.conf
 
 $ chmod 600 gpg.conf
 ```
+
+Set the following option. This avoids the problem where GnuPG will prompt, repeatedly, for the insertion of an already-inserted YubiKey:
+
+```console
+$ echo "disable-ccid" >>scdaemon.conf
+```
+
+>  The `disable-ccid` option is only required for GnuPG versions 2.3 or later. However, setting this option does not appear to interfere with the operation of earlier versions of GnuPG so it is recommended for all installations.
 
 Install the required packages and mount the non-encrypted volume created earlier:
 
