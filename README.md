@@ -1,4 +1,4 @@
-This is a guide to using [YubiKey](https://www.yubico.com/products/) as a [smart card](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for secure encryption, signing and authentication operations.
+This is a guide to using [YubiKey](https://www.yubico.com/products/) as a [smart card](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for secure encryption, signature and authentication operations.
 
 Keys stored on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for daily use. YubiKey can be configured to require a physical touch for cryptographic operations, reducing the risk of credential compromise.
 
@@ -418,7 +418,7 @@ throw-keyids
 
 # Certify key
 
-The primary key to generate is the Certify key, which will be used to issue Subkeys for Encrypt, Sign and Authenticate operations.
+The primary key to generate is the Certify key, which will be used to issue Subkeys for encryption, signature and authentication operations.
 
 The Certify key should be kept offline at all times and only accessed from a secure environment to revoke or issue Subkeys. Keys can also be generated on the YubiKey itself to avoid duplication, however for usability and durability reasons this guide recommends against doing so.
 
@@ -2171,7 +2171,7 @@ The goal is to configure SSH client inside WSL work together with the Windows ag
 
 ![WSL agent architecture](media/schema_gpg.png)
 
-**Note** this works only for SSH agent forwarding. GnuPG forwarding for cryptographic operations is not supported. See [vuori/weasel-pageant](https://github.com/vuori/weasel-pageant) for more information.
+**Note** GnuPG forwarding for cryptographic operations is not supported. See [vuori/weasel-pageant](https://github.com/vuori/weasel-pageant) for more information.
 
 One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` in ssh/sshd config may be involved. However, when using ssh socket forwarding, do not enable `ForwardAgent` in ssh config. See [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more information. This requires Ubuntu 16.04 or newer for WSL and Kleopatra.
 
@@ -2283,7 +2283,7 @@ On the remote host, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink ye
 
 **Optional** Without root access on the remote host to edit `/etc/ssh/sshd_config`, socket located at `gpgconf --list-dir agent-socket` on the remote host will need to be removed before forwarding works. See [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding) for more information.
 
-Import public keys on the remote host. On the local host, copy the public keyring to the remote host:
+Import the public key on the remote host. On the local host, copy the public keyring to the remote host:
 
 ```console
 scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
@@ -2614,7 +2614,7 @@ To reset YubiKey from the Certify key backup (such as the one on encrypted porta
 
 1. To switch between multiple identities on different YubiKeys, unplug the first YubiKey and restart gpg-agent, ssh-agent and pinentry with `pkill gpg-agent ; pkill ssh-agent ; pkill pinentry ; eval $(gpg-agent --daemon --enable-ssh-support)` then insert the other YubiKey and run `gpg-connect-agent updatestartuptty /bye`
 
-1. To use YubiKey on multiple computers, import the corresponding public keys on them. Confirm see YubiKey is visible with `gpg --card-status`, then trust the imported public keys ultimately. `gpg --list-secret-keys` will show the correct and trusted key.
+1. To use YubiKey on multiple computers, import the corresponding public keys. Confirm see YubiKey is visible with `gpg --card-status`, then trust the imported public keys ultimately. `gpg --list-secret-keys` will show the correct and trusted key.
 
 # Troubleshooting
 
