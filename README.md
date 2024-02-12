@@ -1413,9 +1413,9 @@ cd $GNUPGHOME
 
 ## Switching between YubiKeys
 
-When GnuPG key is added to YubiKey using the *keytocard* command, the key is deleted from the keyring and a *stub* is added, pointing to the YubiKey. The stub identifies the GnuPG key ID and YubiKey serial number.
+When a GnuPG key is added to YubiKey using `keytocard`, the key is deleted from the keyring and a **stub** is added, pointing to the YubiKey. The stub identifies the GnuPG key ID and YubiKey serial number.
 
-However, when the operation is repeated for an additional YubiKey, the stub is overwritten by the *keytocard* operation and now will point to the latest YubiKey.
+When the operation is repeated for an additional YubiKey, the stub is overwritten `keytocard` and now will point to the latest YubiKey.
 
 GnuPG will request a specific YubiKey by serial number, as referenced by the stub, and will not recognize another YubiKey with a different serial number without manual intervention.
 
@@ -1443,7 +1443,7 @@ Before completing setup, verify the following:
 
 Reboot to finish.
 
-If an ephemeral environment was not used for setup, delete secret keys from the keyring and [securely delete](https://srm.sourceforge.net/) `$GNUPGHOME`.
+If an ephemeral environment was not used for setup, delete secret keys from the keyring and [securely delete](https://srm.sourceforge.net/) `$GNUPGHOME`
 
 ```console
 gpg --delete-secret-key $KEYID
@@ -1533,7 +1533,7 @@ export KEYID=0xF0F2CFEB04341FB5
 gpg --edit-key $KEYID
 ```
 
-Assign ultimate trust by tying `trust` and selecting option `5`:
+Assign ultimate trust by typing `trust` and selecting option `5`:
 
 ```console
 gpg> trust
@@ -1688,8 +1688,6 @@ sudo mount /dev/mapper/secret /mnt/encrypted-storage
 
 Import the Certify key and configuration to a temporary working directory.
 
-Note that Windows users should import certify.gpg:
-
 ```console
 export GNUPGHOME=$(mktemp -d -t gnupg_$(date +%Y%m%d%H%M)_XXX)
 
@@ -1756,13 +1754,13 @@ Set the expiration date, then `save`
 Next, [Export public keys](#export-public-keys):
 
 ```console
-gpg --armor --export $KEYID > gpg-$KEYID-$(date +%F).asc
+gpg --armor --export $KEYID > $KEYID-$(date +%F).asc
 ```
 
 Transfer the public key to the destination host, and then import it:
 
 ```console
-gpg --import gpg-0x*.asc
+gpg --import 0x*.asc
 ```
 
 Alternatively, publish to a public key server to update the expiration:
@@ -1781,7 +1779,7 @@ The validity of the GnuPG identity will be extended, allowing it to be used agai
 
 ## Rotating keys
 
-Follow the original steps to generate and add each Subkey.
+Follow the original procedure to generate and add [Subkeys](#subkeys).
 
 Previous Subkeys may be kept or deleted from the identity.
 
@@ -1851,7 +1849,7 @@ Use `showpref` to verify notions were correctly added.
 
 # SSH
 
-**Tip** YubiKey can be used directly for SSH only, without GnuPG features, starting in [OpenSSH v8.2](https://www.openssh.com/txt/release-8.2). For more information, see [ed25519-sk.md](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md) and [Yubico - GitHub now supports SSH security keys](https://www.yubico.com/blog/github-now-supports-ssh-security-keys/).
+**Tip** YubiKey can be used directly for SSH only, without GnuPG features, starting in [OpenSSH v8.2](https://www.openssh.com/txt/release-8.2). For more information, see [vorburger/ed25519-sk.md](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md) and [Yubico - GitHub now supports SSH security keys](https://www.yubico.com/blog/github-now-supports-ssh-security-keys/).
 
 [gpg-agent](https://wiki.archlinux.org/title/GnuPG#SSH_agent) supports the OpenSSH ssh-agent protocol (`enable-ssh-support`) as well as PuTTy's Pageant on Windows (`enable-putty-support`). This means it can be used instead of the traditional ssh-agent / pageant. There are some differences from ssh-agent, notably that gpg-agent does not _cache_ keys rather it converts, encrypts and stores them persistently as keys, then makes them available to ssh clients. Any existing ssh private keys should be deleted after importing to GnuPG agent.
 
@@ -2175,11 +2173,7 @@ The goal is to configure SSH client inside WSL work together with the Windows ag
 
 **Note** this works only for SSH agent forwarding. GnuPG forwarding for cryptographic operations is not supported. See [vuori/weasel-pageant](https://github.com/vuori/weasel-pageant) for more information.
 
-One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` in ssh/sshd config may be involved. However, when using ssh socket forwarding, do not enable `ForwardAgent` in ssh config. See [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more information. This requires:
-
-* Ubuntu 16.04 or newer for WSL
-* Kleopatra
-* [Windows configuration](#windows)
+One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` in ssh/sshd config may be involved. However, when using ssh socket forwarding, do not enable `ForwardAgent` in ssh config. See [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more information. This requires Ubuntu 16.04 or newer for WSL and Kleopatra.
 
 Download [vuori/weasel-pageant](https://github.com/vuori/weasel-pageant).
 
