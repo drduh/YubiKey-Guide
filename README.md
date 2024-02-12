@@ -20,7 +20,6 @@ To suggest an improvement, please send a pull request or open an [issue](https:/
    * [macOS](#macos)
    * [Windows](#windows)
 - [Entropy](#entropy)
-   * [YubiKey](#yubikey)
    * [OneRNG](#onerng)
 - [Generate keys](#generate-keys)
    * [Temporary working directory](#temporary-working-directory)
@@ -339,16 +338,6 @@ Generating cryptographic keys requires high-quality [randomness](https://www.ran
 Most operating systems use software-based pseudorandom number generators or CPU-based hardware random number generators (HRNG).
 
 **Optional** A device such as [OneRNG](https://onerng.info/onerng/) may be used to [increase the speed](https://lwn.net/Articles/648550/) and possibly the quality of available entropy.
-
-## YubiKey
-
-YubiKey version 5.2.3 introduced "Enhancements to OpenPGP 3.4 Support" which can gather additional entropy from YubiKey.
-
-To seed PRNG with an additional 512 bytes retrieved from the YubiKey:
-
-```console
-echo "SCD RANDOM 512" | gpg-connect-agent | sudo tee /dev/random | hexdump -C
-```
 
 ## OneRNG
 
