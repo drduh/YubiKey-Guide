@@ -33,7 +33,7 @@ To suggest an improvement, please send a pull request or open an [issue](https:/
 - [Export secret keys](#export-secret-keys)
 - [Revocation certificate](#revocation-certificate)
 - [Backup](#backup)
-- [Export public keys](#export-public-keys)
+- [Export public key](#export-public-key)
 - [Configure YubiKey](#configure-yubikey)
    * [Enable KDF](#enable-kdf)
    * [Change PIN](#change-pin)
@@ -822,10 +822,9 @@ List available secret keys:
 gpg -K
 ```
 
-The output should display Certify, Signature, Encryption and Authentication keys, for example:
+The output will display Certify, Signature, Encryption and Authentication keys, for example:
 
 ```console
----------------------------------------
 sec   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 uid                   [ultimate] YubiKey User <yubikey@example>
@@ -1071,9 +1070,9 @@ doas bioctl -d sd3
 
 See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for more information.
 
-# Export public keys
+# Export public key
 
-**Important** Without the *public* key, it will **not** be possible to use GnuPG to encrypt, decrypt, nor sign messages. However, YubiKey may still be used for SSH authentication.
+**Important** Without the public key, it will **not** be possible to use GnuPG to decrypt and sign messages. However, YubiKey can still be used for SSH authentication.
 
 Create another partition on the portable storage device to store the public key, or reconnect networking and upload to a key server.
 
@@ -1183,29 +1182,7 @@ gpg/card> quit
 Insert YubiKey and use GnuPG to configure it:
 
 ```console
-$ gpg --card-edit
-
-Reader ...........: Yubico Yubikey 4 OTP U2F CCID
-Application ID ...: D2760001240102010006055532110000
-Application type .: OpenPGP
-Version ..........: 3.4
-Manufacturer .....: Yubico
-Serial number ....: 05553211
-Name of cardholder: [not set]
-Language prefs ...: [not set]
-Salutation .......:
-URL of public key : [not set]
-Login data .......: [not set]
-Signature PIN ....: not forced
-Key attributes ...: rsa2048 rsa2048 rsa2048
-Max. PIN lengths .: 127 127 127
-PIN retry counter : 3 0 3
-Signature counter : 0
-KDF setting ......: off
-Signature key ....: [none]
-Encryption key....: [none]
-Authentication key: [none]
-General key info..: [none]
+gpg --card-edit
 ```
 
 Enter administrative mode:
@@ -1314,17 +1291,19 @@ gpg/card> quit
 
 **Important** Transferring keys to YubiKey is a one-way operation. Verify backups were made before proceeding. `keytocard` converts the local, on-disk key into a stub, which means the on-disk copy is no longer usable to transfer to subsequent YubiKeys.
 
-The currently selected key(s) are indicated with an `*`. When transferring keys, only one subkey should be selected at a time.
+The currently selected key(s) are indicated with an `*`.
+
+When transferring keys, only one subkey should be selected at a time.
 
 ```console
 gpg --edit-key $KEYID
 ```
 
-The Certify key passphrase and Admin PIN will be prompted.
+The Certify key passphrase and Admin PIN are required to transfer keys.
 
 ## Signature key
 
-Select and transfer the Signature key - `*` will appear next to the selected subkey (`ssb*`):
+Type `key 1` to select the first key and `keytocard` to transfer it, then `1` as the destination:
 
 ```console
 gpg> key 1
@@ -1349,7 +1328,7 @@ Your selection? 1
 
 ## Encryption key
 
-Type `key 1` again to deselect the first key and `key 2` to select the next key:
+Type `key 1` again to deselect the first key and `key 2` to select the next key, then `keytocard` to transfer it, then `2` as the destination:
 
 ```console
 gpg> key 1
@@ -1375,7 +1354,7 @@ Your selection? 2
 
 ## Authentication key
 
-Type `key 2` again to deselect the second key and `key 3` to select the third key:
+Type `key 2` again to deselect the second key and `key 3` to select the third key, then `keytocard` to transfer it, then `3` as the destination:
 
 ```console
 gpg> key 2
@@ -2031,7 +2010,7 @@ For example, tmux does not have environment variables such as `$SSH_AUTH_SOCK` w
 
 ### Use ssh-agent 
 
-You should now be able to use `ssh -A remote` on the _local_ host to log into _remote_ host, and should then be able to use YubiKey as if it were connected to the remote host. For example, using e.g. `ssh-add -l` on that remote host should show the public key from the YubiKey (note `cardno:`).  (If you don't want to have to remember to use `ssh -A`, you can use `ForwardAgent yes` in `~/.ssh/config`.  As a security best practice, always use `ForwardAgent yes` only for a single `Hostname`, never for all servers.)
+You should now be able to use `ssh -A remote` on the _local_ host to log into _remote_ host, and should then be able to use YubiKey as if it were connected to the remote host. For example, using e.g. `ssh-add -l` on that remote host will show the public key from the YubiKey (`cardno:`). Always use `ForwardAgent yes` only for a single host, never for all servers.
 
 ### Use S.gpg-agent.ssh
 
