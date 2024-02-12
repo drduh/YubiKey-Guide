@@ -438,13 +438,11 @@ throw-keyids
 
 The primary key to generate is the Certify key, which will be used to issue Subkeys for Encrypt, Sign and Authenticate operations.
 
-**Important** The Certify key should be kept offline at all times and only accessed from a secure environment to revoke or issue new Subkeys. Keys can also be generated on the YubiKey itself to avoid duplication, however for usability and durability reasons this guide recommends against doing so.
+The Certify key should be kept offline at all times and only accessed from a secure environment to revoke or issue Subkeys. Keys can also be generated on the YubiKey itself to avoid duplication, however for usability and durability reasons this guide recommends against doing so.
 
-Generate a passphrase which will be needed throughout the guide to create and export Subkeys.
+Generate a passphrase which will be needed throughout the guide to create and export Subkeys. The passphrase should be memorized or written down in a secure place separate from the backup storage disk.
 
-**Important** The passphrase should be memorized or written down in a secure place separate from the backup storage disk.
-
-The passphrase should consist of only upper case letters and numbers for improved readability.
+The passphrase is recommended to consist of only upper case letters and numbers for improved readability.
 
 The following command will generate strong passphrases while avoiding ambiguous characters:
 
@@ -471,12 +469,15 @@ WM2J-XF7L-QV6D-AWLY-Y2D8-4TQQ
 
 **Tip** On Linux or OpenBSD, select the passphrase using the mouse or by double-clicking on it to copy to clipboard. Paste using the middle mouse button or `Shift`-`Insert`
 
-Generate a new key with GnuPG, selecting `(8) RSA (set your own capabilities)`, `Certify` capability only and `4096` bit key size.
-
-Do **not** set the Certify key to expire - see [Note #3](#notes).
+Generate the Certify key with GnuPG:
 
 ```console
-$ gpg --expert --full-generate-key
+gpg --expert --full-generate-key
+```
+
+Select `(8) RSA (set your own capabilities)`, then `E` and `S` deselect Encrypt and Sign actions and only the Certify capability remains:
+
+```console
 Please select what kind of key you want:
    (1) RSA and RSA (default)
    (2) DSA and Elgamal
@@ -518,7 +519,13 @@ Current allowed actions: Certify
    (E) Toggle the encrypt capability
    (A) Toggle the authenticate capability
    (Q) Finished
+```
 
+Select `Q` then `4096` as the keysize.
+
+Do **not** set the Certify key to expire (see [Note #3](#notes)).
+
+```console
 Your selection? Q
 RSA keys may be between 1024 and 4096 bits long.
 What keysize do you want? (2048) 4096
@@ -534,55 +541,52 @@ Key does not expire at all
 Is this correct? (y/N) y
 ```
 
-Input any name and email address (it doesn't have to be valid):
+Input any name and email address (it doesn't have to be valid) - Comment is optional:
 
 ```console
 GnuPG needs to construct a user ID to identify your key.
 
-Real name: Dr Duh
-Email address: doc@duh.to
-Comment: [Optional - leave blank]
+Real name: YubiKey User
+Email address: yubikey@example
+Comment:
 You selected this USER-ID:
-    "Dr Duh <doc@duh.to>"
+    "YubiKey User <yubikey@example>"
 
-Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? o
-
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? O
 We need to generate a lot of random bytes. It is a good idea to perform
 some other action (type on the keyboard, move the mouse, utilize the
 disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
-
-gpg: /tmp.FLZC0xcM/trustdb.gpg: trustdb created
-gpg: key 0xFF3E7D88647EBCDB marked as ultimately trusted
-gpg: directory '/tmp.FLZC0xcM/openpgp-revocs.d' created
-gpg: revocation certificate stored as '/tmp.FLZC0xcM/openpgp-revocs.d/011CE16BD45B27A55BA8776DFF3E7D88647EBCDB.rev'
+gpg: /tmp/gnupg_202401011200_TnL/trustdb.gpg: trustdb created
+gpg: directory '/tmp/gnupg_202401011200_TnL/openpgp-revocs.d' created
+gpg: revocation certificate stored as '/tmp/gnupg_202401011200_TnL/openpgp-revocs.d/4E2C1FA3372CBA96A06AC34AF0F2CFEB04341FB5.rev'
 public and secret key created and signed.
 
-pub   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
-      Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
-uid                              Dr Duh <doc@duh.to>
+pub   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
+      Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
+uid                              YubiKey User <yubikey@example>
 ```
 
-Export the GnuPG key ID as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) (`KEYID`):
+Copy the Certify key identifier beginning with `0x` and export it as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) (`KEYID`):
 
 ```console
-export KEYID=0xFF3E7D88647EBCDB
+export KEYID=0xF0F2CFEB04341FB5
 ```
 
 # Sign with existing key
 
-(Optional) If you already have a PGP key, you may want to sign the new key with the old one to prove that the new key is controlled by you.
+**Optional** Existing PGP keys may be used to sign new ones to prove control.
 
-Export your existing key to move it to the working keyring:
+Export the existing key to move it to the working keyring:
 
 ```console
 gpg --export-secret-keys --armor --output /tmp/new.sec
 ```
 
-Then sign the new key:
+Sign the new key:
 
 ```console
-gpg  --default-key $OLDKEY --sign-key $KEYID
+gpg --default-key $OLDKEY --sign-key $KEYID
 ```
 
 # Subkeys
@@ -590,69 +594,16 @@ gpg  --default-key $OLDKEY --sign-key $KEYID
 Edit the identity to add Subkeys:
 
 ```console
-$ gpg --expert --edit-key $KEYID
-
-Secret key is available.
-
-sec  rsa4096/0xEA5DE91459B80592
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-[ultimate] (1). Dr Duh <doc@duh.to>
+gpg --expert --edit-key $KEYID
 ```
 
-Use of 4096-bit RSA keys is recommended.
+RSA with 4096-bit key length is recommended.
 
 Subkeys are recommended to have one or several year expirations. They must be renewed using the Certify key. See [rotating keys](#rotating-keys).
 
 ## Signing
 
-Create a [signing key](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623) by selecting `addkey` then `(4) RSA (sign only)`:
-
-```console
-gpg> addkey
-Key is protected.
-
-You need a passphrase to unlock the secret key for
-user: "Dr Duh <doc@duh.to>"
-4096-bit RSA key, ID 0xFF3E7D88647EBCDB, created 2016-05-24
-
-Please select what kind of key you want:
-   (3) DSA (sign only)
-   (4) RSA (sign only)
-   (5) Elgamal (encrypt only)
-   (6) RSA (encrypt only)
-   (7) DSA (set your own capabilities)
-   (8) RSA (set your own capabilities)
-Your selection? 4
-RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
-Requested keysize is 4096 bits
-Please specify how long the key should be valid.
-         0 = key does not expire
-      <n>  = key expires in n days
-      <n>w = key expires in n weeks
-      <n>m = key expires in n months
-      <n>y = key expires in n years
-Key is valid for? (0) 1y
-Key expires at Mon 10 Sep 2018 00:00:00 PM UTC
-Is this correct? (y/N) y
-Really create? (y/N) y
-We need to generate a lot of random bytes. It is a good idea to perform
-some other action (type on the keyboard, move the mouse, utilize the
-disks) during the prime generation; this gives the random number
-generator a better chance to gain enough entropy.
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S
-[ultimate] (1). Dr Duh <doc@duh.to>
-```
-
-## Encryption
-
-Next, create an [encryption key](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php) by selecting `(6) RSA (encrypt only)`:
+Create a [signing key](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623) by selecting `addkey` then the `(4) RSA (sign only)` option:
 
 ```console
 gpg> addkey
@@ -667,9 +618,10 @@ Please select what kind of key you want:
   (11) ECC (set your own capabilities)
   (12) ECC (encrypt only)
   (13) Existing key
-Your selection? 6
+  (14) Existing key from card
+Your selection? 4
 RSA keys may be between 1024 and 4096 bits long.
-What keysize do you want? (2048) 4096
+What keysize do you want? (3072) 4096
 Requested keysize is 4096 bits
 Please specify how long the key should be valid.
          0 = key does not expire
@@ -677,8 +629,7 @@ Please specify how long the key should be valid.
       <n>w = key expires in n weeks
       <n>m = key expires in n months
       <n>y = key expires in n years
-Key is valid for? (0) 1y
-Key expires at Mon 10 Sep 2018 00:00:00 PM UTC
+Key is valid for? (0) 2y
 Is this correct? (y/N) y
 Really create? (y/N) y
 We need to generate a lot of random bytes. It is a good idea to perform
@@ -686,21 +637,36 @@ some other action (type on the keyboard, move the mouse, utilize the
 disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09       usage: E
-[ultimate] (1). Dr Duh <doc@duh.to>
+sec  rsa4096/0xF0F2CFEB04341FB5
+     created: 2024-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  rsa4096/0xB3CD10E502E19637
+     created: 2024-01-01  expires: 2026-01-01  usage: S
+[ultimate] (1). YubiKey User <yubikey@example>
+```
+
+## Encryption
+
+Next, create an [encryption key](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php) by selecting `addkey` then the `(6) RSA (encrypt only)` option.
+
+```console
+sec  rsa4096/0xF0F2CFEB04341FB5
+     created: 2024-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  rsa4096/0xB3CD10E502E19637
+     created: 2024-01-01  expires: 2026-01-01  usage: S
+ssb  rsa4096/0x30CBE8C4B085B9F7
+     created: 2024-01-01  expires: 2026-01-01  usage: E
+[ultimate] (1). YubiKey User <yubikey@example>
 ```
 
 ## Authentication
 
 Finally, create an [authentication key](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for).
 
-GnuPG doesn't provide an authenticate-only key type, so select `(8) RSA (set your own capabilities)` and toggle the required capabilities until the only allowed action is `Authenticate`:
+Select `addkey` then the `(8) RSA (set your own capabilities)` option.
+
+Toggle the required capabilities with `S`, `E` and `A` until `Authenticate` is the only selected action:
 
 ```console
 gpg> addkey
@@ -715,6 +681,7 @@ Please select what kind of key you want:
   (11) ECC (set your own capabilities)
   (12) ECC (encrypt only)
   (13) Existing key
+  (14) Existing key from card
 Your selection? 8
 
 Possible actions for a RSA key: Sign Encrypt Authenticate
@@ -765,8 +732,7 @@ Please specify how long the key should be valid.
       <n>w = key expires in n weeks
       <n>m = key expires in n months
       <n>y = key expires in n years
-Key is valid for? (0) 1y
-Key expires at Mon 10 Sep 2018 00:00:00 PM UTC
+Key is valid for? (0) 2y
 Is this correct? (y/N) y
 Really create? (y/N) y
 We need to generate a lot of random bytes. It is a good idea to perform
@@ -774,19 +740,19 @@ some other action (type on the keyboard, move the mouse, utilize the
 disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09       usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
+sec  rsa4096/0xF0F2CFEB04341FB5
+     created: 2024-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  rsa4096/0xB3CD10E502E19637
+     created: 2024-01-01  expires: 2026-01-01  usage: S
+ssb  rsa4096/0x30CBE8C4B085B9F7
+     created: 2024-01-01  expires: 2026-01-01  usage: E
+ssb  rsa4096/0xAD9E24E1B8CB9600
+     created: 2024-01-01  expires: 2026-01-01  usage: A
+[ultimate] (1). YubiKey User <yubikey@example>
 ```
 
-Finish by saving the keys.
+Finish by saving the keys:
 
 ```console
 gpg> save
@@ -794,7 +760,7 @@ gpg> save
 
 ## Add extra identities
 
-**Optional** To add additional email addresses or identities, use `adduid`.
+**Optional** To add additional email addresses or identities, use `adduid`
 
 Edit the identity:
 
@@ -802,97 +768,43 @@ Edit the identity:
 gpg --expert --edit-key $KEYID
 ```
 
-Then add the new identity:
+Add the new identity:
+
 ```console
 gpg> adduid
-Real name: Dr Duh
-Email address: DrDuh@other.org
+Real name: YubiKey User
+Email address: yubikey@somewhere
 Comment:
 You selected this USER-ID:
-    "Dr Duh <DrDuh@other.org>"
+    "YubiKey User <yubikey@somewhere>"
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
-[ unknown] (2). Dr Duh <DrDuh@other.org>
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? o
 
+sec  rsa4096/0xF0F2CFEB04341FB5
+     created: 2024-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  rsa4096/0xB3CD10E502E19637
+     created: 2024-01-01  expires: 2026-01-01  usage: S
+ssb  rsa4096/0x30CBE8C4B085B9F7
+     created: 2024-01-01  expires: 2026-01-01  usage: E
+ssb  rsa4096/0xAD9E24E1B8CB9600
+     created: 2024-01-01  expires: 2026-01-01  usage: A
+[ultimate] (1)  YubiKey User <yubikey@example>
+[ unknown] (2). YubiKey User <yubikey@somewhere>
+```
+
+Configure trust:
+
+```console
 gpg> trust
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
-[ unknown] (2). Dr Duh <DrDuh@other.org>
-
-Please decide how far you trust this user to correctly verify other users' keys
-(by looking at passports, checking fingerprints from different sources, etc.)
-
-  1 = I don't know or won't say
-  2 = I do NOT trust
-  3 = I trust marginally
-  4 = I trust fully
-  5 = I trust ultimately
-  m = back to the main menu
-
+[...]
 Your decision? 5
 Do you really want to set this key to ultimate trust? (y/N) y
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
-[ unknown] (2). Dr Duh <DrDuh@other.org>
-
-gpg> uid 1
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
-[ultimate] (1)* Dr Duh <doc@duh.to>
-[ unknown] (2). Dr Duh <DrDuh@other.org>
-
-gpg> primary
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: never       usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: never       usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: never       usage: A
-[ultimate] (1)* Dr Duh <doc@duh.to>
-[ unknown] (2)  Dr Duh <DrDuh@other.org>
-
+[...]
 gpg> save
 ```
 
-By default, the last identity added will be the primary user ID - use `primary` to change that.
+By default, the latest identity added will be the primary user ID. Select `uid 2` or equivalent and `primary` to change it.
 
 # Verify
 
@@ -905,33 +817,26 @@ gpg -K
 Verify output:
 
 ```console
-/tmp.FLZC0xcM/pubring.kbx
--------------------------------------------------------------------------
-sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
-      Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
-uid                            Dr Duh <doc@duh.to>
-ssb   rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
-ssb   rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
-ssb   rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
+---------------------------------------
+sec   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
+      Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
+uid                   [ultimate] YubiKey User <yubikey@example>
+ssb   rsa4096/0xB3CD10E502E19637 2024-01-01 [S] [expires: 2026-01-01]
+ssb   rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-01-01]
+ssb   rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-01-01]
 ```
 
-Add any additional identities or email addresses as needed using the `adduid` command.
-
-**Tip** Verify with a OpenPGP [key best practice checker](https://riseup.net/en/security/message-security/openpgp/best-practices#openpgp-key-checks):
+**Optional** Verify with a OpenPGP [key best practice checker](https://riseup.net/en/security/message-security/openpgp/best-practices#openpgp-key-checks):
 
 ```console
 gpg --export $KEYID | hokey lint
 ```
-
-The output will display any problems with your key in red text. If everything is green, your key passes each of the tests. If it is red, your key has failed one of the tests.
 
 hokey may warn (orange text) about cross certification for the authentication key. GnuPG [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html) documentation has more detail on cross certification, and version 2.2.1 notes "subkey <keyid> does not sign and so does not need to be cross-certified".
 
 hokey may also indicate a problem (red text) with `Key expiration times: []` on the primary key - see [Note #3](#notes).
 
 # Export secret keys
-
-The Certify key and Subkeys will be encrypted with your passphrase when exported.
 
 Save a copy of all keys:
 
@@ -951,23 +856,21 @@ gpg -o \path\to\dir\subkeys.gpg --armor --export-secret-subkeys $KEYID
 
 # Revocation certificate
 
-Although we will backup and store the Certify key in a safe place, it is best practice to never rule out the possibility of losing it or having the backup fail. Without the Certify key, it will be impossible to renew or rotate Subkeys or generate a revocation certificate; the PGP identity will be useless.
+Although the Certify key may be backed up to a secure place, the possibility of losing it cannot be ruled out. Without the Certify key, it will be impossible to renew or rotate Subkeys or generate a revocation certificate; the PGP identity will be useless. To mitigate this risk, deprecate an orphaned identity with a revocation certificate.
 
-Even worse, we cannot advertise this fact in any way to those that are using our keys. It is reasonable to assume this *will* occur at some point and the only remaining way to deprecate orphaned keys is a revocation certificate.
-
-To create the revocation certificate:
+To create one:
 
 ``` console
 gpg --output $GNUPGHOME/revoke.asc --gen-revoke $KEYID
 ```
 
-The `revoke.asc` certificate file should be stored (or printed) in a (secondary) place that allows retrieval in case the main backup fails.
+The `revoke.asc` file should be stored in a secondary location to the primary backup.
 
 # Backup
 
 Create an **encrypted** backup on portable storage to be kept offline in a secure and durable location.
 	
-**Tip** The [ext2](https://en.wikipedia.org/wiki/Ext2) filesystem without encryption can be mounted on Linux and OpenBSD. Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) filesystem for MacOS/Windows compatibility instead.
+**Tip** The [ext2](https://en.wikipedia.org/wiki/Ext2) filesystem without encryption can be mounted on Linux and OpenBSD. Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) filesystem for macOS and Windows compatibility instead.
 
 As an additional backup measure, use [Paperkey](https://www.jabberwocky.com/software/paperkey/) to make a physical copy of materials. See [Linux Kernel Maintainer PGP Guide](https://www.kernel.org/doc/html/latest/process/maintainer-pgp-guide.html#back-up-your-master-key-for-disaster-recovery) for more information.
 
@@ -1001,11 +904,6 @@ Erase and create a new partition table:
 $ sudo fdisk /dev/mmcblk0
 
 Welcome to fdisk (util-linux 2.33.1).
-Changes will remain in memory only, until you decide to write them.
-Be careful before using the write command.
-
-Device does not contain a recognized partition table.
-Created a new DOS disklabel with disk identifier 0x3c1ad14a.
 
 Command (m for help): g
 Created a new GPT disklabel (GUID: 4E7495FD-85A3-3E48-97FC-2DD8D41516C3).
@@ -1023,8 +921,6 @@ Create a new partition with a 25 Megabyte size:
 $ sudo fdisk /dev/mmcblk0
 
 Welcome to fdisk (util-linux 2.36.1).
-Changes will remain in memory only, until you decide to write them.
-Be careful before using the write command.
 
 Command (m for help): n
 Partition number (1-128, default 1):
@@ -1175,12 +1071,12 @@ Create another partition on the portable storage device to store the public key,
 
 **Linux**
 
+Provision the portable storage device:
+
 ```console
 $ sudo fdisk /dev/mmcblk0
 
 Welcome to fdisk (util-linux 2.36.1).
-Changes will remain in memory only, until you decide to write them.
-Be careful before using the write command.
 
 Command (m for help): n
 Partition number (2-128, default 2):
@@ -1193,14 +1089,18 @@ Command (m for help): w
 The partition table has been altered.
 Calling ioctl() to re-read partition table.
 Syncing disks.
+```
 
-$ sudo mkfs.ext2 /dev/mmcblk0p2
+Create a filesystem and export the public key to it:
 
-$ sudo mkdir /mnt/public
+```console
+sudo mkfs.ext2 /dev/mmcblk0p2
 
-$ sudo mount /dev/mmcblk0p2 /mnt/public/
+sudo mkdir /mnt/public
 
-$ gpg --armor --export $KEYID | sudo tee /mnt/public/gpg-$KEYID-$(date +%F).asc
+sudo mount /dev/mmcblk0p2 /mnt/public/
+
+gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
 ```
 
 **OpenBSD**
@@ -1215,14 +1115,18 @@ FS type: [swap] 4.2BSD
 sd2*> w
 sd2> q
 No label changes.
+```
 
-$ doas newfs sd2b
+Create a filesystem and export the public key to it:
 
-$ doas mkdir /mnt/public
+```console
+doas newfs sd2b
 
-$ doas mount /dev/sd2b /mnt/public
+doas mkdir /mnt/public
 
-$ gpg --armor --export $KEYID | doas tee /mnt/public/gpg-$KEYID-$(date +%F).asc
+doas mount /dev/sd2b /mnt/public
+
+gpg --armor --export $KEYID | doas tee /mnt/public/$KEYID-$(date +%F).asc
 ```
 
 **Windows**
@@ -1233,7 +1137,7 @@ gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
 
 **Keyserver**
 
-(Optional) Upload the public key to a [public keyserver](https://debian-administration.org/article/451/Submitting_your_GPG_key_to_a_keyserver):
+**Optional** Upload the public key to a [public keyserver](https://debian-administration.org/article/451/Submitting_your_GPG_key_to_a_keyserver):
 
 ```console
 gpg --send-key $KEYID
@@ -1302,6 +1206,8 @@ Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing 
 gpg/card> kdf-setup
 ```
 
+This step must be completed before changing PINs or moving keys or an error will occur: `gpg: error for setup KDF: Conditions of use not satisfied`
+
 ## Change PIN
 
 The [PGP interface](https://developers.yubico.com/PGP/) is separate from other modules on YubiKey, such as the [PIV interface](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html) - the PGP interface has its own *PIN*, *Admin PIN*, and *Reset Code* which must be changed from default values.
@@ -1320,7 +1226,7 @@ Reset Code | None          | reset PIN ([more information](https://forum.yubico.
 
 A maximum of 127 ASCII characters are allowed. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
 
-To update PINs:
+Update PINs:
 
 ```console
 gpg/card> passwd
@@ -1361,97 +1267,48 @@ ykman openpgp access set-retries 5 5 5 -f -a YOUR_ADMIN_PIN
 
 ## Set information
 
-Some fields are optional.
+While still in administrative mode:
 
 ```console
+gpg/card> list
+
 gpg/card> name
-Cardholder's surname: Duh
-Cardholder's given name: Dr
+Cardholder's surname: User
+Cardholder's given name: YubiKey
 
 gpg/card> lang
 Language preferences: en
 
 gpg/card> login
-Login data (account name): doc@duh.to
-
-gpg/card> list
-
-Application ID ...: D2760001240102010006055532110000
-Version ..........: 3.4
-Manufacturer .....: unknown
-Serial number ....: 05553211
-Name of cardholder: Dr Duh
-Language prefs ...: en
-Sex ..............: unspecified
-URL of public key : [not set]
-Login data .......: doc@duh.to
-Private DO 4 .....: [not set]
-Signature PIN ....: not forced
-Key attributes ...: rsa2048 rsa2048 rsa2048
-Max. PIN lengths .: 127 127 127
-PIN retry counter : 3 0 3
-Signature counter : 0
-KDF setting ......: on
-Signature key ....: [none]
-Encryption key....: [none]
-Authentication key: [none]
-General key info..: [none]
+Login data (account name): yubikey@example
 
 gpg/card> quit
 ```
 
 # Transfer keys
 
-**Important** Transferring keys to YubiKey using `keytocard` is a one-way/destructive operation. Make sure a backup was made before proceeding. `keytocard` converts the local, on-disk key into a stub, which means the on-disk copy is no longer usable to transfer to subsequent YubiKeys.
+**Important** Transferring keys to YubiKey is a one-way/destructive operation. Verify backups were made before proceeding. `keytocard` converts the local, on-disk key into a stub, which means the on-disk copy is no longer usable to transfer to subsequent YubiKeys.
 
 Previous GnuPG versions required the `toggle` command before selecting keys. The currently selected key(s) are indicated with an `*`. When moving keys only one key should be selected at a time.
 
 ```console
-$ gpg --edit-key $KEYID
-
-Secret key is available.
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
+gpg --edit-key $KEYID
 ```
 
 ## Signing
 
 **Important** You will be prompted for the Certify key passphrase and Admin PIN.
 
-Select and transfer the signature key.
+Select and transfer the signature key - `*` will appear next to the selected subkey (`ssb*`):
 
 ```console
 gpg> key 1
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb* rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
 
 gpg> keytocard
 Please select where to store the key:
    (1) Signature key
    (3) Authentication key
 Your selection? 1
-
-You need a passphrase to unlock the secret key for
-user: "Dr Duh <doc@duh.to>"
-4096-bit RSA key, ID 0xBECFA3C1AE191D15, created 2016-05-24
 ```
 
 ## Encryption
@@ -1463,23 +1320,10 @@ gpg> key 1
 
 gpg> key 2
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb* rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
-
 gpg> keytocard
 Please select where to store the key:
    (2) Encryption key
 Your selection? 2
-
-[...]
 ```
 
 ## Authentication
@@ -1490,17 +1334,6 @@ Type `key 2` again to deselect and `key 3` to select the last key:
 gpg> key 2
 
 gpg> key 3
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb* rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
 
 gpg> keytocard
 Please select where to store the key:
@@ -1516,18 +1349,15 @@ gpg> save
 
 # Verify card
 
-Verify the Subkeys have been moved to YubiKey as indicated by `ssb>`
+Verify Subkeys have been moved to YubiKey as indicated by `ssb>` with `gpg -K`, for example:
 
 ```console
-$ gpg -K
-/tmp.FLZC0xcM/pubring.kbx
--------------------------------------------------------------------------
-sec   rsa4096/0xFF3E7D88647EBCDB 2017-10-09 [C]
-      Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
-uid                            Dr Duh <doc@duh.to>
-ssb>  rsa4096/0xBECFA3C1AE191D15 2017-10-09 [S] [expires: 2018-10-09]
-ssb>  rsa4096/0x5912A795E90DD2CF 2017-10-09 [E] [expires: 2018-10-09]
-ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
+sec   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
+      Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
+uid                   [ultimate] YubiKey User <yubikey@example>
+ssb>  rsa4096/0xB3CD10E502E19637 2024-01-01 [S] [expires: 2026-01-01]
+ssb>  rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-01-01]
+ssb>  rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-01-01]
 ```
 
 # Multiple YubiKeys
@@ -1535,13 +1365,11 @@ ssb>  rsa4096/0x3F29127E79649A3D 2017-10-09 [A] [expires: 2018-10-09]
 To provision additional YubiKeys, restore the Certify key backup and repeat [Configure YubiKey](#configure-yubikey).
 
 ```console
-$ mv -vi $GNUPGHOME $GNUPGHOME.1
-renamed '/tmp.FLZC0xcM' -> '/tmp.FLZC0xcM.1'
+mv -vi $GNUPGHOME $GNUPGHOME.1
 
-$ cp -avi /mnt/encrypted-storage/tmp.XXX $GNUPGHOME
-'/mnt/encrypted-storage/tmp.FLZC0xcM' -> '/tmp.FLZC0xcM'
+cp -avi /mnt/encrypted-storage/tmp.XXX $GNUPGHOME
 
-$ cd $GNUPGHOME
+cd $GNUPGHOME
 ```
 
 ## Switching between YubiKeys
@@ -1575,7 +1403,7 @@ gpg --export-ownertrust > gpg-owner-trust.txt
 Move both files to the second host, then define the key ID:
 
 ```console
-export KEYID=0xFF3E7D88647EBCDB
+export KEYID=0xF0F2CFEB04341FB5
 ```
 
 Import the public key:
@@ -1619,27 +1447,21 @@ The public key URL can also be added to YubiKey (based on [Shaw 2003](https://da
 URL="hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=${KEYID}"
 ```
 
-Edit YubiKey using the Admin PIN:
+Edit YubiKey with `gpg --edit-card` and the Admin PIN:
 
 ```console
-$ gpg --edit-card
 gpg/card> admin
+
 gpg/card> url
-URL to retrieve public key: hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF3E7D88647EBCDB
+URL to retrieve public key: hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF00000000000000
+
 gpg/card> quit
 ```
 
-With the URL on YubiKey, the `fetch` command can be used to retrieve the public key:
+With the URL on YubiKey, retrieve the public key:
 
 ```console
-$ gpg --edit-card
-
 gpg/card> fetch
-gpg: requesting key from 'hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF3E7D88647EBCDB'
-gpg: /home/pi/.gnupg/trustdb.gpg: trustdb created
-gpg: key FF3E7D88647EBCDB: public key "Dr Duh <doc@duh.to>" imported
-gpg: Total number processed: 1
-gpg:               imported: 1
 
 gpg/card> quit
 ```
@@ -1734,7 +1556,7 @@ gpg --recv $KEYID
 Edit the Certify key:
 
 ```console
-export KEYID=0xFF3E7D88647EBCDB
+export KEYID=0xF0F2CFEB04341FB5
 
 gpg --edit-key $KEYID
 ```
@@ -1743,70 +1565,49 @@ Assign ultimate trust by selecting `trust` and `5`:
 
 ```console
 gpg> trust
-pub  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never       usage: C
-                               trust: unknown       validity: unknown
-sub  4096R/0xBECFA3C1AE191D15  created: 2017-10-09  expires: 2018-10-09  usage: S
-sub  4096R/0x5912A795E90DD2CF  created: 2017-10-09  expires: 2018-10-09  usage: E
-sub  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09  usage: A
-[ unknown] (1). Dr Duh <doc@duh.to>
-
-Please decide how far you trust this user to correctly verify other users' keys
-(by looking at passports, checking fingerprints from different sources, etc.)
-
-  1 = I don't know or won't say
-  2 = I do NOT trust
-  3 = I trust marginally
-  4 = I trust fully
-  5 = I trust ultimately
-  m = back to the main menu
 
 Your decision? 5
 Do you really want to set this key to ultimate trust? (y/N) y
 
-pub  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never       usage: C
-                               trust: ultimate      validity: unknown
-sub  4096R/0xBECFA3C1AE191D15  created: 2017-10-09  expires: 2018-10-09  usage: S
-sub  4096R/0x5912A795E90DD2CF  created: 2017-10-09  expires: 2018-10-09  usage: E
-sub  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09  usage: A
-[ unknown] (1). Dr Duh <doc@duh.to>
-
 gpg> quit
 ```
 
-Remove and re-insert YubiKey and verify the status:
+Remove and re-insert YubiKey.
+
+Verify the status with `gpg --card-status` which should be similar to:
 
 ```console
-$ gpg --card-status
 Reader ...........: Yubico YubiKey OTP FIDO CCID 00 00
 Application ID ...: D2760001240102010006055532110000
+Application type .: OpenPGP
 Version ..........: 3.4
 Manufacturer .....: Yubico
 Serial number ....: 05553211
-Name of cardholder: Dr Duh
+Name of cardholder: YubiKey User
 Language prefs ...: en
-Sex ..............: unspecified
+Salutation .......:
 URL of public key : [not set]
-Login data .......: doc@duh.to
+Login data .......: yubikey@example
 Signature PIN ....: not forced
 Key attributes ...: rsa4096 rsa4096 rsa4096
 Max. PIN lengths .: 127 127 127
 PIN retry counter : 3 3 3
 Signature counter : 0
 KDF setting ......: on
-Signature key ....: 07AA 7735 E502 C5EB E09E  B8B0 BECF A3C1 AE19 1D15
-      created ....: 2016-05-24 23:22:01
-Encryption key....: 6F26 6F46 845B BEB8 BDF3  7E9B 5912 A795 E90D D2CF
-      created ....: 2016-05-24 23:29:03
-Authentication key: 82BE 7837 6A3F 2E7B E556  5E35 3F29 127E 7964 9A3D
-      created ....: 2016-05-24 23:36:40
-General key info..: pub  4096R/0xBECFA3C1AE191D15 2016-05-24 Dr Duh <doc@duh.to>
-sec#  4096R/0xFF3E7D88647EBCDB  created: 2016-05-24  expires: never
-ssb>  4096R/0xBECFA3C1AE191D15  created: 2017-10-09  expires: 2018-10-09
-                      card-no: 0006 05553211
-ssb>  4096R/0x5912A795E90DD2CF  created: 2017-10-09  expires: 2018-10-09
-                      card-no: 0006 05553211
-ssb>  4096R/0x3F29127E79649A3D  created: 2017-10-09  expires: 2018-10-09
-                      card-no: 0006 05553211
+Signature key ....: CF5A 305B 808B 7A0F 230D  A064 B3CD 10E5 02E1 9637
+      created ....: 2024-01-01 12:00:00
+Encryption key....: A5FA A005 5BED 4DC9 889D  38BC 30CB E8C4 B085 B9F7
+      created ....: 2024-01-01 12:00:00
+Authentication key: 570E 1355 6D01 4C04 8B6D  E2A3 AD9E 24E1 B8CB 9600
+      created ....: 2024-01-01 12:00:00
+General key info..: sub  rsa4096/0xB3CD10E502E19637 2024-01-01 YubiKey User <yubikey@example>
+sec#  rsa4096/0xF0F2CFEB04341FB5  created: 2024-01-01  expires: never
+ssb>  rsa4096/0xB3CD10E502E19637  created: 2024-01-01  expires: 2026-01-01
+                                  card-no: 0006 05553211
+ssb>  rsa4096/0x30CBE8C4B085B9F7  created: 2024-01-01  expires: 2026-01-01
+                                  card-no: 0006 05553211
+ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2024-01-01  expires: 2026-01-01
+                                  card-no: 0006 05553211
 ```
 
 `sec#` indicates the corresponding key is not available.
@@ -1848,11 +1649,11 @@ Verify the signature:
 
 ```console
 $ gpg --verify signed.txt
-gpg: Signature made Wed 25 May 2016 00:00:00 AM UTC
-gpg:                using RSA key 0xBECFA3C1AE191D15
-gpg: Good signature from "Dr Duh <doc@duh.to>" [ultimate]
-Primary key fingerprint: 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
-     Subkey fingerprint: 07AA 7735 E502 C5EB E09E  B8B0 BECF A3C1 AE19 1D15
+gpg: Signature made Mon 01 Jan 2024 12:00:00 PM PST
+gpg:                using RSA key CF5A305B808B7A0F230DA064B3CD10E502E19637
+gpg: Good signature from "YubiKey User <yubikey@example>" [ultimate]
+Primary key fingerprint: 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
+     Subkey fingerprint: CF5A 305B 808B 7A0F 230D  A064 B3CD 10E5 02E1 9637
 ```
 
 Use a [shell function](https://github.com/drduh/config/blob/master/zshrc) to make encrypting files easier:
@@ -1874,7 +1675,7 @@ $ secret document.pdf
 document.pdf -> document.pdf.1580000000.enc
 
 $ reveal document.pdf.1580000000.enc
-gpg: anonymous recipient; trying secret key 0xFF3E7D88647EBCDB ...
+gpg: anonymous recipient; trying secret key 0xF0F2CFEB04341FB5 ...
 gpg: okay, we are the anonymous recipient.
 gpg: encrypted with RSA key, ID 0x0000000000000000
 document.pdf.1580000000.enc -> document.pdf
@@ -1928,7 +1729,7 @@ cp -v /mnt/encrypted-storage/tmp.XXX/gpg.conf $GNUPGHOME
 Edit the Certify key:
 
 ```console
-export KEYID=0xFF3E7D88647EBCDB
+export KEYID=0xF0F2CFEB04341FB5
 
 gpg --expert --edit-key $KEYID
 ```
@@ -1937,83 +1738,23 @@ gpg --expert --edit-key $KEYID
 
 To renew Subkeys, the expiry time associated with the corresponding public key will need to be updated, which will require access to the Certify key.
 
-Start by selecting all keys:
+Start by editing the identity:
 
 ```console
-$ gpg --edit-key $KEYID
+gpg --edit-key $KEYID
+```
 
-Secret key is available.
+Select all expired keys:
 
-sec  rsa4096/0xFF3E7D88647EBCDB
-    created: 2017-10-09  expires: never       usage: C
-    trust: ultimate      validity: ultimate
-ssb  rsa4096/0xBECFA3C1AE191D15
-    created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-    created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-    created: 2017-10-09  expires: 2018-10-09  usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
-
+```console
 gpg> key 1
-
-Secret key is available.
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-     created: 2017-10-09  expires: never       usage: C
-     trust: ultimate      validity: ultimate
-ssb* rsa4096/0xBECFA3C1AE191D15
-     created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb  rsa4096/0x5912A795E90DD2CF
-     created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-     created: 2017-10-09  expires: 2018-10-09  usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
 
 gpg> key 2
 
-Secret key is available.
-
-sec  rsa4096/0xFF3E7D88647EBCDB
-     created: 2017-10-09  expires: never       usage: C
-     trust: ultimate      validity: ultimate
-ssb* rsa4096/0xBECFA3C1AE191D15
-     created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb* rsa4096/0x5912A795E90DD2CF
-     created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb  rsa4096/0x3F29127E79649A3D
-     created: 2017-10-09  expires: 2018-10-09  usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
-
 gpg> key 3
-
-Secret key is available.
-
-sec   rsa4096/0xFF3E7D88647EBCDB
-      created: 2017-10-09  expires: never       usage: C
-      trust: ultimate      validity: ultimate
-ssb*  rsa4096/0xBECFA3C1AE191D15
-      created: 2017-10-09  expires: 2018-10-09  usage: S
-ssb*  rsa4096/0x5912A795E90DD2CF
-      created: 2017-10-09  expires: 2018-10-09  usage: E
-ssb*  rsa4096/0x3F29127E79649A3D
-      created: 2017-10-09  expires: 2018-10-09  usage: A
-[ultimate] (1). Dr Duh <doc@duh.to>
 ```
 
 Use `expire` to configure the expiration date. This will **not** expire valid keys.
-
-```console
-gpg> expire
-Changing expiration time for a subkey.
-Please specify how long the key should be valid.
-         0 = key does not expire
-      <n>  = key expires in n days
-      <n>w = key expires in n weeks
-      <n>m = key expires in n months
-      <n>y = key expires in n years
-Key is valid for? (0)
-```
 
 Follow the prompt to set the expiration date, then `save`
 
@@ -2116,7 +1857,7 @@ Use `showpref` to verify notions were correctly added.
 
 # SSH
 
-**Tip** YubiKey can be used for SSH only, without GnuPG features, starting in [OpenSSH v8.2](https://www.openssh.com/txt/release-8.2). For more information, see [ed25519-sk.md](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md) and [Yubico - GitHub now supports SSH security keys](https://www.yubico.com/blog/github-now-supports-ssh-security-keys/).
+**Tip** YubiKey can be used directly for SSH only, without GnuPG features, starting in [OpenSSH v8.2](https://www.openssh.com/txt/release-8.2). For more information, see [ed25519-sk.md](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md) and [Yubico - GitHub now supports SSH security keys](https://www.yubico.com/blog/github-now-supports-ssh-security-keys/).
 
 [gpg-agent](https://wiki.archlinux.org/title/GnuPG#SSH_agent) supports the OpenSSH ssh-agent protocol (`enable-ssh-support`) as well as PuTTy's Pageant on Windows (`enable-putty-support`). This means it can be used instead of the traditional ssh-agent / pageant. There are some differences from ssh-agent, notably that gpg-agent does not _cache_ keys rather it converts, encrypts and stores them persistently as keys, then makes them available to ssh clients. Any existing ssh private keys should be deleted after importing to GnuPG agent.
 
@@ -2562,9 +2303,9 @@ YubiKey can be used sign git commits and decrypt files on remote hosts with GPG 
 
 On the remote host, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink yes`
 
-**Optional** If you do not have root access to the remote host to edit `/etc/ssh/sshd_config`, you will need to remove the socket (located at `gpgconf --list-dir agent-socket`) on the remote host before forwarding works. For example, `rm /run/user/1000/gnupg/S.gpg-agent`. See [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding) for more information.
+**Optional** Without root access on the remote host to edit `/etc/ssh/sshd_config`, socket located at `gpgconf --list-dir agent-socket` on the remote host will need to be removed before forwarding works. See [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding) for more information.
 
-Import public keys to the remote host. On the local host, copy the public keyring to the remote host:
+Import public keys on the remote host. On the local host, copy the public keyring to the remote host:
 
 ```console
 scp ~/.gnupg/pubring.kbx remote:~/.gnupg/
@@ -2965,7 +2706,7 @@ To reset YubiKey from the Certify key backup (such as the one on encrypted porta
 
 - If you receive the error, `Error connecting to agent: No such file or directory` from `ssh-add -L`, the UNIX file socket that the agent uses for communication with other processes may not be set up correctly. On Debian, try `export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"`. Also see that `gpgconf --list-dirs agent-ssh-socket` is returning single path, to existing `S.gpg-agent.ssh` socket.
 
-- If you receive the error, `Permission denied (publickey)`, increase ssh verbosity with the `-v` flag and verify the public key from the card is being offered: `Offering public key: RSA SHA256:abcdefg... cardno:00060123456`. If it is, verify you are connecting as the right user on the target system, rather than as the user on the local system. Otherwise, be sure `IdentitiesOnly` is not [enabled](https://github.com/FiloSottile/whosthere#how-do-i-stop-it) for this host.
+- If you receive the error, `Permission denied (publickey)`, increase ssh verbosity with the `-v` flag and verify the public key from the card is being offered: `Offering public key: RSA SHA256:abcdefg... cardno:00060123456`. If it is, verify the correct user the target system - not the user on the local system. Otherwise, be sure `IdentitiesOnly` is not [enabled](https://github.com/FiloSottile/whosthere#how-do-i-stop-it) for this host.
 
 - If SSH authentication still fails - add up to 3 `-v` flags to the `ssh` client to increase verbosity.
 
@@ -3022,50 +2763,35 @@ Use the example [gen-params-rsa4096](contrib/gen-params-rsa4096) or [gen-params-
 Generate the Certify key:
 
 ```console
-$ gpg --batch --generate-key gen-params-rsa4096
-gpg: Generating a basic OpenPGP key
-gpg: key 0xEA5DE91459B80592 marked as ultimately trusted
-gpg: revocation certificate stored as '/tmp.FLZC0xcM/openpgp-revocs.d/D6F924841F78D62C65ABB9588B461860159FFB7B.rev'
-gpg: done
+gpg --batch --generate-key gen-params-rsa4096
 ```
 
-Verify the result:
+Verify results:
 
 ```console
-$ gpg --list-key
-gpg: checking the trustdb
-gpg: marginals needed: 3  completes needed: 1  trust model: pgp
-gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
-/tmp.FLZC0xcM/pubring.kbx
--------------------------------
-pub   rsa4096/0xFF3E7D88647EBCDB 2021-08-22 [C]
-       Key fingerprint = 011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB
-uid                   [ultimate] Dr Duh <doc@duh.to>
+gpg --list-key
 ```
 
-The fingerprint (`011C E16B D45B 27A5 5BA8 776D FF3E 7D88 647E BCDB`) is used to create the three Subkeys for signing, authentication and encryption.
+The fingerprint is used to create the three Subkeys for signing, authentication and encryption.
 
 Use a one or several year expiration for Subkeys - they can be renewed using the Certify key, see [rotating keys](#rotating-keys).
 
 Create a [signing subkey](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623):
 
 ```console
-gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
-  rsa4096 sign 1y
+gpg --quick-add-key "$KEYID" rsa4096 sign 1y
 ```
 
 Create an [encryption subkey](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php):
 
 ```console
-gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
-  rsa4096 encrypt 1y
+gpg --quick-add-key "$KEYID" rsa4096 encrypt 1y
 ```
 
 Finally, create an [authentication subkey](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for):
 
 ```console
-gpg --quick-add-key "011C E16B D45B 27A5 5BA8  776D FF3E 7D88 647E BCDB" \
-  rsa4096 auth 1y
+gpg --quick-add-key "$KEYID" rsa4096 auth 1y
 ```
 
 # Additional resources
