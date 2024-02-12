@@ -422,7 +422,7 @@ The primary key to generate is the Certify key, which will be used to issue Subk
 
 The Certify key should be kept offline at all times and only accessed from a secure environment to revoke or issue Subkeys. Keys can also be generated on the YubiKey itself to avoid duplication, however for usability and durability reasons this guide recommends against doing so.
 
-Generate a passphrase which will be needed throughout the guide to create and export Subkeys. The passphrase should be memorized or written down in a secure location, ideally separate from the portable storage device used for key material.
+Generate a passphrase which will be needed throughout the guide to create Subkeys. The passphrase should be memorized or written down in a secure location, ideally separate from the portable storage device used for key material.
 
 The passphrase is recommended to consist of only upper case letters and numbers for improved readability.
 
@@ -552,7 +552,7 @@ pub   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
 uid                              YubiKey User <yubikey@example>
 ```
 
-Copy the Certify key identifier beginning with `0x` and export it as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) (`KEYID`):
+Copy the Certify key identifier beginning with `0x` from the output and export it as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) (`KEYID`):
 
 ```console
 export KEYID=0xF0F2CFEB04341FB5
@@ -560,15 +560,11 @@ export KEYID=0xF0F2CFEB04341FB5
 
 **Optional** Existing keys may be used to sign new ones to prove ownership.
 
-Export the existing key to the working keyring:
+Export the existing key to the working keyring and sign the new key:
 
 ```console
 gpg --export-secret-keys --armor --output /tmp/new.sec
-```
 
-Sign the new key:
-
-```console
 gpg --default-key $OLDKEY --sign-key $KEYID
 ```
 
@@ -582,11 +578,11 @@ gpg --expert --edit-key $KEYID
 
 RSA with 4096-bit key length is recommended.
 
-Subkeys are recommended to have one or several year expirations. They must be renewed using the Certify key - see [Rotating keys](#rotating-keys).
+Subkeys are recommended to have one or several year expirations. They must be renewed or replaced using the Certify key - see [Rotating keys](#rotating-keys).
 
 ## Signature key
 
-Create Signature key by typing `addkey` then type `4` to select the `(4) RSA (sign only)` option:
+Generate a Signature key by typing `addkey` then `4` to select the `(4) RSA (sign only)` option:
 
 ```console
 gpg> addkey
@@ -630,7 +626,7 @@ ssb  rsa4096/0xB3CD10E502E19637
 
 ## Encryption key
 
-Next, create an Encryption key by typing `addkey` then type `6` to select the `(6) RSA (encrypt only)` option:
+Generate an Encryption key by typing `addkey` then `6` to select the `(6) RSA (encrypt only)` option:
 
 ```console
 gpg> addkey
@@ -676,7 +672,7 @@ ssb  rsa4096/0x30CBE8C4B085B9F7
 
 ## Authentication key
 
-Finally, create an Authentication key by typing `addkey` then type `8` to select the `(8) RSA (set your own capabilities)` option.
+Generate an Authentication key by typing `addkey` then `8` to select the `(8) RSA (set your own capabilities)` option.
 
 Toggle the required capabilities with `S`, `E` and `A` until **Authenticate** is the only allowed action:
 
@@ -2737,36 +2733,22 @@ Generate the Certify key:
 gpg --batch --generate-key gen-params-rsa4096
 ```
 
-Verify results:
+Verify the Certify key:
 
 ```console
 gpg --list-key
 ```
 
-The fingerprint is used to create the three Subkeys:
+Export the Certify key ID and create the Subkeys:
 
 ```console
 export KEYID=0xF0F2CFEB04341FB5
-```
 
-Use a one or several year expiration for Subkeys - they must be renewed using the Certify key, see [rotating keys](#rotating-keys).
+gpg --quick-add-key "$KEYID" rsa4096 sign 2y
 
-Create a [signing subkey](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623):
+gpg --quick-add-key "$KEYID" rsa4096 encrypt 2y
 
-```console
-gpg --quick-add-key "$KEYID" rsa4096 sign 1y
-```
-
-Create an [encryption subkey](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php):
-
-```console
-gpg --quick-add-key "$KEYID" rsa4096 encrypt 1y
-```
-
-Finally, create an [authentication subkey](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for):
-
-```console
-gpg --quick-add-key "$KEYID" rsa4096 auth 1y
+gpg --quick-add-key "$KEYID" rsa4096 auth 2y
 ```
 
 # Additional resources
