@@ -214,7 +214,7 @@ sudo apt -y install \
     yubikey-personalization
 ```
 
-**Note** `hopenpgp-tools` is no longer part of the latest Debian stable package repositories. To install it, go to [https://packages.debian.org/sid/hopenpgp-tools](https://packages.debian.org/sid/hopenpgp-tools) to select your architecture (likely `amd64`) and then an ftp server.
+**Note** `hopenpgp-tools` is no longer part of the latest Debian stable package repositories. To install it, go to [https://packages.debian.org/sid/hopenpgp-tools](https://packages.debian.org/sid/hopenpgp-tools) to select the correct architecture (likely `amd64`) and then an ftp server.
 
 Edit `/etc/apt/sources.list` and add the ftp server:
 
@@ -998,7 +998,7 @@ sudo cp -avi $GNUPGHOME /mnt/encrypted-storage/
 sudo cp onerng_3.7-1_all.deb /mnt/encrypted-storage/
 ```
 
-**Note** If you plan on setting up multiple keys, keep the backup mounted or remember to terminate the gpg process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
+**Note** To set up multiple keys, keep the backup mounted or remember to terminate the GnuPG process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
 
 Unmount, close and disconnect the encrypted volume:
 
@@ -1094,7 +1094,7 @@ See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for 
 
 # Export public keys
 
-**Important** Without the *public* key, you will **not** be able to use GnuPG to encrypt, decrypt, nor sign messages. However, you will still be able to use YubiKey for SSH authentication.
+**Important** Without the *public* key, it will **not** be possible to use GnuPG to encrypt, decrypt, nor sign messages. However, YubiKey may still be used for SSH authentication.
 
 Create another partition on the portable storage device to store the public key, or reconnect networking and upload to a key server.
 
@@ -1674,7 +1674,7 @@ ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2024-01-01  expires: 2026-01-01
 
 `sec#` indicates the corresponding key is not available.
 
-**Note** If you see `General key info..: [none]` in the output instead - go back and import the public key using the previous step.
+**Note** If `General key info..: [none]` appears in the output instead - go back and import the public key using the previous step.
 
 Encrypt a message to yourself (useful for storing credentials):
 
@@ -1711,7 +1711,7 @@ Verify the signature:
 
 ```console
 $ gpg --verify signed.txt
-gpg: Signature made Mon 01 Jan 2024 12:00:00 PM PST
+gpg: Signature made Mon 01 Jan 2024 12:00:00 PM UTC
 gpg:                using RSA key CF5A305B808B7A0F230DA064B3CD10E502E19637
 gpg: Good signature from "YubiKey User <yubikey@example>" [ultimate]
 Primary key fingerprint: 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
@@ -1749,7 +1749,7 @@ PGP does not provide [forward secrecy](https://en.wikipedia.org/wiki/Forward_sec
 
 When a Subkey expires, it can either be renewed or replaced. Both actions require access to the Certify key.
 
-- Renewing Subkeys by updating expiration dates indicates you are still in possession of the Certify key and is more convenient.
+- Renewing Subkeys by updating expiration indicates continued possession of the Certify key and is more convenient.
 
 - Replacing Subkeys is less convenient but potentially more secure: the new Subkeys will **not** be able to decrypt previous messages, authenticate with SSH, etc. Contacts will need to receive the updated public key and any encrypted secrets need to be decrypted and re-encrypted to new Subkeys to be usable. This process is functionally equivalent to losing the YubiKey and provisioning a new one.
 
@@ -1892,8 +1892,7 @@ sudo cp -avi $GNUPGHOME /mnt/encrypted-storage
 There should now be at least two versions of the Certify and Subkeys:
 
 ```console
-$ ls /mnt/encrypted-storage
-lost+found  tmp.ykhTOGjR36  tmp.2gyGnyCiHs
+ls /mnt/encrypted-storage
 ```
 
 Unmount and close the encrypted volume:
@@ -1948,7 +1947,7 @@ Use `showpref` to verify notions were correctly added.
 
 When importing the key to `gpg-agent`, a passphrase will be required to encrypt within the key store. GnuPG can cache both passphrases with `cache-ttl` options. Note than when removing the old private key after importing to `gpg-agent`, keep the `.pub` key file around for use in specifying ssh identities (e.g. `ssh -i /path/to/identity.pub`).
 
-Probably the biggest thing missing from `gpg-agent`'s ssh agent support is being able to remove keys. `ssh-add -d/-D` have no effect. Instead, you need to use the `gpg-connect-agent` utility to lookup a key's keygrip, match that with the desired ssh key fingerprint (as an MD5) and then delete that keygrip. The [gnupg-users mailing list](https://lists.gnupg.org/pipermail/gnupg-users/2016-August/056499.html) has more information.
+Missing from `gpg-agent` ssh agent support is the ability to remove keys. `ssh-add -d/-D` have no effect. Instead, use the `gpg-connect-agent` utility to lookup a keygrip, match it with the desired ssh key fingerprint (as an MD5) and then delete that keygrip. The [gnupg-users mailing list](https://lists.gnupg.org/pipermail/gnupg-users/2016-August/056499.html) has more information.
 
 ## Create configuration
 
@@ -1962,9 +1961,9 @@ wget https://raw.githubusercontent.com/drduh/config/master/gpg-agent.conf
 
 **Important** The `cache-ttl` options do **not** apply when using YubiKey as a smart card, because the PIN is [cached by the smart card itself](https://dev.gnupg.org/T3362). To clear the PIN from cache (equivalent to `default-cache-ttl` and `max-cache-ttl`), unplug YubiKey, or set `forcesig` when editing the card to be prompted for the PIN each time.
 
-**Tip** Set `pinentry-program /usr/bin/pinentry-gnome3` for a GUI-based prompt. If the _pinentry_ graphical dialog doesn't show and you get this error: `sign_and_send_pubkey: signing failed: agent refused operation`, you may need to install the `dbus-user-session` package and restart the computer for the `dbus` user session to be fully inherited; this is because behind the scenes, `pinentry` complains about `No $DBUS_SESSION_BUS_ADDRESS found`, falls back to `curses` but doesn't find the expected `tty`.
+**Tip** Set `pinentry-program /usr/bin/pinentry-gnome3` for a GUI-based prompt. If the _pinentry_ graphical dialog doesn't show and this error appears: `sign_and_send_pubkey: signing failed: agent refused operation`, install the `dbus-user-session` package and restart the computer for the `dbus` user session to be fully inherited; this is because behind the scenes, `pinentry` complains about `No $DBUS_SESSION_BUS_ADDRESS found`, falls back to `curses` but doesn't find the expected `tty`.
 
-On macOS, use `brew install pinentry-mac` and set the program path to `pinentry-program /usr/local/bin/pinentry-mac` for Intel Macs, `/opt/homebrew/bin/pinentry-mac` for ARM/Apple Silicon Macs or `pinentry-program /usr/local/MacGPG2/libexec/pinentry-mac.app/Contents/MacOS/pinentry-mac` if using MacGPG Suite. For the configuration to take effect you have to run `gpgconf --kill gpg-agent`.
+On macOS, use `brew install pinentry-mac` and set the program path to `pinentry-program /usr/local/bin/pinentry-mac` for Intel Macs, `/opt/homebrew/bin/pinentry-mac` for ARM/Apple Silicon Macs or `pinentry-program /usr/local/MacGPG2/libexec/pinentry-mac.app/Contents/MacOS/pinentry-mac` if using MacGPG Suite. For the configuration to take effect, run `gpgconf --kill gpg-agent`
 
 ## Replace agents
 
@@ -1996,7 +1995,7 @@ gpgconf --launch gpg-agent
 
 When using `ForwardAgent` for ssh-agent forwarding, `SSH_AUTH_SOCK` only needs to be set on the *local* host, where YubiKey is connected. On the *remote* host, `ssh` will set `SSH_AUTH_SOCK` to something like `/tmp/ssh-mXzCzYT2Np/agent.7541` upon connection. Do **not** set `SSH_AUTH_SOCK` on the remote host - doing so will break [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding).
 
-If you use `S.gpg-agent.ssh` (see [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more info), `SSH_AUTH_SOCK` should also be set on the *remote*. However, `GPG_TTY` should not be set on the *remote*, explanation specified in that section.
+For `S.gpg-agent.ssh` (see [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more info), `SSH_AUTH_SOCK` should also be set on the *remote*. However, `GPG_TTY` should not be set on the *remote*, explanation specified in that section.
 
 ## Copy public key
 
@@ -2023,7 +2022,7 @@ In the case of YubiKey usage, to extract the public key from the ssh agent:
 ssh-add -L | grep "cardno:000605553211" > ~/.ssh/id_rsa_yubikey.pub
 ```
 
-Then you can explicitly associate this YubiKey-stored key for used with a host, `github.com` for example, as follows:
+Then explicitly associate this YubiKey-stored key for used with a host, `github.com` for example, as follows:
 
 ```console
 $ cat << EOF >> ~/.ssh/config
@@ -2100,8 +2099,6 @@ The latter one may be more insecure as raw socket is just forwarded (not like `S
 For example, tmux does not have environment variables such as `$SSH_AUTH_SOCK` when connecting to remote hosts and attaching an existing session. For each shell, find the socket and `export SSH_AUTH_SOCK=/tmp/ssh-agent-xxx/xxxx.socket`. However, with `S.gpg-agent.ssh` in a fixed place, it can be used as the ssh-agent in shell rc files.
 
 ### Use ssh-agent 
-
-In the above steps, you have successfully configured a local ssh-agent.
 
 You should now be able to use `ssh -A remote` on the _local_ host to log into _remote_ host, and should then be able to use YubiKey as if it were connected to the remote host. For example, using e.g. `ssh-add -l` on that remote host should show the public key from the YubiKey (note `cardno:`).  (If you don't want to have to remember to use `ssh -A`, you can use `ForwardAgent yes` in `~/.ssh/config`.  As a security best practice, always use `ForwardAgent yes` only for a single `Hostname`, never for all servers.)
 
@@ -2183,7 +2180,7 @@ git config --global gpg.program 'C:\Program Files (x86)\GnuPG\bin\gpg.exe'
 
 Update the repository URL to `git@github.com:USERNAME/repository` and any authenticated commands will be authorized by YubiKey.
 
-**Note** If you encounter the error `gpg: signing failed: No secret key` - run `gpg --card-status` with YubiKey plugged in and try the git command again.
+**Note** For the error `gpg: signing failed: No secret key` - run `gpg --card-status` with YubiKey plugged in and try the git command again.
 
 ## OpenBSD
 
@@ -2314,7 +2311,7 @@ Reload SSH daemon:
 sudo service sshd reload
 ```
 
-Unplug YubiKey, disconnect or reboot. Log back into Windows, open a WSL console and enter `ssh-add -l` - you should see nothing.
+Unplug YubiKey, disconnect or reboot. Log back into Windows, open a WSL console and enter `ssh-add -l` - no output should appear.
 
 Plug in YubiKey, enter the same command to display the ssh key.
 
@@ -2378,7 +2375,7 @@ Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist` with the follo
 launchctl load $HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist
 ```
 
-You will need to either reboot, or log out and log back in, in order to activate these changes.
+Reboot or log out and log back in to activate these changes.
 
 # Remote Machines (GPG Agent Forwarding)
 
@@ -2613,38 +2610,15 @@ ykman openpgp keys set-touch dec on
 
 **Note** Older versions of YubiKey Manager use `touch` instead of `set-touch`
 
-Depending on how the YubiKey is going to be used, you may want to look at the policy options for each of these and adjust the above commands accordingly. They can be viewed with the following command:
+To view and adjust policy options:
 
 ```
-$ ykman openpgp keys set-touch -h
-Usage: ykman openpgp keys set-touch [OPTIONS] KEY POLICY
-
-  Set the touch policy for OpenPGP keys.
-
-  The touch policy is used to require user interaction for all operations using the private key on the YubiKey. The touch policy is set
-  individually for each key slot. To see the current touch policy, run the "openpgp info" subcommand.
-
-  Touch policies:
-
-  Off (default)   no touch required
-  On              touch required
-  Fixed           touch required, can't be disabled without deleting the private key
-  Cached          touch required, cached for 15s after use
-  Cached-Fixed    touch required, cached for 15s after use, can't be disabled
-                  without deleting the private key
-
-  KEY     key slot to set (sig, dec, aut or att)
-  POLICY  touch policy to set (on, off, fixed, cached or cached-fixed)
-
-Options:
-  -a, --admin-pin TEXT  Admin PIN for OpenPGP
-  -f, --force           confirm the action without prompting
-  -h, --help            show this message and exit
+ykman openpgp keys set-touch -h
 ```
 
-If the YubiKey is going to be used within an email client that opens and verifies encrypted mail, `Cached` or `Cached-Fixed` may be desirable.
+If the YubiKey is going to be used within an email client which opens and verifies mail, `Cached` or `Cached-Fixed` may be desirable.
 
-YubiKey will blink when it is waiting for a touch. On Linux you can also use [yubikey-touch-detector](https://github.com/maximbaz/yubikey-touch-detector) to have an indicator or notification that YubiKey is waiting for a touch.
+YubiKey will blink when it is waiting for a touch. On Linux, [maximbaz/yubikey-touch-detector](https://github.com/maximbaz/yubikey-touch-detector) can be used to indicate YubiKey is waiting for a touch.
 
 # Email
 
