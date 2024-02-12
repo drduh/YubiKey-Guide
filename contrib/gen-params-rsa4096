@@ -17,8 +17,8 @@ Key-Usage: cert
 # Subkey-Usage: auth
 
 # select a name and email address - neither has to be valid nor existing
-Name-Real: Dr Duh
-Name-Email: doc@duh.to
+Name-Real: YubiKey User
+Name-Email: yubikey@example
 
 # Do not set the key to expire
 Expire-Date: 0

@@ -1,4 +1,4 @@
-# GnuPG v2.1.7 or newer
+# Requires GnuPG v2.1.7 or newer
 
 %echo Generating a OpenPGP key
 
@@ -20,8 +20,8 @@ Key-Usage: cert
 # Subkey-Usage: encrypt
 
 # select a name and email address - neither has to be valid nor existing
-Name-Real: Dr Duh
-Name-Email: doc@duh.to
+Name-Real: YubiKey User
+Name-Email: yubikey@example
 
 # Do not set the key to expire
 Expire-Date: 0
