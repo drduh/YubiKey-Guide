@@ -1415,7 +1415,7 @@ cd $GNUPGHOME
 
 When a GnuPG key is added to YubiKey using `keytocard`, the key is deleted from the keyring and a **stub** is added, pointing to the YubiKey. The stub identifies the GnuPG key ID and YubiKey serial number.
 
-When the operation is repeated for an additional YubiKey, the stub is overwritten `keytocard` and now will point to the latest YubiKey.
+When the operation is repeated for an additional YubiKey, the stub is overwritten and will now point to the latest YubiKey.
 
 GnuPG will request a specific YubiKey by serial number, as referenced by the stub, and will not recognize another YubiKey with a different serial number without manual intervention.
 
