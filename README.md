@@ -24,14 +24,14 @@ To suggest an improvement, please send a pull request or open an [issue](https:/
    * [OneRNG](#onerng)
 - [Generate keys](#generate-keys)
    * [Temporary working directory](#temporary-working-directory)
-   * [Harden configuration](#harden-configuration)
+   * [Hardened configuration](#hardened-configuration)
 - [Certify key](#certify-key)
 - [Sign with existing key](#sign-with-existing-key)
 - [Subkeys](#subkeys)
    * [Signing](#signing)
    * [Encryption](#encryption)
    * [Authentication](#authentication)
-   * [Add extra identities](#add-extra-identities)
+   * [Extra Identities](#extra-identities)
 - [Verify](#verify)
 - [Export secret keys](#export-secret-keys)
 - [Revocation certificate](#revocation-certificate)
@@ -48,7 +48,6 @@ To suggest an improvement, please send a pull request or open an [issue](https:/
 - [Verify card](#verify-card)
 - [Multiple YubiKeys](#multiple-yubikeys)
    * [Switching between YubiKeys](#switching-between-yubikeys)
-- [Multiple Hosts](#multiple-hosts)
 - [Finish](#finish)
 - [Using keys](#using-keys)
 - [Rotating keys](#rotating-keys)
@@ -66,19 +65,15 @@ To suggest an improvement, please send a pull request or open an [issue](https:/
    * [Remote Machines (SSH Agent Forwarding)](#remote-machines-ssh-agent-forwarding)
       + [Use ssh-agent ](#use-ssh-agent)
       + [Use S.gpg-agent.ssh](#use-sgpg-agentssh)
-      + [Chained SSH Agent Forwarding](#chained-ssh-agent-forwarding)
+      + [Chained SSH agent forwarding](#chained-ssh-agent-forwarding)
    * [GitHub](#github)
    * [OpenBSD](#openbsd-1)
    * [Windows](#windows-1)
       + [WSL](#wsl)
-         - [Use ssh-agent or use S.weasel-pageant](#use-ssh-agent-or-use-sweasel-pageant)
-         - [Prerequisites](#prerequisites)
-         - [WSL configuration](#wsl-configuration)
-         - [Remote host configuration](#remote-host-configuration)
    * [macOS](#macos-1)
 - [Remote Machines (GPG Agent Forwarding)](#remote-machines-gpg-agent-forwarding)
    * [Steps for older distributions](#steps-for-older-distributions)
-   * [Chained GPG Agent Forwarding](#chained-gpg-agent-forwarding)
+   * [Chained GnuPG agent forwarding](#chained-gnupg-agent-forwarding)
 - [Using Multiple Keys](#using-multiple-keys)
 - [Adding an identity](#adding-an-identity)
    * [Updating YubiKey](#updating-yubikey)
@@ -310,10 +305,10 @@ nix build --experimental-features "nix-command flakes" .#nixosConfigurations.yub
 Copy it to a USB drive:
 
 ```console
-sudo cp -v result/iso/yubikeyLive.iso /dev/sdb; sync
+sudo cp -v result/iso/yubikeyLive.iso /dev/sdb ; sync
 ```
 
-With this image, you won't need to create a [temporary working directory](#temporary-working-directory) or [harden the configuration](#harden-configuration), as it was done when creating the image.
+With this image, you won't need to create a [temporary working directory](#temporary-working-directory) or [harden the configuration](#hardened-configuration), as it was done when creating the image.
 
 ## OpenBSD
 
@@ -357,7 +352,7 @@ echo "SCD RANDOM 512" | gpg-connect-agent | sudo tee /dev/random | hexdump -C
 
 ## OneRNG
 
-Configure [rng-tools](https://wiki.archlinux.org/index.php/Rng-tools) software:
+Configure [rng-tools](https://wiki.archlinux.org/title/Rng-tools):
 
 ```console
 sudo apt -y install at rng-tools python3-gnupg openssl
@@ -398,7 +393,7 @@ Create a temporary directory which will be cleared on [reboot](https://en.wikipe
 export GNUPGHOME=$(mktemp -d -t gnupg_$(date +%Y%m%d%H%M)_XXX)
 ```
 
-## Harden configuration
+## Hardened configuration
 
 Import or create a hardened configuration for GnuPG:
 
@@ -787,7 +782,7 @@ Finish by saving the keys:
 gpg> save
 ```
 
-## Add extra identities
+## Extra Identities
 
 **Optional** To add additional email addresses or identities, use `adduid`
 
@@ -1166,7 +1161,7 @@ gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
 
 **Keyserver**
 
-**Optional** Upload the public key to a [public keyserver](https://debian-administration.org/article/451/Submitting_your_GPG_key_to_a_keyserver):
+**Optional** Upload the public key to a public keyserver:
 
 ```console
 gpg --send-key $KEYID
@@ -1180,6 +1175,23 @@ Or if [uploading to keys.openpgp.org](https://keys.openpgp.org/about/usage):
 
 ```console
 gpg --send-key $KEYID | curl -T - https://keys.openpgp.org
+```
+
+The public key URL can also be added to YubiKey (based on [Shaw 2003](https://datatracker.ietf.org/doc/html/draft-shaw-openpgp-hkp-00)):
+
+```console
+URL="hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=${KEYID}"
+```
+
+Edit YubiKey with `gpg --edit-card` and the Admin PIN:
+
+```console
+gpg/card> admin
+
+gpg/card> url
+URL to retrieve public key: hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF00000000000000
+
+gpg/card> quit
 ```
 
 # Configure YubiKey
@@ -1452,81 +1464,6 @@ GnuPG will scan the first YubiKey for keys and recreate the stubs to point to th
 
 To use the second YubiKey, repeat the command.
 
-# Multiple Hosts
-
-Export the public key and trust setting from the current host:
-
-```console
-gpg --armor --export $KEYID > gpg-public-key-$KEYID.asc
-
-gpg --export-ownertrust > gpg-owner-trust.txt
-```
-
-Move both files to the second host, then define the key ID:
-
-```console
-export KEYID=0xF0F2CFEB04341FB5
-```
-
-Import the public key:
-
-```console
-gpg --import gpg-public-key-$KEYID.asc
-```
-
-Import the trust setting:
-
-```console
-gpg --import-ownertrust < gpg-owner-trust.txt
-```
-
-Insert YubiKey and import key stubs:
-
-```console
-gpg --card-status
-```
-
-Or download from a public key server:
-
-```console
-gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv $KEYID
-```
-
-Configure trust:
-
-```console
-$ gpg --edit-key $KEYID
-gpg> trust
-Your decision? 5
-Do you really want to set this key to ultimate trust? (y/N) y
-gpg> quit
-```
-
-The public key URL can also be added to YubiKey (based on [Shaw 2003](https://datatracker.ietf.org/doc/html/draft-shaw-openpgp-hkp-00)):
-
-```console
-[[ ! "$KEYID" =~ ^"0x" ]] && KEYID="0x${KEYID}"
-URL="hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=${KEYID}"
-```
-
-Edit YubiKey with `gpg --edit-card` and the Admin PIN:
-
-```console
-gpg/card> admin
-
-gpg/card> url
-URL to retrieve public key: hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF00000000000000
-
-gpg/card> quit
-```
-
-With the URL on YubiKey, retrieve the public key:
-
-```console
-gpg/card> fetch
-
-gpg/card> quit
-```
 
 # Finish
 
@@ -1613,6 +1550,14 @@ Or download the public key from a keyserver:
 
 ```console
 gpg --recv $KEYID
+```
+
+Or with the URL on YubiKey, retrieve the public key:
+
+```console
+gpg/card> fetch
+
+gpg/card> quit
 ```
 
 Edit the Certify key:
@@ -2010,7 +1955,7 @@ ssh-rsa AAAAB4NzaC1yc2EAAAADAQABAAACAz[...]zreOKM+HwpkHzcy9DQcVG2Nw== cardno:000
 
 ## (Optional) Save public key for identity file configuration
 
-By default, SSH attempts to use all the identities available via the agent. It's often a good idea to manage exactly which keys SSH will use to connect to a server, for example to separate different roles or [to avoid being fingerprinted by untrusted ssh servers](https://blog.filippo.io/ssh-whoami-filippo-io/). To do this you'll need to use the command line argument `-i [identity_file]` or the `IdentityFile` and `IdentitiesOnly` options in `.ssh/config`.
+By default, SSH attempts to use all the identities available via the agent. It's often a good idea to manage exactly which keys SSH will use to connect to a server, for example to separate different roles or [to avoid being fingerprinted by untrusted ssh servers](https://words.filippo.io/ssh-whoami-filippo-io/). To do this you'll need to use the command line argument `-i [identity_file]` or the `IdentityFile` and `IdentitiesOnly` options in `.ssh/config`.
 
 The argument provided to `IdentityFile` is traditionally the path to the _private_ key file (for example `IdentityFile ~/.ssh/id_rsa`). For YubiKey, `IdentityFile` must point to the _public_ key file, and `ssh` will select the appropriate private key from those available via ssh-agent. To prevent `ssh` from trying all keys in the agent, use `IdentitiesOnly yes` along with one or more `-i` or `IdentityFile` options for the target host.
 
@@ -2135,7 +2080,7 @@ After sourcing the shell rc file, `ssh-add -l` will return the correct public ke
 
 **Note** In this process no gpg-agent in the remote is involved, hence `gpg-agent.conf` in the remote is of no use. Also pinentry is invoked locally.
 
-### Chained SSH Agent Forwarding
+### Chained SSH agent forwarding
 
 If you use `ssh-agent` provided by OpenSSH and want to forward it into a *third* box, you can just `ssh -A third` on the *remote*.
 
@@ -2265,17 +2210,11 @@ The goal is to configure SSH client inside WSL work together with the Windows ag
 
 **Note** this works only for SSH agent forwarding. GnuPG forwarding for cryptographic operations is not supported. See [vuori/weasel-pageant](https://github.com/vuori/weasel-pageant) for more information.
 
-#### Use ssh-agent or use S.weasel-pageant
-
-One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` in ssh/sshd config may be involved. However, when using ssh socket forwarding, do not enable `ForwardAgent` in ssh config. See [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more information.
-
-#### Prerequisites
+One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` in ssh/sshd config may be involved. However, when using ssh socket forwarding, do not enable `ForwardAgent` in ssh config. See [SSH Agent Forwarding](#remote-machines-ssh-agent-forwarding) for more information. This requires:
 
 * Ubuntu 16.04 or newer for WSL
 * Kleopatra
 * [Windows configuration](#windows)
-
-#### WSL configuration
 
 Download [vuori/weasel-pageant](https://github.com/vuori/weasel-pageant).
 
@@ -2290,8 +2229,6 @@ RemoteForward <remote SSH socket path> /tmp/S.weasel-pageant
 ```
 
 **Note** The remote SSH socket path can be found with `gpgconf --list-dirs agent-ssh-socket`
-
-#### Remote host configuration
 
 Add the following to the shell rc file:
 
@@ -2436,7 +2373,7 @@ extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
 
 See [Issue #85](https://github.com/drduh/YubiKey-Guide/issues/85) for more information and troubleshooting.
 
-## Chained GPG Agent Forwarding
+## Chained GnuPG agent forwarding
 
 Assume you have gone through the steps above and have `S.gpg-agent` on the *remote*, and you would like to forward this agent into a *third* box, first you may need to configure `sshd_config` of *third* in the same way as *remote*, then in the ssh config of *remote*, add the following lines:
 
