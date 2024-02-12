@@ -440,7 +440,7 @@ The primary key to generate is the Certify key, which will be used to issue Subk
 
 The Certify key should be kept offline at all times and only accessed from a secure environment to revoke or issue Subkeys. Keys can also be generated on the YubiKey itself to avoid duplication, however for usability and durability reasons this guide recommends against doing so.
 
-Generate a passphrase which will be needed throughout the guide to create and export Subkeys. The passphrase should be memorized or written down in a secure place separate from the backup storage disk.
+Generate a passphrase which will be needed throughout the guide to create and export Subkeys. The passphrase should be memorized or written down in a secure location, ideally separate from the portable storage device used for key material.
 
 The passphrase is recommended to consist of only upper case letters and numbers for improved readability.
 
@@ -475,7 +475,7 @@ Generate the Certify key with GnuPG:
 gpg --expert --full-generate-key
 ```
 
-Select `(8) RSA (set your own capabilities)`, then `E` and `S` deselect Encrypt and Sign actions and only the Certify capability remains:
+Select `(8) RSA (set your own capabilities)`, then type `E` and `S` deselect Encrypt and Sign actions and only the Certify capability remains:
 
 ```console
 Please select what kind of key you want:
@@ -521,7 +521,7 @@ Current allowed actions: Certify
    (Q) Finished
 ```
 
-Select `Q` then `4096` as the keysize.
+Type `Q` then `4096` as the requested keysize.
 
 Do **not** set the Certify key to expire (see [Note #3](#notes)).
 
@@ -541,7 +541,7 @@ Key does not expire at all
 Is this correct? (y/N) y
 ```
 
-Input any name and email address (it doesn't have to be valid) - Comment is optional:
+Input any value for Real name and Email address; Comment is optional:
 
 ```console
 GnuPG needs to construct a user ID to identify your key.
@@ -575,7 +575,7 @@ export KEYID=0xF0F2CFEB04341FB5
 
 # Sign with existing key
 
-**Optional** Existing PGP keys may be used to sign new ones to prove control.
+**Optional** Existing PGP keys may be used to sign new ones to prove ownership.
 
 Export the existing key to move it to the working keyring:
 
@@ -599,11 +599,11 @@ gpg --expert --edit-key $KEYID
 
 RSA with 4096-bit key length is recommended.
 
-Subkeys are recommended to have one or several year expirations. They must be renewed using the Certify key. See [rotating keys](#rotating-keys).
+Subkeys are recommended to have one or several year expirations. They must be renewed using the Certify key - see [Rotating keys](#rotating-keys).
 
 ## Signing
 
-Create a [signing key](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623) by selecting `addkey` then the `(4) RSA (sign only)` option:
+Create a [signing key](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623) by typing `addkey` then select the `(4) RSA (sign only)` option:
 
 ```console
 gpg> addkey
@@ -647,9 +647,40 @@ ssb  rsa4096/0xB3CD10E502E19637
 
 ## Encryption
 
-Next, create an [encryption key](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php) by selecting `addkey` then the `(6) RSA (encrypt only)` option.
+Next, create an [encryption key](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php) by typing `addkey` then select the `(6) RSA (encrypt only)` option:
 
 ```console
+gpg> addkey
+Please select what kind of key you want:
+   (3) DSA (sign only)
+   (4) RSA (sign only)
+   (5) Elgamal (encrypt only)
+   (6) RSA (encrypt only)
+   (7) DSA (set your own capabilities)
+   (8) RSA (set your own capabilities)
+  (10) ECC (sign only)
+  (11) ECC (set your own capabilities)
+  (12) ECC (encrypt only)
+  (13) Existing key
+  (14) Existing key from card
+Your selection? 6
+RSA keys may be between 1024 and 4096 bits long.
+What keysize do you want? (3072) 4096
+Requested keysize is 4096 bits
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Key is valid for? (0) 2y
+Is this correct? (y/N) y
+Really create? (y/N) y
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action (type on the keyboard, move the mouse, utilize the
+disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+
 sec  rsa4096/0xF0F2CFEB04341FB5
      created: 2024-01-01  expires: never       usage: C
      trust: ultimate      validity: ultimate
@@ -662,9 +693,7 @@ ssb  rsa4096/0x30CBE8C4B085B9F7
 
 ## Authentication
 
-Finally, create an [authentication key](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for).
-
-Select `addkey` then the `(8) RSA (set your own capabilities)` option.
+Finally, create an [authentication key](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for) by typing `addkey` then select the `(8) RSA (set your own capabilities)` option.
 
 Toggle the required capabilities with `S`, `E` and `A` until `Authenticate` is the only selected action:
 
@@ -1287,9 +1316,9 @@ gpg/card> quit
 
 # Transfer keys
 
-**Important** Transferring keys to YubiKey is a one-way/destructive operation. Verify backups were made before proceeding. `keytocard` converts the local, on-disk key into a stub, which means the on-disk copy is no longer usable to transfer to subsequent YubiKeys.
+**Important** Transferring keys to YubiKey is a one-way operation. Verify backups were made before proceeding. `keytocard` converts the local, on-disk key into a stub, which means the on-disk copy is no longer usable to transfer to subsequent YubiKeys.
 
-Previous GnuPG versions required the `toggle` command before selecting keys. The currently selected key(s) are indicated with an `*`. When moving keys only one key should be selected at a time.
+The currently selected key(s) are indicated with an `*`. When transferring keys, only one subkey should be selected at a time.
 
 ```console
 gpg --edit-key $KEYID
@@ -1297,12 +1326,23 @@ gpg --edit-key $KEYID
 
 ## Signing
 
-**Important** You will be prompted for the Certify key passphrase and Admin PIN.
+The Certify key passphrase and Admin PIN are required for this step.
 
 Select and transfer the signature key - `*` will appear next to the selected subkey (`ssb*`):
 
 ```console
 gpg> key 1
+
+sec  rsa4096/0xF0F2CFEB04341FB5
+     created: 2024-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb* rsa4096/0xB3CD10E502E19637
+     created: 2024-01-01  expires: 2026-01-01  usage: S
+ssb  rsa4096/0x30CBE8C4B085B9F7
+     created: 2024-01-01  expires: 2026-01-01  usage: E
+ssb  rsa4096/0xAD9E24E1B8CB9600
+     created: 2024-01-01  expires: 2026-01-01  usage: A
+[ultimate] (1). YubiKey User <yubikey@example>
 
 gpg> keytocard
 Please select where to store the key:
@@ -1313,12 +1353,23 @@ Your selection? 1
 
 ## Encryption
 
-Type `key 1` again to de-select and `key 2` to select the next key:
+Type `key 1` again to deselect the first key and `key 2` to select the next key:
 
 ```console
 gpg> key 1
 
 gpg> key 2
+
+sec  rsa4096/0xF0F2CFEB04341FB5
+     created: 2024-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  rsa4096/0xB3CD10E502E19637
+     created: 2024-01-01  expires: 2026-01-01  usage: S
+ssb* rsa4096/0x30CBE8C4B085B9F7
+     created: 2024-01-01  expires: 2026-01-01  usage: E
+ssb  rsa4096/0xAD9E24E1B8CB9600
+     created: 2024-01-01  expires: 2026-01-01  usage: A
+[ultimate] (1). YubiKey User <yubikey@example>
 
 gpg> keytocard
 Please select where to store the key:
@@ -1328,12 +1379,23 @@ Your selection? 2
 
 ## Authentication
 
-Type `key 2` again to deselect and `key 3` to select the last key:
+Type `key 2` again to deselect the second key and `key 3` to select the last key:
 
 ```console
 gpg> key 2
 
 gpg> key 3
+
+sec  rsa4096/0xF0F2CFEB04341FB5
+     created: 2024-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb  rsa4096/0xB3CD10E502E19637
+     created: 2024-01-01  expires: 2026-01-01  usage: S
+ssb  rsa4096/0x30CBE8C4B085B9F7
+     created: 2024-01-01  expires: 2026-01-01  usage: E
+ssb* rsa4096/0xAD9E24E1B8CB9600
+     created: 2024-01-01  expires: 2026-01-01  usage: A
+[ultimate] (1). YubiKey User <yubikey@example>
 
 gpg> keytocard
 Please select where to store the key:
@@ -1561,7 +1623,7 @@ export KEYID=0xF0F2CFEB04341FB5
 gpg --edit-key $KEYID
 ```
 
-Assign ultimate trust by selecting `trust` and `5`:
+Assign ultimate trust by tying `trust` and selecting option `5`:
 
 ```console
 gpg> trust
@@ -1752,11 +1814,34 @@ gpg> key 1
 gpg> key 2
 
 gpg> key 3
+
+sec  rsa4096/0xF0F2CFEB04341FB5
+     created: 2024-01-01  expires: never       usage: C
+     trust: ultimate      validity: ultimate
+ssb* rsa4096/0xB3CD10E502E19637
+     created: 2024-01-01  expires: 2026-01-01  usage: S
+ssb* rsa4096/0x30CBE8C4B085B9F7
+     created: 2024-01-01  expires: 2026-01-01  usage: E
+ssb* rsa4096/0xAD9E24E1B8CB9600
+     created: 2024-01-01  expires: 2026-01-01  usage: A
+[ultimate] (1). YubiKey User <yubikey@example>
 ```
 
 Use `expire` to configure the expiration date. This will **not** expire valid keys.
 
-Follow the prompt to set the expiration date, then `save`
+```console
+gpg> expire
+Changing expiration time for a subkey.
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Key is valid for? (0)
+```
+
+Set the expiration date, then `save`
 
 Next, [Export public keys](#export-public-keys):
 
@@ -1930,7 +2015,7 @@ By default, SSH attempts to use all the identities available via the agent. It's
 
 The argument provided to `IdentityFile` is traditionally the path to the _private_ key file (for example `IdentityFile ~/.ssh/id_rsa`). For YubiKey, `IdentityFile` must point to the _public_ key file, and `ssh` will select the appropriate private key from those available via ssh-agent. To prevent `ssh` from trying all keys in the agent, use `IdentitiesOnly yes` along with one or more `-i` or `IdentityFile` options for the target host.
 
-To reiterate, with `IdentitiesOnly yes`, `ssh` will not enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means `publickey` authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
+To reiterate, with `IdentitiesOnly yes`, `ssh` will not enumerate public keys loaded into `ssh-agent` or `gpg-agent`. This means public-key authentication will not proceed unless explicitly named by `ssh -i [identity_file]` or in `.ssh/config` on a per-host basis.
 
 In the case of YubiKey usage, to extract the public key from the ssh agent:
 
@@ -2431,34 +2516,19 @@ export GNUPGHOME=$(mktemp -d -t gnupg_$(date +%Y%m%d%H%M)_XXX)
 cp -avi /mnt/encrypted-storage/tmp.XXX/* $GNUPGHOME
 ```
 
-Edit the Certify key to add the new identity:
+Edit the Certify key:
 
 ```console
-$ KEYID=<your keyID>
+gpg --expert --edit-key $KEYID
+```
 
-$ gpg --expert --edit-key $KEYID
+Add the identity and set ultimate trust:
 
+```console
 gpg> adduid
-Real name:
-Email address:
-Comment:
-
-Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? O
 
 gpg> trust
-
-Please decide how far you trust this user to correctly verify other users' keys
-(by looking at passports, checking fingerprints from different sources, etc.)
-
-  1 = I don't know or won't say
-  2 = I do NOT trust
-  3 = I trust marginally
-  4 = I trust fully
-  5 = I trust ultimately
-  m = back to the main menu
-
 Your decision? 5
-Do you really want to set this key to ultimate trust? (y/N) y
 
 gpg> save
 ```
@@ -2477,7 +2547,7 @@ Export the public key:
 gpg --armor --export $KEYID | sudo tee /mnt/public/gpg-$KEYID-$(date +%F).asc
 ```
 
-As before, on Windows, note that using any extension other than `.gpg` or attempting IO redirection to a file will garble the secret key, making it impossible to import it again at a later date:
+**Note** On Windows, using an extension other than `.gpg` or attempting IO redirection to a file will result in a nonfunctional private key.
 
 ```console
 gpg -o \path\to\dir\certify.gpg --armor --export-secret-keys $KEYID
@@ -2487,7 +2557,7 @@ gpg -o \path\to\dir\subkeys.gpg --armor --export-secret-subkeys $KEYID
 gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
 ```
 
-Copy the **new** temporary working directory to encrypted storage, which should still be mounted:
+Copy the **new** working directory to encrypted storage, which should still be mounted:
 
 ```console
 sudo cp -avi $GNUPGHOME /mnt/encrypted-storage
@@ -2772,7 +2842,7 @@ Verify results:
 gpg --list-key
 ```
 
-The fingerprint is used to create the three Subkeys for signing, authentication and encryption.
+The fingerprint is used to create the three Subkeys for encryption, signing and authentication operations.
 
 Use a one or several year expiration for Subkeys - they can be renewed using the Certify key, see [rotating keys](#rotating-keys).
 
