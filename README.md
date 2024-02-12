@@ -25,12 +25,10 @@ To suggest an improvement, please send a pull request or open an [issue](https:/
    * [Temporary working directory](#temporary-working-directory)
    * [Hardened configuration](#hardened-configuration)
 - [Certify key](#certify-key)
-- [Sign with existing key](#sign-with-existing-key)
 - [Subkeys](#subkeys)
-   * [Signing](#signing)
-   * [Encryption](#encryption)
-   * [Authentication](#authentication)
-   * [Extra Identities](#extra-identities)
+   * [Signature key](#signature-key)
+   * [Encryption key](#encryption-key)
+   * [Authentication key](#authentication-key)
 - [Verify](#verify)
 - [Export secret keys](#export-secret-keys)
 - [Revocation certificate](#revocation-certificate)
@@ -41,10 +39,10 @@ To suggest an improvement, please send a pull request or open an [issue](https:/
    * [Change PIN](#change-pin)
    * [Set information](#set-information)
 - [Transfer keys](#transfer-keys)
-   * [Signing](#signing-1)
-   * [Encryption](#encryption-1)
-   * [Authentication](#authentication-1)
-- [Verify card](#verify-card)
+   * [Signature key](#signature-key-1)
+   * [Encryption key](#encryption-key-1)
+   * [Authentication key](#authentication-key-1)
+- [Verify transfer](#verify-transfer)
 - [Multiple YubiKeys](#multiple-yubikeys)
    * [Switching between YubiKeys](#switching-between-yubikeys)
 - [Finish](#finish)
@@ -459,7 +457,7 @@ Generate the Certify key with GnuPG:
 gpg --expert --full-generate-key
 ```
 
-Select `(8) RSA (set your own capabilities)`, then type `E` and `S` deselect Encrypt and Sign actions and only the Certify capability remains:
+Select `(8) RSA (set your own capabilities)`, then type `E` and `S` to deselect **Encrypt** and **Sign** actions, so the only **Current allowed actions** remaining is **Certify**:
 
 ```console
 Please select what kind of key you want:
@@ -505,15 +503,18 @@ Current allowed actions: Certify
    (Q) Finished
 ```
 
-Type `Q` then `4096` as the requested keysize.
-
-Do **not** set the Certify key to expire (see [Note #3](#notes)).
+Type `Q` then `4096` as the requested keysize:
 
 ```console
 Your selection? Q
 RSA keys may be between 1024 and 4096 bits long.
 What keysize do you want? (2048) 4096
 Requested keysize is 4096 bits
+```
+
+Type `0` for key validity - there is no reason to expire the Certify key (see [Note #3](#notes)) - then type `y` to confirm.
+
+```console
 Please specify how long the key should be valid.
          0 = key does not expire
       <n>  = key expires in n days
@@ -525,7 +526,7 @@ Key does not expire at all
 Is this correct? (y/N) y
 ```
 
-Input any value for Real name and Email address; Comment is optional:
+Input any value for **Real name** and **Email address**; **Comment** is optional, then type `O` to confirm:
 
 ```console
 GnuPG needs to construct a user ID to identify your key.
@@ -557,11 +558,9 @@ Copy the Certify key identifier beginning with `0x` and export it as a [variable
 export KEYID=0xF0F2CFEB04341FB5
 ```
 
-# Sign with existing key
+**Optional** Existing keys may be used to sign new ones to prove ownership.
 
-**Optional** Existing PGP keys may be used to sign new ones to prove ownership.
-
-Export the existing key to move it to the working keyring:
+Export the existing key to the working keyring:
 
 ```console
 gpg --export-secret-keys --armor --output /tmp/new.sec
@@ -585,9 +584,9 @@ RSA with 4096-bit key length is recommended.
 
 Subkeys are recommended to have one or several year expirations. They must be renewed using the Certify key - see [Rotating keys](#rotating-keys).
 
-## Signing
+## Signature key
 
-Create a [signing key](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623) by typing `addkey` then select the `(4) RSA (sign only)` option:
+Create Signature key by typing `addkey` then type `4` to select the `(4) RSA (sign only)` option:
 
 ```console
 gpg> addkey
@@ -629,9 +628,9 @@ ssb  rsa4096/0xB3CD10E502E19637
 [ultimate] (1). YubiKey User <yubikey@example>
 ```
 
-## Encryption
+## Encryption key
 
-Next, create an [encryption key](https://www.cs.cornell.edu/courses/cs5430/2015sp/notes/rsa_sign_vs_dec.php) by typing `addkey` then select the `(6) RSA (encrypt only)` option:
+Next, create an Encryption key by typing `addkey` then type `6` to select the `(6) RSA (encrypt only)` option:
 
 ```console
 gpg> addkey
@@ -675,11 +674,11 @@ ssb  rsa4096/0x30CBE8C4B085B9F7
 [ultimate] (1). YubiKey User <yubikey@example>
 ```
 
-## Authentication
+## Authentication key
 
-Finally, create an [authentication key](https://superuser.com/questions/390265/what-is-a-gpg-with-authenticate-capability-used-for) by typing `addkey` then select the `(8) RSA (set your own capabilities)` option.
+Finally, create an Authentication key by typing `addkey` then type `8` to select the `(8) RSA (set your own capabilities)` option.
 
-Toggle the required capabilities with `S`, `E` and `A` until `Authenticate` is the only selected action:
+Toggle the required capabilities with `S`, `E` and `A` until **Authenticate** is the only allowed action:
 
 ```console
 gpg> addkey
@@ -765,13 +764,13 @@ ssb  rsa4096/0xAD9E24E1B8CB9600
 [ultimate] (1). YubiKey User <yubikey@example>
 ```
 
-Finish by saving the keys:
+Finish by saving Subkeys:
 
 ```console
 gpg> save
-```
 
-## Extra Identities
+gpg> quit
+```
 
 **Optional** To add additional email addresses or identities, use `adduid`
 
@@ -806,7 +805,7 @@ ssb  rsa4096/0xAD9E24E1B8CB9600
 [ unknown] (2). YubiKey User <yubikey@somewhere>
 ```
 
-Configure trust:
+Then configure ultimate trust for the new identity:
 
 ```console
 gpg> trust
@@ -827,7 +826,7 @@ List available secret keys:
 gpg -K
 ```
 
-Verify output:
+The output should display Certify, Signature, Encryption and Authentication keys, for example:
 
 ```console
 ---------------------------------------
@@ -845,7 +844,7 @@ ssb   rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-01-01]
 gpg --export $KEYID | hokey lint
 ```
 
-hokey may warn (orange text) about cross certification for the authentication key. GnuPG [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html) documentation has more detail on cross certification, and version 2.2.1 notes "subkey <keyid> does not sign and so does not need to be cross-certified".
+hokey may warn (orange text) about cross certification for the Authentication key. GnuPG [Signing Subkey Cross-Certification](https://gnupg.org/faq/subkey-cross-certify.html) documentation has more detail on cross certification, and version 2.2.1 notes "subkey <keyid> does not sign and so does not need to be cross-certified".
 
 hokey may also indicate a problem (red text) with `Key expiration times: []` on the primary key - see [Note #3](#notes).
 
@@ -1325,11 +1324,11 @@ The currently selected key(s) are indicated with an `*`. When transferring keys,
 gpg --edit-key $KEYID
 ```
 
-## Signing
+The Certify key passphrase and Admin PIN will be prompted.
 
-The Certify key passphrase and Admin PIN are required for this step.
+## Signature key
 
-Select and transfer the signature key - `*` will appear next to the selected subkey (`ssb*`):
+Select and transfer the Signature key - `*` will appear next to the selected subkey (`ssb*`):
 
 ```console
 gpg> key 1
@@ -1352,7 +1351,7 @@ Please select where to store the key:
 Your selection? 1
 ```
 
-## Encryption
+## Encryption key
 
 Type `key 1` again to deselect the first key and `key 2` to select the next key:
 
@@ -1378,9 +1377,9 @@ Please select where to store the key:
 Your selection? 2
 ```
 
-## Authentication
+## Authentication key
 
-Type `key 2` again to deselect the second key and `key 3` to select the last key:
+Type `key 2` again to deselect the second key and `key 3` to select the third key:
 
 ```console
 gpg> key 2
@@ -1410,9 +1409,9 @@ Save and quit:
 gpg> save
 ```
 
-# Verify card
+# Verify transfer
 
-Verify Subkeys have been moved to YubiKey as indicated by `ssb>` with `gpg -K`, for example:
+To Verify Subkeys have been moved to YubiKey, look for `ssb>` with `gpg -K`, for example:
 
 ```console
 sec   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
@@ -1422,6 +1421,8 @@ ssb>  rsa4096/0xB3CD10E502E19637 2024-01-01 [S] [expires: 2026-01-01]
 ssb>  rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-01-01]
 ssb>  rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-01-01]
 ```
+
+A `>` after a tag indicates the key is stored on a smart card.
 
 # Multiple YubiKeys
 
@@ -1458,7 +1459,7 @@ To use the second YubiKey, repeat the command.
 
 Before completing setup, verify the following:
 
-- [ ] Saved encryption, signing and authentication Subkeys to YubiKey (`gpg -K` will show `ssb>` for Subkeys)
+- [ ] Saved Encryption, Signature and Authentication Subkeys to YubiKey (`gpg -K` will show `ssb>` for 3 Subkeys)
 - [ ] Saved YubiKey user and admin PINs, which are unique and were changed from default values
 - [ ] Saved Certify key passphrase to a secure and durable location
 - [ ] Saved Certify key, Subkeys and revocation certificate on encrypted portable storage, to be kept offline
@@ -1606,7 +1607,7 @@ ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2024-01-01  expires: 2026-01-01
                                   card-no: 0006 05553211
 ```
 
-`sec#` indicates the corresponding key is not available.
+`sec#` indicates the corresponding key is not available (the Certify key is offline).
 
 **Note** If `General key info..: [none]` appears in the output instead - go back and import the public key using the previous step.
 
@@ -1687,7 +1688,7 @@ When a Subkey expires, it can either be renewed or replaced. Both actions requir
 
 - Replacing Subkeys is less convenient but potentially more secure: the new Subkeys will **not** be able to decrypt previous messages, authenticate with SSH, etc. Contacts will need to receive the updated public key and any encrypted secrets need to be decrypted and re-encrypted to new Subkeys to be usable. This process is functionally equivalent to losing the YubiKey and provisioning a new one.
 
-Neither rotation method is superior and it is up to personal philosophy on identity management and individual threat modeling to decide which one to use, or whether to expire Subkeys at all. Ideally, Subkeys would be ephemeral: used only once for each unique encryption, signing and authentication event, however in practice that is not really practical nor worthwhile with YubiKey. Advanced users may dedicate an air-gapped machine for frequent credential rotation.
+Neither rotation method is superior and it is up to personal philosophy on identity management and individual threat modeling to decide which one to use, or whether to expire Subkeys at all. Ideally, Subkeys would be ephemeral: used only once for each unique encryption, signature and authentication event, however in practice that is not really practical nor worthwhile with YubiKey. Advanced users may dedicate an air-gapped machine for frequent credential rotation.
 
 ## Setup environment
 
@@ -1801,7 +1802,7 @@ Download the public key with updated expiration:
 gpg --recv $KEYID
 ```
 
-The validity of the GnuPG identity will be extended, allowing it to be used again for encryption, signing and authentication operations. The SSH public key does **not** need to be updated on remote hosts.
+The validity of the GnuPG identity will be extended, allowing it to be used again for encryption, signature and authentication operations. The SSH public key does **not** need to be updated on remote hosts.
 
 ## Rotating keys
 
@@ -2510,26 +2511,26 @@ Use `gpg -K` to verify the identity is listed.
 
 **Note** This is not possible on YubiKey NEO.
 
-By default, YubiKey will perform encryption, signing and authentication operations without requiring any action from the user after the key is plugged in and unlocked once with the PIN.
+By default, YubiKey will perform cryptographic operations without requiring any action from the user after the key is unlocked once with the PIN.
 
 To require a touch for each key operation, install [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and recall the Admin PIN:
-
-Authentication:
-
-```console
-ykman openpgp keys set-touch aut on
-```
-
-Signing:
-
-```console
-ykman openpgp keys set-touch sig on
-```
 
 Encryption:
 
 ```console
 ykman openpgp keys set-touch dec on
+```
+
+Signature:
+
+```console
+ykman openpgp keys set-touch sig on
+```
+
+Authentication:
+
+```console
+ykman openpgp keys set-touch aut on
 ```
 
 **Note** Versions of YubiKey Manager before 5.1.0 use `enc` instead of `dec` for encryption.
@@ -2742,9 +2743,13 @@ Verify results:
 gpg --list-key
 ```
 
-The fingerprint is used to create the three Subkeys for encryption, signing and authentication operations.
+The fingerprint is used to create the three Subkeys:
 
-Use a one or several year expiration for Subkeys - they can be renewed using the Certify key, see [rotating keys](#rotating-keys).
+```console
+export KEYID=0xF0F2CFEB04341FB5
+```
+
+Use a one or several year expiration for Subkeys - they must be renewed using the Certify key, see [rotating keys](#rotating-keys).
 
 Create a [signing subkey](https://stackoverflow.com/questions/5421107/can-rsa-be-both-used-as-encryption-and-signature/5432623#5432623):
 
