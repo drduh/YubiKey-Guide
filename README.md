@@ -672,9 +672,9 @@ ssb  rsa4096/0x30CBE8C4B085B9F7
 
 Generate an Authentication key by typing `addkey` then `8` to select the `(8) RSA (set your own capabilities)` option.
 
-Toggle the required capabilities with `S`, `E` and `A` until **Authenticate** is the only allowed action:
+**Note** Newer versions of GnuPG may set a Restricted flag on the Authenticate key (see [issue 421](https://github.com/drduh/YubiKey-Guide/issues/421)) - set the **Authenticate** action with `=A` instead.
 
-**Note** Newer versions of GnuPG may set a Restricted flag on the Authenticate key (see [issue 421](https://github.com/drduh/YubiKey-Guide/issues/421) - set the **Authenticate** action with `=A` instead.
+Toggle the required capabilities with `S`, `E` and `A` until **Authenticate** is the only allowed action:
 
 ```console
 gpg> addkey
