@@ -552,15 +552,13 @@ pub   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
 uid                              YubiKey User <yubikey@example>
 ```
 
-Copy the Certify key identifier beginning with `0x` from the output and export it as a [variable](https://stackoverflow.com/questions/1158091/defining-a-variable-with-or-without-export/1158231#1158231) (`KEYID`):
+Export the Certify key identifier beginning with `0x` as `KEYID` with the following command or by pasting the value manually:
 
 ```console
-export KEYID=0xF0F2CFEB04341FB5
+export KEYID=$(gpg -K | grep -Po "(0x\w+)")
 ```
 
-**Optional** Existing keys may be used to sign new ones to prove ownership.
-
-Export the existing key to the working keyring and sign the new key:
+**Optional** Existing keys may be used to sign new ones to prove ownership. Export the existing key to the working keyring and sign the new key:
 
 ```console
 gpg --export-secret-keys --armor --output /tmp/new.sec
@@ -675,6 +673,8 @@ ssb  rsa4096/0x30CBE8C4B085B9F7
 Generate an Authentication key by typing `addkey` then `8` to select the `(8) RSA (set your own capabilities)` option.
 
 Toggle the required capabilities with `S`, `E` and `A` until **Authenticate** is the only allowed action:
+
+**Note** Newer versions of GnuPG may set a Restricted flag on the Authenticate key (see [issue 421](https://github.com/drduh/YubiKey-Guide/issues/421) - set the **Authenticate** action with `=A` instead.
 
 ```console
 gpg> addkey
@@ -812,7 +812,7 @@ Do you really want to set this key to ultimate trust? (y/N) y
 gpg> save
 ```
 
-By default, the latest identity added will be the primary user ID. Select `uid 2` or equivalent and `primary` to change it.
+By default, the latest identity added will be the primary user ID. To change it, select `uid 2` or equivalent and `primary`
 
 # Verify
 
@@ -2642,7 +2642,7 @@ To reset YubiKey from the Certify key backup (such as the one on encrypted porta
 
 - If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - it is a [known issue](https://bbs.archlinux.org/viewtopic.php?id=274571) that openssh 8.9p1 and higher has issues with YubiKey. Adding `KexAlgorithms -sntrup761x25519-sha512@openssh.com` to `/etc/ssh/ssh_config` often resolves the issue.
 
-- If you receive the error, `The agent has no identities` from `ssh-add -L`, make sure you have installed and started `scdaemon`.
+- If you receive the error, `The agent has no identities` from `ssh-add -L`, make sure you have installed and started `scdaemon`
 
 - If you receive the error, `Error connecting to agent: No such file or directory` from `ssh-add -L`, the UNIX file socket that the agent uses for communication with other processes may not be set up correctly. On Debian, try `export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"`. Also see that `gpgconf --list-dirs agent-ssh-socket` is returning single path, to existing `S.gpg-agent.ssh` socket.
 
@@ -2654,7 +2654,7 @@ To reset YubiKey from the Certify key backup (such as the one on encrypted porta
 
 - If you receive the error, `Please insert the card with serial number` see [Using Multiple Keys](#using-multiple-keys).
 
-- If you receive the error, `There is no assurance this key belongs to the named user` or `encryption failed: Unusable public key` use `gpg --edit-key` to set `trust` to `5 = I trust ultimately`.
+- If you receive the error, `There is no assurance this key belongs to the named user` or `encryption failed: Unusable public key` or `No public key` use `gpg --edit-key` to set `trust` to `5 = I trust ultimately`
 
 - If, when you try the above command, you get the error `Need the secret key to do this` - specify trust for the key in `~/.gnupg/gpg.conf` by using the `trust-key [key ID]` directive.
 
