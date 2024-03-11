@@ -2712,16 +2712,17 @@ Verify the Certify key:
 gpg --list-key
 ```
 
-Export the Certify key ID and create the Subkeys:
+Export the Certify key ID, extract its fingerprint and create the Subkeys:
 
 ```console
 export KEYID=0xF0F2CFEB04341FB5
+KEYFPR=$(gpg --fingerprint "$KEYID" | grep -Eo '([0-9A-F][0-9A-F ]{49})' | head -n 1 | tr -d ' ')
 
-gpg --quick-add-key "$KEYID" rsa4096 sign 2y
+gpg --quick-add-key "$KEYFPR" rsa4096 sign 2y
 
-gpg --quick-add-key "$KEYID" rsa4096 encrypt 2y
+gpg --quick-add-key "$KEYFPR" rsa4096 encrypt 2y
 
-gpg --quick-add-key "$KEYID" rsa4096 auth 2y
+gpg --quick-add-key "$KEYFPR" rsa4096 auth 2y
 ```
 
 # Additional resources
