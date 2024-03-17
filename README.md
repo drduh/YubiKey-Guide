@@ -20,12 +20,12 @@ To suggest an improvement, send a pull request or open an [issue](https://github
 - [Create Certify key](#create-certify-key)
 - [Create Subkeys](#create-subkeys)
 - [Verify keys](#verify-keys)
-- [Backup private keys](#backup-private-keys)
+- [Backup keys](#backup-keys)
 - [Export public key](#export-public-key)
 - [Configure YubiKey](#configure-yubikey)
    * [Enable KDF](#enable-kdf)
    * [Change PIN](#change-pin)
-   * [Set information](#set-information)
+   * [Set attributes](#set-attributes)
 - [Transfer Subkeys](#transfer-subkeys)
    * [Signature key](#signature-key)
    * [Encryption key](#encryption-key)
@@ -81,7 +81,8 @@ A dedicated, secure operating environment is recommended to generate cryptograph
 
 The following is a general ranking of environments least to most hospitable to generating materials:
 
-1. Daily, currently in use operating system with unrestricted network access
+1. Public, shared or other computer owned by someone else
+1. Daily-use personal operating system with unrestricted network access
 1. Virtualized operating system with limited capabilities (using [virt-manager](https://virt-manager.org/), VirtualBox or VMware, for example)
 1. Dedicated and hardened [Debian](https://www.debian.org/) or [OpenBSD](https://www.openbsd.org/) installation
 1. Ephemeral [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html) booted without primary storage attached
@@ -440,7 +441,7 @@ Display the password, then memorize or write it in a secure location, ideally se
 echo $PASS
 ```
 
-This repository includes a [`passphrase.html`](passphrase.html) file which can be printed and filled out by hand to assist with passphrase transcription.
+This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) file which can be printed and filled out by hand to assist with passphrase transcription. Save the raw file and open it with a browser to print.
 
 # Create Certify key
 
@@ -500,7 +501,7 @@ ssb   rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-01-01]
 ssb   rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-01-01]
 ```
 
-# Backup private keys
+# Backup keys
 
 Save a copy of the Certify key and Subkeys:
 
@@ -512,6 +513,9 @@ gpg --output $GNUPGHOME/$KEYID-Certify.key \
 gpg --output $GNUPGHOME/$KEYID-Subkeys.key \
     --batch --pinentry-mode=loopback --passphrase "$PASS" \
     --armor --export-secret-subkeys $KEYID
+
+gpg --output $GNUPGHOME/$KEYID.asc \
+    --armor --export $KEYID
 ```
 
 Create an **encrypted** backup on portable storage to be kept offline in a secure and durable location.
@@ -841,8 +845,14 @@ Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing 
 
 **Note** This feature may not be compatible with older GnuPG versions, especially mobile clients. These incompatible clients will not function because the PIN will always be rejected.
 
+Enable KDF using the default Admin pin of `12345678`:
+
 ```console
-gpg/card> kdf-setup
+gpg --command-fd=0 --pinentry-mode=loopback --card-edit <<EOF
+admin
+kdf-setup
+12345678
+EOF
 ```
 
 This step must be completed before changing PINs or moving keys or an error will occur: `gpg: error for setup KDF: Conditions of use not satisfied`
@@ -855,9 +865,9 @@ Entering the *PIN* incorrectly three times will cause the PIN to become blocked.
 
 Entering the *Admin PIN* or *Reset Code* incorrectly three times destroys all GnuPG data on the card.
 
-Name       | Default Value | Use
+Name       | Default Value | Capability
 -----------|---------------|-------------------------------------------------------------
-PIN        | `123456`      | cryptographic operations (decrypt, sign, authenticate) PIN
+PIN        | `123456`      | cryptographic operations (decrypt, sign, authenticate)
 Admin PIN  | `12345678`    | reset PIN, change Reset Code, add keys and owner information
 Reset Code | None          | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
@@ -865,160 +875,118 @@ Reset Code | None          | reset PIN ([more information](https://forum.yubico.
 
 A maximum of 127 ASCII characters are allowed. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
 
-Update PINs:
+Determine the desired PIN values and set them manually, or generate them randomly:
 
 ```console
-gpg/card> passwd
-gpg: OpenPGP card no. D2760001240102010006055532110000 detected
+ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
+  fold -w 30 | sed "-es/./ /"{1..26..5} | \
+  cut -c2- | tr " " "-" | head -1)
 
-1 - change PIN
-2 - unblock PIN
-3 - change Admin PIN
-4 - set the Reset Code
-Q - quit
+USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
+  fold -w 15 | sed "-es/./ /"{1..26..5} | \
+  cut -c2- | tr " " "-" | head -1)
 
-Your selection? 3
-PIN changed.
+echo "Admin PIN: $ADMIN_PIN\nUser PIN: $USER_PIN"
+```
 
-1 - change PIN
-2 - unblock PIN
-3 - change Admin PIN
-4 - set the Reset Code
-Q - quit
+Update the admin PIN:
 
-Your selection? 1
-PIN changed.
+```console
+gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
+3
+12345678
+$ADMIN_PIN
+$ADMIN_PIN
+q
+EOF
+```
 
-1 - change PIN
-2 - unblock PIN
-3 - change Admin PIN
-4 - set the Reset Code
-Q - quit
+Update the user PIN:
 
-Your selection? q
+```console
+gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
+1
+123456
+$USER_PIN
+$USER_PIN
+q
+EOF
 ```
 
 **Note** The number of retry attempts can be changed later with the following command, documented [here](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries):
 
-```bash
-ykman openpgp access set-retries 5 5 5 -f -a YOUR_ADMIN_PIN
+```console
+ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
 ```
 
-## Set information
+## Set attributes
 
-While still in administrative mode:
+Set the [smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html):
 
 ```console
-gpg/card> list
-
-gpg/card> name
-Cardholder's surname: User
-Cardholder's given name: YubiKey
-
-gpg/card> lang
-Language preferences: en
-
-gpg/card> login
-Login data (account name): yubikey@example
-
-gpg/card> quit
+gpg --command-fd=0 --pinentry-mode=loopback --edit-card <<EOF
+admin
+login
+example@yubikey
+$ADMIN_PIN
+name
+User
+YubiKey
+quit
+EOF
 ```
 
 # Transfer Subkeys
 
 **Important** Verify a backup of Subkeys was made before proceeding. Transferring keys to YubiKey is a one-way operation: `keytocard` converts the local, on-disk key into a stub, which means the on-disk copy is no longer usable to transfer to subsequent YubiKeys.
 
-The currently selected key(s) are indicated with an `*` symbol.
-
-When transferring keys, only one subkey must be selected at a time.
-
-```console
-gpg --edit-key $KEYID
-```
+The currently selected key(s) are indicated with an `*` symbol.  When transferring keys, only one subkey must be selected at a time.
 
 The Certify key passphrase and Admin PIN are required to transfer keys.
 
 ## Signature key
 
-Type `key 1` to select the first key and `keytocard` to transfer it, then `1` as the destination:
+Transfer the first key:
 
 ```console
-gpg> key 1
-
-sec  rsa4096/0xF0F2CFEB04341FB5
-     created: 2024-01-01  expires: never       usage: C
-     trust: ultimate      validity: ultimate
-ssb* rsa4096/0xB3CD10E502E19637
-     created: 2024-01-01  expires: 2026-01-01  usage: S
-ssb  rsa4096/0x30CBE8C4B085B9F7
-     created: 2024-01-01  expires: 2026-01-01  usage: E
-ssb  rsa4096/0xAD9E24E1B8CB9600
-     created: 2024-01-01  expires: 2026-01-01  usage: A
-[ultimate] (1). YubiKey User <yubikey@example>
-
-gpg> keytocard
-Please select where to store the key:
-   (1) Signature key
-   (3) Authentication key
-Your selection? 1
+gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
+key 1
+keytocard
+1
+$PASS
+$ADMIN_PIN
+save
+EOF
 ```
 
 ## Encryption key
 
-Type `key 1` again to deselect the first key and `key 2` to select the next key, then `keytocard` to transfer it, then `2` as the destination:
+Repeat the process for the second key:
 
 ```console
-gpg> key 1
-
-gpg> key 2
-
-sec  rsa4096/0xF0F2CFEB04341FB5
-     created: 2024-01-01  expires: never       usage: C
-     trust: ultimate      validity: ultimate
-ssb  rsa4096/0xB3CD10E502E19637
-     created: 2024-01-01  expires: 2026-01-01  usage: S
-ssb* rsa4096/0x30CBE8C4B085B9F7
-     created: 2024-01-01  expires: 2026-01-01  usage: E
-ssb  rsa4096/0xAD9E24E1B8CB9600
-     created: 2024-01-01  expires: 2026-01-01  usage: A
-[ultimate] (1). YubiKey User <yubikey@example>
-
-gpg> keytocard
-Please select where to store the key:
-   (2) Encryption key
-Your selection? 2
+gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
+key 2
+keytocard
+2
+$PASS
+$ADMIN_PIN
+save
+EOF
 ```
 
 ## Authentication key
 
-Type `key 2` again to deselect the second key and `key 3` to select the third key, then `keytocard` to transfer it, then `3` as the destination:
+Repeat the process for the third key:
 
 ```console
-gpg> key 2
-
-gpg> key 3
-
-sec  rsa4096/0xF0F2CFEB04341FB5
-     created: 2024-01-01  expires: never       usage: C
-     trust: ultimate      validity: ultimate
-ssb  rsa4096/0xB3CD10E502E19637
-     created: 2024-01-01  expires: 2026-01-01  usage: S
-ssb  rsa4096/0x30CBE8C4B085B9F7
-     created: 2024-01-01  expires: 2026-01-01  usage: E
-ssb* rsa4096/0xAD9E24E1B8CB9600
-     created: 2024-01-01  expires: 2026-01-01  usage: A
-[ultimate] (1). YubiKey User <yubikey@example>
-
-gpg> keytocard
-Please select where to store the key:
-   (3) Authentication key
-Your selection? 3
-```
-
-Save and quit:
-
-```console
-gpg> save
+gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
+key 3
+keytocard
+3
+$PASS
+$ADMIN_PIN
+save
+EOF
 ```
 
 # Verify transfer
