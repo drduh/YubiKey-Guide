@@ -59,7 +59,7 @@ To suggest an improvement, send a pull request or open an [issue](https://github
 
 # Purchase YubiKey
 
-[Current YubiKeys](https://www.yubico.com/store/compare/) except the FIDO-only Security Key Series and Bios Series YubiKeys are compatible with this guide.
+[Current YubiKeys](https://www.yubico.com/store/compare/) except the FIDO-only Security Key Series and Bio Series YubiKeys are compatible with this guide.
 
 [Verify YubiKey](https://support.yubico.com/hc/en-us/articles/360013723419-How-to-Confirm-Your-Yubico-Device-is-Genuine) by visiting [yubico.com/genuine](https://www.yubico.com/genuine/). Select *Verify Device* to begin the process. Touch the YubiKey when prompted and allow the site to see the make and model of the device when prompted. This device attestation may help mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
@@ -415,9 +415,9 @@ EXPIRATION=2026-05-01
 
 Generate a passphrase, which will be used to issue the Certify key and Subkeys.
 
-The passphrase is recommended to consist of only upper case letters and numbers for improved readability. A strong diceware passphrase can also provide equivalent protection.
+The passphrase is recommended to consist of only upper case letters and numbers for improved readability. [Diceware](https://secure.research.vt.edu/diceware) is another method for creating strong and memorable passphrases.
 
-The following command will generate a strong 30-character passphrase while avoiding ambiguous characters:
+The following command will generate a strong passphrase while avoiding ambiguous characters:
 
 ```console
 PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
@@ -801,32 +801,28 @@ This step must be completed before changing PINs or moving keys or an error will
 
 ## Change PIN
 
-The [PGP interface](https://developers.yubico.com/PGP/) is separate from other modules on YubiKey, such as the [PIV interface](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html) - the PGP interface has its own *PIN*, *Admin PIN*, and *Reset Code* which must be changed from default values.
+YubiKey's PGP interface has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
 
-Name       | Default Value | Capability
+Name       | Default value | Capability
 -----------|---------------|-------------------------------------------------------------
-PIN        | `123456`      | cryptographic operations (decrypt, sign, authenticate)
+User PIN   | `123456`      | cryptographic operations (decrypt, sign, authenticate)
 Admin PIN  | `12345678`    | reset PIN, change Reset Code, add keys and owner information
 Reset Code | None          | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
 Entering the *PIN* incorrectly 3 times will cause the PIN to become blocked. It can be unblocked with either the *Admin PIN* or *Reset Code*.
 
-**Warning** Entering the *Admin PIN* or *Reset Code* incorrectly 3 times destroys all GnuPG data on the card.
+**Warning** Entering the *Admin PIN* or *Reset Code* incorrectly 3 times will destroy data on YubiKey.
 
-Determine the desired PIN values.
+Determine the desired PIN values. They can be shorter than the GnuPG identity passphrase due to limited brute-forcing opportunities. The User PIN should be convenient enough to remember for every-day use.
 
 *PIN* values must be at least 6 characters. *Admin PIN* values must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
 
-Set PINs manually or generate them, for example a 15 digit code:
+Set PINs manually or generate them, for example a 6 digit User PIN and 8 digit Admin PIN:
 
 ```console
-ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
-  fold -w 15 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1)
+ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w8 | head -1)
 
-USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
-  fold -w 15 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1)
+USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w6 | head -1)
 
 echo "\nAdmin PIN: $ADMIN_PIN\nUser PIN:  $USER_PIN"
 ```
@@ -1128,8 +1124,7 @@ Use a [shell function](https://github.com/drduh/config/blob/master/zshrc) to mak
 secret () {
   output=~/"${1}".$(date +%s).enc
   gpg --encrypt --armor --output ${output} \
-    -r 0x0000 -r 0x0001 -r 0x0002 "${1}" && \
-      echo "${1} -> ${output}"
+    -r $KEYID "${1}" && echo "${1} -> ${output}"
 }
 
 reveal () {
