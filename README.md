@@ -785,57 +785,9 @@ gpg --armor --export $KEYID | doas tee /mnt/public/$KEYID-$(date +%F).asc
 gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
 ```
 
-**Keyserver**
-
-**Optional** Upload the public key to a keyserver:
-
-```console
-gpg --send-key $KEYID
-
-gpg --keyserver keys.gnupg.net --send-key $KEYID
-
-gpg --keyserver hkps://keyserver.ubuntu.com:443 --send-key $KEYID
-```
-
-Or if [uploading to keys.openpgp.org](https://keys.openpgp.org/about/usage):
-
-```console
-gpg --send-key $KEYID | curl -T - https://keys.openpgp.org
-```
-
-The public key URL can also be added to YubiKey (based on [Shaw 2003](https://datatracker.ietf.org/doc/html/draft-shaw-openpgp-hkp-00)):
-
-```console
-URL="hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=${KEYID}"
-```
-
-Edit YubiKey with `gpg --edit-card` and the Admin PIN:
-
-```console
-gpg/card> admin
-
-gpg/card> url
-URL to retrieve public key: hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF00000000000000
-
-gpg/card> quit
-```
-
 # Configure YubiKey
 
-Insert YubiKey and use GnuPG to configure it:
-
-```console
-gpg --card-edit
-```
-
-Enter administrative mode:
-
-```console
-gpg/card> admin
-Admin commands are allowed
-```
-
-If the card is locked, use [Reset](#reset).
+If the card is locked, [Reset](#reset) it.
 
 **Windows** Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this is not the similarly named older YubiKey NEO Manager) to enable CCID functionality.
 
@@ -861,32 +813,32 @@ This step must be completed before changing PINs or moving keys or an error will
 
 The [PGP interface](https://developers.yubico.com/PGP/) is separate from other modules on YubiKey, such as the [PIV interface](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html) - the PGP interface has its own *PIN*, *Admin PIN*, and *Reset Code* which must be changed from default values.
 
-Entering the *PIN* incorrectly three times will cause the PIN to become blocked. It can be unblocked with either the *Admin PIN* or *Reset Code*.
-
-Entering the *Admin PIN* or *Reset Code* incorrectly three times destroys all GnuPG data on the card.
-
 Name       | Default Value | Capability
 -----------|---------------|-------------------------------------------------------------
 PIN        | `123456`      | cryptographic operations (decrypt, sign, authenticate)
 Admin PIN  | `12345678`    | reset PIN, change Reset Code, add keys and owner information
 Reset Code | None          | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
-*PIN* values must be at least 6 characters. *Admin PIN* values must be at least 8 characters.
+Entering the *PIN* incorrectly 3 times will cause the PIN to become blocked. It can be unblocked with either the *Admin PIN* or *Reset Code*.
 
-A maximum of 127 ASCII characters are allowed. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
+**Warning** Entering the *Admin PIN* or *Reset Code* incorrectly 3 times destroys all GnuPG data on the card.
 
-Determine the desired PIN values and set them manually, or generate them randomly:
+Determine the desired PIN values.
+
+*PIN* values must be at least 6 characters. *Admin PIN* values must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
+
+Set PINs manually or generate them, for example a 15 digit code:
 
 ```console
 ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
-  fold -w 30 | sed "-es/./ /"{1..26..5} | \
+  fold -w 15 | sed "-es/./ /"{1..26..5} | \
   cut -c2- | tr " " "-" | head -1)
 
 USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
   fold -w 15 | sed "-es/./ /"{1..26..5} | \
   cut -c2- | tr " " "-" | head -1)
 
-echo "Admin PIN: $ADMIN_PIN\nUser PIN: $USER_PIN"
+echo "\nAdmin PIN: $ADMIN_PIN\nUser PIN:  $USER_PIN"
 ```
 
 Update the admin PIN:
@@ -913,7 +865,9 @@ q
 EOF
 ```
 
-**Note** The number of retry attempts can be changed later with the following command, documented [here](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries):
+Remote and re-insert YubiKey.
+
+**Optional** The number of [retry attempts](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries) can be changed to 5 with:
 
 ```console
 ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
@@ -921,7 +875,9 @@ ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
 
 ## Set attributes
 
-Set the [smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html):
+Set the [smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) with `gpg --edit-card` and `admin` mode - use `help` to see available options.
+
+Or use predetermined values:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-card <<EOF
@@ -991,7 +947,7 @@ EOF
 
 # Verify transfer
 
-To Verify Subkeys have been moved to YubiKey, look for `ssb>` with `gpg -K`, for example:
+Verify Subkeys have been moved to YubiKey with `gpg -K` and look for `ssb>`, for example:
 
 ```console
 sec   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
@@ -1093,23 +1049,21 @@ gpg/card> fetch
 gpg/card> quit
 ```
 
-Edit the Certify key:
+Determine the key ID:
 
 ```console
 KEYID=0xF0F2CFEB04341FB5
-
-gpg --edit-key $KEYID
 ```
 
 Assign ultimate trust by typing `trust` and selecting option `5` then `quit`:
 
 ```console
-gpg> trust
-
-Your decision? 5
-Do you really want to set this key to ultimate trust? (y/N) y
-
-gpg> quit
+gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
+trust
+5
+y
+save
+EOF
 ```
 
 Remove and re-insert YubiKey.
@@ -1159,7 +1113,8 @@ ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2024-01-01  expires: 2026-01-01
 Encrypt a message to yourself (useful for storing credentials or protecting backups):
 
 ```console
-echo "test message string" | gpg --encrypt --armor --recipient $KEYID -o encrypted.txt
+echo "\ntest message string" | \
+  gpg --encrypt --armor --recipient $KEYID -o encrypted.txt
 ```
 
 To encrypt to multiple recipients or keys (the preferred key ID goes last):
@@ -1171,14 +1126,10 @@ echo "test message string" | \
     -o encrypted.txt
 ```
 
-Decrypt the message:
+Decrypt the message - a User PIN prompt will appear:
 
 ```console
-$ gpg --decrypt --armor encrypted.txt
-gpg: anonymous recipient; trying secret key 0x0000000000000000 ...
-gpg: okay, we are the anonymous recipient.
-gpg: encrypted with RSA key, ID 0x0000000000000000
-test message string
+gpg --decrypt --armor encrypted.txt
 ```
 
 Use a [shell function](https://github.com/drduh/config/blob/master/zshrc) to make encrypting files easier:
@@ -1219,7 +1170,12 @@ echo "test message string" | gpg --armor --clearsign > signed.txt
 Verify the signature:
 
 ```console
-$ gpg --verify signed.txt
+gpg --verify signed.txt
+```
+
+The output will be similar to:
+
+```console
 gpg: Signature made Mon 01 Jan 2024 12:00:00 PM UTC
 gpg:                using RSA key CF5A305B808B7A0F230DA064B3CD10E502E19637
 gpg: Good signature from "YubiKey User <yubikey@example>" [ultimate]
@@ -1233,13 +1189,15 @@ Primary key fingerprint: 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 
 By default, YubiKey will perform cryptographic operations without requiring any action from the user after the key is unlocked once with the PIN.
 
-To require a touch for each key operation, install [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and use the Admin PIN to set policy:
+To require a touch for each key operation, use [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and the Admin PIN to set policy:
 
 Encryption:
 
 ```console
 ykman openpgp keys set-touch dec on
 ```
+
+**Note** Versions of YubiKey Manager before 5.1.0 use `enc` instead of `dec` for encryption. Older versions of YubiKey Manager use `touch` instead of `set-touch`
 
 Signature:
 
@@ -1252,8 +1210,6 @@ Authentication:
 ```console
 ykman openpgp keys set-touch aut on
 ```
-
-**Note** Versions of YubiKey Manager before 5.1.0 use `enc` instead of `dec` for encryption. Older versions of YubiKey Manager use `touch` instead of `set-touch`
 
 To view and adjust policy options:
 
@@ -1677,7 +1633,7 @@ Then update the repository URL to `git@github.com:USERNAME/repository`
 
 ## GnuPG agent forwarding
 
-YubiKey can be used sign git commits and decrypt files on remote hosts with GPG Agent Forwarding. To ssh through another network, especially to push to/pull from GitHub using ssh, see [Remote Machines (SSH Agent forwarding)](#remote-machines-ssh-agent-forwarding).
+YubiKey can be used sign git commits and decrypt files on remote hosts with GnuPG Agent Forwarding. To ssh through another network, especially to push to/pull from GitHub using ssh, see [Remote Machines (SSH Agent forwarding)](#ssh-agent-forwarding).
 
 `gpg-agent.conf` is not needed on the remote host; after forwarding, remote GnuPG directly communicates with `S.gpg-agent` without starting `gpg-agent` on the remote host.
 
@@ -1833,6 +1789,41 @@ Edit the file to enable options `pgp_default_key`, `pgp_sign_as` and `pgp_autosi
 `source` the file in `muttrc`
 
 **Important** `pinentry-tty` set as the pinentry program in `gpg-agent.conf` is reported to cause problems with Mutt TUI, because it uses curses. It is recommended to use `pinentry-curses` or other graphic pinentry program instead.
+
+## Keyserver
+
+Public keys can be uploaded to a public server for discoverability:
+
+```console
+gpg --send-key $KEYID
+
+gpg --keyserver keys.gnupg.net --send-key $KEYID
+
+gpg --keyserver hkps://keyserver.ubuntu.com:443 --send-key $KEYID
+```
+
+Or if [uploading to keys.openpgp.org](https://keys.openpgp.org/about/usage):
+
+```console
+gpg --send-key $KEYID | curl -T - https://keys.openpgp.org
+```
+
+The public key URL can also be added to YubiKey (based on [Shaw 2003](https://datatracker.ietf.org/doc/html/draft-shaw-openpgp-hkp-00)):
+
+```console
+URL="hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=${KEYID}"
+```
+
+Edit YubiKey with `gpg --edit-card` and the Admin PIN:
+
+```console
+gpg/card> admin
+
+gpg/card> url
+URL to retrieve public key: hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=0xFF00000000000000
+
+gpg/card> quit
+```
 
 # Updating keys
 
@@ -1996,6 +1987,7 @@ scd apdu 00 20 00 83 08 40 40 40 40 40 40 40 40
 scd apdu 00 e6 00 00
 scd apdu 00 44 00 00
 /echo Card has been successfully reset.
+/bye
 ```
 
 Or use `ykman` (sometimes in `~/.local/bin/`):
