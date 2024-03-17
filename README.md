@@ -2,11 +2,7 @@ This is a guide to using [YubiKey](https://www.yubico.com/products/) as a [smart
 
 Keys stored on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for daily use. YubiKey can be configured to require a physical touch for cryptographic operations, reducing the risk of credential compromise.
 
-**Important** If you followed this guide before Jan 2021, *PIN* and *Admin PIN* may be set to default values of `123456` and `12345678`. See [Change PIN](#change-pin) to change PINs.
-
 To suggest an improvement, send a pull request or open an [issue](https://github.com/drduh/YubiKey-Guide/issues).
-
-**Tip** [drduh/Purse](https://github.com/drduh/Purse) is a password manager based on GnuPG and YubiKey to securely store and use credentials.
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Prepare environment](#prepare-environment)
@@ -63,15 +59,9 @@ To suggest an improvement, send a pull request or open an [issue](https://github
 
 # Purchase YubiKey
 
-All YubiKeys except the blue "security key" model and the "Bio Series - FIDO Edition" are compatible with this guide. NEO models are limited to 2048-bit RSA keys.
+[Current YubiKeys](https://www.yubico.com/store/compare/) except the FIDO-only Security Key Series and Bios Series YubiKeys are compatible with this guide.
 
-Compare YubiKeys [here](https://www.yubico.com/products/yubikey-hardware/compare-products-series/).
-
- A list of the YubiKeys compatible with OpenPGP is available [here](https://support.yubico.com/hc/en-us/articles/360013790259-Using-Your-YubiKey-with-OpenPGP).
-
-In May 2021, Yubico also released a press release and blog post about supporting resident SSH keys on YubiKey, including blue "security key 5 NFC" with OpenSSH 8.2 or later, see [here](https://www.yubico.com/blog/github-now-supports-ssh-security-keys/) for more information.
-
-To [verify a YubiKey](https://support.yubico.com/hc/en-us/articles/360013723419-How-to-Confirm-Your-Yubico-Device-is-Genuine), visit [yubico.com/genuine](https://www.yubico.com/genuine/). Insert a Yubico device, and select *Verify Device* to begin the process. Touch the YubiKey when prompted, and if asked, allow the site to see the make and model of the device. This device attestation may help mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
+[Verify YubiKey](https://support.yubico.com/hc/en-us/articles/360013723419-How-to-Confirm-Your-Yubico-Device-is-Genuine) by visiting [yubico.com/genuine](https://www.yubico.com/genuine/). Select *Verify Device* to begin the process. Touch the YubiKey when prompted and allow the site to see the make and model of the device when prompted. This device attestation may help mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
 Several portable storage devices (such as microSD cards) for storing encrypted backups are also recommended.
 
@@ -1136,13 +1126,16 @@ Use a [shell function](https://github.com/drduh/config/blob/master/zshrc) to mak
 
 ```console
 secret () {
-        output=~/"${1}".$(date +%s).enc
-        gpg --encrypt --armor --output ${output} -r 0x0000 -r 0x0001 -r 0x0002 "${1}" && echo "${1} -> ${output}"
+  output=~/"${1}".$(date +%s).enc
+  gpg --encrypt --armor --output ${output} \
+    -r 0x0000 -r 0x0001 -r 0x0002 "${1}" && \
+      echo "${1} -> ${output}"
 }
 
 reveal () {
-        output=$(echo "${1}" | rev | cut -c16- | rev)
-        gpg --decrypt --output ${output} "${1}" && echo "${1} -> ${output}"
+  output=$(echo "${1}" | rev | cut -c16- | rev)
+  gpg --decrypt --output ${output} "${1}" && \
+    echo "${1} -> ${output}"
 }
 ```
 
@@ -1158,6 +1151,8 @@ gpg: okay, we are the anonymous recipient.
 gpg: encrypted with RSA key, ID 0x0000000000000000
 document.pdf.1580000000.enc -> document.pdf
 ```
+
+[drduh/Purse](https://github.com/drduh/Purse) is a password manager based on GnuPG and YubiKey to securely store and use credentials.
 
 ## Signature
 
@@ -2099,7 +2094,6 @@ EOF
 # Additional resources
 
 * [Yubico - PGP](https://developers.yubico.com/PGP/)
-* [Yubico - PGP Card edit](https://developers.yubico.com/PGP/Card_edit.html)
 * [Yubico - Yubikey Personalization](https://developers.yubico.com/yubikey-personalization/)
 * [A Visual Explanation of GPG Subkeys (2022)](https://rgoulter.com/blog/posts/programming/2022-06-10-a-visual-explanation-of-gpg-subkeys.html)
 * [dhess/nixos-yubikey](https://github.com/dhess/nixos-yubikey)
@@ -2111,5 +2105,3 @@ EOF
 * [PGP and SSH keys on a Yubikey NEO (2015)](https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/)
 * [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
 * [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
-* [GPG and SSH with Yubikey NEO (2013)](https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO)
-* [Riseup - OpenPGP Best Practices](https://help.riseup.net/en/security/message-security/openpgp/best-practices)
