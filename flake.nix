@@ -40,7 +40,7 @@
                 name = "yubikey-guide";
                 icon = "${pkgs.yubikey-manager-qt}/share/ykman-gui/icons/ykman.png";
                 desktopName = "drduh's YubiKey Guide";
-                genericName = "Guide to using YubiKey for GPG and SSH";
+                genericName = "Guide to using YubiKey for GnuPG and SSH";
                 comment = "Open the guide in a reader program";
                 categories = ["Documentation"];
                 exec = "${viewYubikeyGuide}/bin/view-yubikey-guide";
@@ -167,7 +167,7 @@
               };
 
               # Unset history so it's never stored Set GNUPGHOME to an
-              # ephemeral location and configure GPG with the guide's
+              # ephemeral location and configure GPG with the guide
 
               environment.interactiveShellInit = ''
                 unset HISTFILE
