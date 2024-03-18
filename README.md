@@ -119,24 +119,20 @@ grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
 
-Mount a portable storage device and copy the image:
+Connect a portable storage device and identify the disk label - this guide uses `/dev/sdc` throughout, but this value may differ on your system:
 
 **Linux**
 
 ```console
 $ sudo dmesg | tail
 usb-storage 3-2:1.0: USB Mass Storage device detected
-scsi host2: usb-storage 3-2:1.0
-scsi 2:0:0:0: Direct-Access     TS-RDF5  SD  Transcend    TS3A PQ: 0 ANSI: 6
-sd 2:0:0:0: Attached scsi generic sg1 type 0
-sd 2:0:0:0: [sdb] 31116288 512-byte logical blocks: (15.9 GB/14.8 GiB)
-sd 2:0:0:0: [sdb] Write Protect is off
-sd 2:0:0:0: [sdb] Mode Sense: 23 00 00 00
-sd 2:0:0:0: [sdb] Write cache: disabled, read cache: enabled, doesn't support DPO or FUA
-sdb: sdb1 sdb2
-sd 2:0:0:0: [sdb] Attached SCSI removable disk
+sd 2:0:0:0: [sdc] Attached SCSI removable disk
+```
 
-$ sudo dd if=debian-live-*-amd64-xfce.iso of=/dev/sdb bs=4M status=progress ; sync
+Copy the Debian image to the device:
+
+```console
+$ sudo dd if=debian-live-*-amd64-xfce.iso of=/dev/sdc bs=4M status=progress ; sync
 465+1 records in
 465+1 records out
 1951432704 bytes (2.0 GB, 1.8 GiB) copied, 42.8543 s, 45.5 MB/s
@@ -293,7 +289,7 @@ nix build --experimental-features "nix-command flakes" .#nixosConfigurations.yub
 Copy it to a USB drive:
 
 ```console
-sudo cp -v result/iso/yubikeyLive.iso /dev/sdb ; sync
+sudo cp -v result/iso/yubikeyLive.iso /dev/sdc ; sync
 ```
 
 Skip steps to create a temporary working directory and a hardened configuration, as they are already part of the image.
@@ -415,23 +411,19 @@ EXPIRATION=2026-05-01
 
 Generate a passphrase, which will be used to issue the Certify key and Subkeys.
 
-The passphrase is recommended to consist of only upper case letters and numbers for improved readability. [Diceware](https://secure.research.vt.edu/diceware) is another method for creating strong and memorable passphrases.
+The passphrase is recommended to consist of only uppercase letters and numbers for improved readability. [Diceware](https://secure.research.vt.edu/diceware) is another method for creating strong and memorable passphrases.
 
-The following command will generate a strong passphrase while avoiding ambiguous characters:
+The following commands will generate and display a strong passphrase which avoids ambiguous characters:
 
 ```console
 PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
   tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
   cut -c2- | tr " " "-" | head -1)
-```
 
-Display the password, then memorize or write it in a secure location, ideally separate from the portable storage device used for key material:
-
-```console
 echo $PASS
 ```
 
-This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) file which can be printed and filled out by hand to assist with passphrase transcription. Save the raw file and open it with a browser to print.
+Memorize the passphrase or write it in a secure location, ideally separate from the portable storage device used for key material. This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with transcription. Save the raw file, open it with a browser and print. Use a pen or permanent marker to select a letter or number on each row for each character in the passphrase.
 
 # Create Certify key
 
@@ -509,98 +501,91 @@ gpg --output $GNUPGHOME/$KEYID.asc \
 ```
 
 Create an **encrypted** backup on portable storage to be kept offline in a secure and durable location.
-	
-**Tip** The [ext2](https://en.wikipedia.org/wiki/Ext2) filesystem without encryption can be mounted on Linux and OpenBSD. Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) filesystem for macOS and Windows compatibility instead.
 
-As an additional backup measure, use [Paperkey](https://www.jabberwocky.com/software/paperkey/) to make a physical copy of materials. See [Linux Kernel Maintainer PGP Guide](https://www.kernel.org/doc/html/latest/process/maintainer-pgp-guide.html#back-up-your-master-key-for-disaster-recovery) for more information.
+The following process is recommended to be repeated several times on multiple portable storage devices, as they can fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) may be used to make a physical copy of key materials for improved durability.
+
+**Tip** The [ext2](https://en.wikipedia.org/wiki/Ext2) filesystem without encryption can be mounted on Linux and OpenBSD. Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) filesystem for macOS and Windows compatibility instead.
 
 **Linux**
 
-Attach another portable storage device and check its label:
+Attach a portable storage device and check its label, in this case `/dev/sdc`:
 
 ```console
 $ sudo dmesg | tail
-mmc0: new high speed SDHC card at address a001
-mmcblk0: mmc0:a001 SS16G 14.8 GiB
+usb-storage 3-2:1.0: USB Mass Storage device detected
+sd 2:0:0:0: [sdc] Attached SCSI removable disk
 
-$ sudo fdisk -l /dev/mmcblk0
-Disk /dev/mmcblk0: 14.9 GiB, 15931539456 bytes, 31116288 sectors
-Units: sectors of 1 * 512 = 512 bytes
-Sector size (logical/physical): 512 bytes / 512 bytes
-I/O size (minimum/optimal): 512 bytes / 512 bytes
+$ sudo fdisk -l /dev/sdc
+Disk /dev/sdc: 14.9 GiB, 15931539456 bytes, 31116288 sectors
 ```
 
-Write it with random data to prepare for encryption:
+**Warning** Confirm the destination (`of`) before issuing the following command! This guide uses `/dev/sdc` throughout, but this value may differ on your system.
+
+Zero the header to prepare for encryption:
 
 ```console
-sudo dd if=/dev/urandom of=/dev/mmcblk0 bs=4M status=progress
+sudo dd if=/dev/zero of=/dev/sdc bs=4M count=1
 ```
 
 Erase and create a new partition table:
 
 ```console
-$ sudo fdisk /dev/mmcblk0
-
-Welcome to fdisk (util-linux 2.33.1).
-
-Command (m for help): g
-Created a new GPT disklabel (GUID: 4E7495FD-85A3-3E48-97FC-2DD8D41516C3).
-
-Command (m for help): w
-The partition table has been altered.
-Calling ioctl() to re-read partition table.
-Syncing disks.
-
+sudo fdisk /dev/sdc <<EOF
+g
+w
+EOF
 ```
 
-Create a new partition with a 25 Megabyte size:
+Create a small (at least 20 Mb is recommended to account for the LUKS header size) partition for storing secret materials:
 
 ```console
-$ sudo fdisk /dev/mmcblk0
+sudo fdisk /dev/sdc <<EOF
+n
 
-Welcome to fdisk (util-linux 2.36.1).
 
-Command (m for help): n
-Partition number (1-128, default 1):
-First sector (2048-30261214, default 2048):
-Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-30261214, default 30261214): +25M
-
-Created a new partition 1 of type 'Linux filesystem' and of size 25 MiB.
-
-Command (m for help): w
-The partition table has been altered.
-Calling ioctl() to re-read partition table.
-Syncing disks.
++20M
+w
+EOF
 ```
 
 Use [LUKS](https://askubuntu.com/questions/97196/how-secure-is-an-encrypted-luks-filesystem) to encrypt the new partition.
 
-Generate a unique passphrase (different from the [Passphrase](#passphrase) used for the GnuPG identity) to protect the encrypted volume:
+Once again, generate a unique passphrase (different from the [Passphrase](#passphrase) used for the GnuPG identity) to protect the encrypted volume:
 
 ```console
-sudo cryptsetup luksFormat /dev/mmcblk0p1
+PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
+  tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
+  cut -c2- | tr " " "-" | head -1)
+
+echo $PASS
+```
+
+Memorize or write it down, then format the partition:
+
+```console
+echo $PASS | sudo cryptsetup -q luksFormat /dev/sdc1
 ```
 
 Mount the partition:
 
 ```console
-sudo cryptsetup luksOpen /dev/mmcblk0p1 secret
+echo $PASS | sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
 ```
 
 Create an ext2 filesystem:
 
 ```console
-sudo mkfs.ext2 /dev/mapper/secret -L gpg-$(date +%F)
+sudo mkfs.ext2 /dev/mapper/gnupg-secrets -L gnupg-$(date +F)
 ```
 
-Mount the filesystem and copy the temporary GnuPG directory with keyring:
+Mount the filesystem and copy the temporary GnuPG working directory exported key materials:
 
 ```console
 sudo mkdir /mnt/encrypted-storage
 
-sudo mount /dev/mapper/secret /mnt/encrypted-storage
+sudo mount /dev/mapper/gnupg-secrets /mnt/encrypted-storage
 
-sudo cp -avi $GNUPGHOME /mnt/encrypted-storage/
+sudo cp -av $GNUPGHOME /mnt/encrypted-storage/
 ```
 
 **Optional** Backup the OneRNG package:
@@ -609,14 +594,14 @@ sudo cp -avi $GNUPGHOME /mnt/encrypted-storage/
 sudo cp onerng_3.7-1_all.deb /mnt/encrypted-storage/
 ```
 
-**Note** To set up multiple keys, keep the backup mounted or remember to terminate the GnuPG process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
+**Note** To provision multiple YubiKeys, keep the backup mounted or remember to terminate the GnuPG process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
 
-Unmount, close and disconnect the encrypted volume:
+Unmount and close the encrypted volume:
 
 ```console
-sudo umount /mnt/encrypted-storage/
+sudo umount /mnt/encrypted-storage
 
-sudo cryptsetup luksClose secret
+sudo cryptsetup luksClose gnupg-secrets
 ```
 
 **OpenBSD**
@@ -688,7 +673,7 @@ doas mkdir /mnt/encrypted-storage
 
 doas mount /dev/sd3i /mnt/encrypted-storage
 
-doas cp -avi $GNUPGHOME /mnt/encrypted-storage
+doas cp -av $GNUPGHOME /mnt/encrypted-storage
 ```
 
 **Note** To set up multiple YubiKeys, keep the backup mounted or terminate GnuPG before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
@@ -711,36 +696,38 @@ Create another partition on the portable storage device to store the public key,
 
 **Linux**
 
-Provision the portable storage device:
+Using the same `/dev/sdc` device as in the previous step:
+
+Create a small (20 Mb is more than enough) partition for storing secret materials:
 
 ```console
-$ sudo fdisk /dev/mmcblk0
+sudo fdisk /dev/sdc <<EOF
+n
 
-Welcome to fdisk (util-linux 2.36.1).
 
-Command (m for help): n
-Partition number (2-128, default 2):
-First sector (53248-30261214, default 53248):
-Last sector, +/-sectors or +/-size{K,M,G,T,P} (53248-30261214, default 30261214): +25M
-
-Created a new partition 2 of type 'Linux filesystem' and of size 25 MiB.
-
-Command (m for help): w
-The partition table has been altered.
-Calling ioctl() to re-read partition table.
-Syncing disks.
++20M
+w
+EOF
 ```
 
 Create a filesystem and export the public key:
 
 ```console
-sudo mkfs.ext2 /dev/mmcblk0p2
+sudo mkfs.ext2 /dev/sdc2
 
 sudo mkdir /mnt/public
 
-sudo mount /dev/mmcblk0p2 /mnt/public
+sudo mount /dev/sdc2 /mnt/public
 
 gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
+
+sudo chmod 0444 /mnt/public/0x*.asc
+```
+
+Unmount and remove the storage device:
+
+```console
+sudo umount /mnt/public
 ```
 
 **OpenBSD**
@@ -809,13 +796,9 @@ User PIN   | `123456`      | cryptographic operations (decrypt, sign, authentica
 Admin PIN  | `12345678`    | reset PIN, change Reset Code, add keys and owner information
 Reset Code | None          | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
-Entering the *PIN* incorrectly 3 times will cause the PIN to become blocked. It can be unblocked with either the *Admin PIN* or *Reset Code*.
-
-**Warning** Entering the *Admin PIN* or *Reset Code* incorrectly 3 times will destroy data on YubiKey.
-
 Determine the desired PIN values. They can be shorter than the GnuPG identity passphrase due to limited brute-forcing opportunities. The User PIN should be convenient enough to remember for every-day use.
 
-*PIN* values must be at least 6 characters. *Admin PIN* values must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
+The *User PIN* must be at least 6 characters and the *Admin PIN* must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
 
 Set PINs manually or generate them, for example a 6 digit User PIN and 8 digit Admin PIN:
 
@@ -853,7 +836,9 @@ EOF
 
 Remote and re-insert YubiKey.
 
-**Optional** The number of [retry attempts](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries) can be changed to 5 with:
+**Warning** Three incorrect *User PIN* entries will cause it to become blocked and must be unblocked with either the *Admin PIN* or *Reset Code*. Three incorrect *Admin PIN* or *Reset Code* entries will destroy data on YubiKey.
+
+The number of [retry attempts](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries) can be changed, for example to 5 attempts:
 
 ```console
 ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
@@ -950,11 +935,11 @@ A `>` after a tag indicates the key is stored on a smart card.
 
 Verify you have done the following:
 
-- [ ] Memorized or wrote down Certify key passphrase to a secure and durable location
+- [ ] Memorized or wrote down the Certify key passphrase to a secure and durable location
 - [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
 - [ ] Memorized or wrote down passphrase to encrypted volume on portable storage
 - [ ] Exported a copy of the public key where is can be easily accessed later
-- [ ] Memorized or wrote down YubiKey user and admin PINs, which are unique and changed from default values
+- [ ] Memorized or wrote down the User Pin and Admin PIN, which are unique and changed from default values
 - [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey (`gpg -K` shows `ssb>` for 3 Subkeys)
 
 Reboot to clear the ephemeral environment and complete setup.
@@ -1012,7 +997,7 @@ doas reboot
 Mount the non-encrypted volume with the public key:
 
 ```console
-doas mount /dev/mmcblk0p2 /mnt
+doas mount /dev/sd3i /mnt
 ```
 
 Import it:
@@ -1203,7 +1188,7 @@ ykman openpgp keys set-touch aut on
 
 To view and adjust policy options:
 
-```
+```console
 ykman openpgp keys set-touch -h
 ```
 
@@ -1829,21 +1814,14 @@ Neither rotation method is superior and it is up to personal philosophy on ident
 
 To renew or rotate Subkeys, follow the same process as generating keys: boot to a secure environment, install required software and disconnect networking.
 
-Connect the portable storage device with the Certify key and identify the disk label:
-
-```console
-$ sudo dmesg | tail
-mmc0: new high speed SDHC card at address a001
-mmcblk0: mmc0:a001 SS16G 14.8 GiB (ro)
-mmcblk0: p1 p2
-```
+Connect the portable storage device with the Certify key and identify the disk label.
 
 Decrypt and mount the encrypted volume:
 
 ```console
-sudo cryptsetup luksOpen /dev/mmcblk0p1 secret
+sudo cryptsetup luksOpen /dev/sdc1 gnupg-secrets
 
-sudo mount /dev/mapper/secret /mnt/encrypted-storage
+sudo mount /dev/mapper/gnupg-secrets /mnt/encrypted-storage
 ```
 
 Mount the non-encrypted public partition:
@@ -1851,7 +1829,7 @@ Mount the non-encrypted public partition:
 ```console
 sudo mkdir /mnt/public
 
-sudo mount /dev/mmcblk0p2 /mnt/public
+sudo mount /dev/sdc2 /mnt/public
 ```
 
 Copy the original private key materials to a temporary working directory:
@@ -1859,7 +1837,9 @@ Copy the original private key materials to a temporary working directory:
 ```console
 GNUPGHOME=$(mktemp -d -t gnupg-$(date +%Y-%m-%d)-XXXXXXXXXX)
 
-cp -rv /mnt/encrypted-storage/* $GNUPGHOME
+cd $GNUPGHOME
+
+cp -avi /mnt/encrypted-storage/gnupg-*/* $GNUPGHOME
 ```
 
 Confirm the identity is available, set it and the key fingerprint:
@@ -1867,7 +1847,7 @@ Confirm the identity is available, set it and the key fingerprint:
 ```console
 gpg -K
 
-KEYID=0xF0F2CFEB04341FB5
+KEYID=$(gpg -K | grep -Po "(0x\w+)" | head -1)
 
 KEYFPR=$(gpg --fingerprint "$KEYID" | grep -Eo '([0-9A-F][0-9A-F ]{49})' | head -n 1 | tr -d ' ')
 ```
@@ -1938,7 +1918,7 @@ Unmount and close the encrypted volume:
 ```console
 sudo umount /mnt/encrypted-storage
 
-sudo cryptsetup luksClose /dev/mapper/secret
+sudo cryptsetup luksClose gnupg-secrets
 ```
 
 Export the updated public key:
@@ -1946,7 +1926,7 @@ Export the updated public key:
 ```console
 sudo mkdir /mnt/public
 
-sudo mount /dev/mmcblk0p2 /mnt/public
+sudo mount /dev/sdc2 /mnt/public
 
 gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
 
@@ -2002,7 +1982,7 @@ Admin PIN:   12345678
 
 1. To switch between YubiKeys, unplug the first YubiKey and restart gpg-agent, ssh-agent and pinentry with `pkill "gpg-agent|ssh-agent|pinentry" ; eval $(gpg-agent --daemon --enable-ssh-support)` then insert the other YubiKey and run `gpg-connect-agent updatestartuptty /bye`
 
-1. To use YubiKey on multiple computers, import the corresponding public keys. Confirm see YubiKey is visible with `gpg --card-status`, then trust the imported public keys ultimately with `trust` and `5`. `gpg --list-secret-keys` will show the correct and trusted key.
+1. To use YubiKey on multiple computers, import the corresponding public keys, then confirm YubiKey is visible with `gpg --card-status`. Trust the imported public keys ultimately with `trust` and `5`, then `gpg --list-secret-keys` will show the correct and trusted key.
 
 # Troubleshooting
 
