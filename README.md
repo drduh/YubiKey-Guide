@@ -403,7 +403,15 @@ PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
 echo $PASS
 ```
 
-Memorize the passphrase or write it in a secure location, ideally separate from the portable storage device used for key material. This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with transcription. Save the raw file, open it with a browser and print. Use a pen or permanent marker to select a letter or number on each row for each character in the passphrase.
+Memorize the passphrase or write it in a secure location, ideally separate from the portable storage device used for key material.
+
+This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with transcription. Save the raw file, open it with a browser and print. Use a pen or permanent marker to select a letter or number on each row for each character in the passphrase.
+
+[`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) can also be printed without a browser:
+
+```console
+lp -d Printer-Name passphrase.csv
+```
 
 # Create Certify key
 
