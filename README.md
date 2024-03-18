@@ -215,33 +215,13 @@ sudo apt -y upgrade
 sudo apt -y install \
     wget gnupg2 gnupg-agent dirmngr \
     cryptsetup scdaemon pcscd \
-    yubikey-personalization
+    yubikey-personalization yubikey-manager
 ```
 
 **Note** Live Ubuntu images [may require modification](https://github.com/drduh/YubiKey-Guide/issues/116) to `/etc/apt/sources.list` and may need additional packages:
 
 ```console
 sudo apt -y install libssl-dev swig libpcsclite-dev
-```
-
-**Optional** Install the `ykman` utility, which will allow you to enable touch policies (requires admin PIN):
-
-```console
-sudo apt -y install python3-pip python3-pyscard
-
-pip3 install PyOpenSSL
-
-pip3 install yubikey-manager
-
-sudo service pcscd start
-
-~/.local/bin/ykman openpgp info
-```
-
-**Note** Debian does not recommend installing non-Debian packaged Python applications globally. But fortunately, it is not necessary as `yubikey-manager` is available in the stable main repository:
-
-```console
-sudo apt install -y yubikey-manager
 ```
 
 **OpenBSD**
@@ -581,8 +561,6 @@ sudo mkfs.ext2 /dev/mapper/gnupg-secrets -L gnupg-$(date +F)
 Mount the filesystem and copy the temporary GnuPG working directory exported key materials:
 
 ```console
-sudo mkdir /mnt/encrypted-storage
-
 sudo mount /dev/mapper/gnupg-secrets /mnt/encrypted-storage
 
 sudo cp -av $GNUPGHOME /mnt/encrypted-storage/
@@ -669,8 +647,6 @@ $ doas newfs sd3i
 Mount the filesystem and copy the temporary directory with the keyring:
 
 ```console
-doas mkdir /mnt/encrypted-storage
-
 doas mount /dev/sd3i /mnt/encrypted-storage
 
 doas cp -av $GNUPGHOME /mnt/encrypted-storage
@@ -696,9 +672,7 @@ Create another partition on the portable storage device to store the public key,
 
 **Linux**
 
-Using the same `/dev/sdc` device as in the previous step:
-
-Create a small (20 Mb is more than enough) partition for storing secret materials:
+Using the same `/dev/sdc` device as in the previous step, create a small (at least 20 Mb is recommended) partition for storing materials:
 
 ```console
 sudo fdisk /dev/sdc <<EOF
@@ -714,8 +688,6 @@ Create a filesystem and export the public key:
 
 ```console
 sudo mkfs.ext2 /dev/sdc2
-
-sudo mkdir /mnt/public
 
 sudo mount /dev/sdc2 /mnt/public
 
@@ -748,8 +720,6 @@ Create a filesystem and export the public key to it:
 
 ```console
 doas newfs sd2b
-
-doas mkdir /mnt/public
 
 doas mount /dev/sd2b /mnt/public
 
@@ -810,7 +780,7 @@ USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w6 | head -1)
 echo "\nAdmin PIN: $ADMIN_PIN\nUser PIN:  $USER_PIN"
 ```
 
-Update the admin PIN:
+Update the Admin PIN:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
@@ -822,7 +792,7 @@ q
 EOF
 ```
 
-Update the user PIN:
+Update the User PIN:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
@@ -834,7 +804,7 @@ q
 EOF
 ```
 
-Remote and re-insert YubiKey.
+Remove and re-insert YubiKey.
 
 **Warning** Three incorrect *User PIN* entries will cause it to become blocked and must be unblocked with either the *Admin PIN* or *Reset Code*. Three incorrect *Admin PIN* or *Reset Code* entries will destroy data on YubiKey.
 
@@ -1827,8 +1797,6 @@ sudo mount /dev/mapper/gnupg-secrets /mnt/encrypted-storage
 Mount the non-encrypted public partition:
 
 ```console
-sudo mkdir /mnt/public
-
 sudo mount /dev/sdc2 /mnt/public
 ```
 
@@ -1924,8 +1892,6 @@ sudo cryptsetup luksClose gnupg-secrets
 Export the updated public key:
 
 ```console
-sudo mkdir /mnt/public
-
 sudo mount /dev/sdc2 /mnt/public
 
 gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
