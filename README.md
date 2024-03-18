@@ -561,6 +561,8 @@ sudo mkfs.ext2 /dev/mapper/gnupg-secrets -L gnupg-$(date +F)
 Mount the filesystem and copy the temporary GnuPG working directory exported key materials:
 
 ```console
+sudo mkdir /mnt/encrypted-storage
+
 sudo mount /dev/mapper/gnupg-secrets /mnt/encrypted-storage
 
 sudo cp -av $GNUPGHOME /mnt/encrypted-storage/
@@ -647,6 +649,8 @@ $ doas newfs sd3i
 Mount the filesystem and copy the temporary directory with the keyring:
 
 ```console
+doas mkdir /mnt/encrypted-storage
+
 doas mount /dev/sd3i /mnt/encrypted-storage
 
 doas cp -av $GNUPGHOME /mnt/encrypted-storage
@@ -689,6 +693,8 @@ Create a filesystem and export the public key:
 ```console
 sudo mkfs.ext2 /dev/sdc2
 
+sudo mkdir /mnt/public
+
 sudo mount /dev/sdc2 /mnt/public
 
 gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
@@ -720,6 +726,8 @@ Create a filesystem and export the public key to it:
 
 ```console
 doas newfs sd2b
+
+doas mkdir /mnt/public
 
 doas mount /dev/sd2b /mnt/public
 
@@ -967,7 +975,9 @@ doas reboot
 Mount the non-encrypted volume with the public key:
 
 ```console
-doas mount /dev/sd3i /mnt
+doas mkdir /mnt/public
+
+doas mount /dev/sd3i /mnt/public
 ```
 
 Import it:
@@ -1791,12 +1801,16 @@ Decrypt and mount the encrypted volume:
 ```console
 sudo cryptsetup luksOpen /dev/sdc1 gnupg-secrets
 
+sudo mkdir /mnt/encrypted-storage
+
 sudo mount /dev/mapper/gnupg-secrets /mnt/encrypted-storage
 ```
 
 Mount the non-encrypted public partition:
 
 ```console
+sudo mkdir /mnt/public
+
 sudo mount /dev/sdc2 /mnt/public
 ```
 
@@ -1892,6 +1906,8 @@ sudo cryptsetup luksClose gnupg-secrets
 Export the updated public key:
 
 ```console
+sudo mkdir /mnt/public
+
 sudo mount /dev/sdc2 /mnt/public
 
 gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
