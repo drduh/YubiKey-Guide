@@ -563,7 +563,7 @@ echo $PASS | sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
 Create an ext2 filesystem:
 
 ```console
-sudo mkfs.ext2 /dev/mapper/gnupg-secrets -L gnupg-$(date +F)
+sudo mkfs.ext2 /dev/mapper/gnupg-secrets -L gnupg-$(date +%F)
 ```
 
 Mount the filesystem and copy the temporary GnuPG working directory exported key materials:
