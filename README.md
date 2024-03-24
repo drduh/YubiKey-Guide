@@ -6,11 +6,11 @@ To suggest an improvement, send a pull request or open an [issue](https://github
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Prepare environment](#prepare-environment)
-   * [Improving entropy](#improving-entropy)
 - [Install software](#install-software)
 - [Prepare GnuPG](#prepare-gnupg)
    * [Configuration](#configuration)
    * [Identity](#identity)
+   * [Key](#key)
    * [Expiration](#expiration)
    * [Passphrase](#passphrase)
 - [Create Certify key](#create-certify-key)
@@ -19,7 +19,6 @@ To suggest an improvement, send a pull request or open an [issue](https://github
 - [Backup keys](#backup-keys)
 - [Export public key](#export-public-key)
 - [Configure YubiKey](#configure-yubikey)
-   * [Enable KDF](#enable-kdf)
    * [Change PIN](#change-pin)
    * [Set attributes](#set-attributes)
 - [Transfer Subkeys](#transfer-subkeys)
@@ -48,10 +47,14 @@ To suggest an improvement, send a pull request or open an [issue](https://github
    * [Email](#email)
       + [Mailvelope](#mailvelope)
       + [Mutt](#mutt)
+   * [Keyserver](#keyserver)
 - [Updating keys](#updating-keys)
    * [Renew Subkeys](#renew-subkeys)
    * [Rotate Subkeys](#rotate-subkeys)
 - [Reset YubiKey](#reset-yubikey)
+- [Optional hardening](#optional-hardening)
+   * [Improving entropy](#improving-entropy)
+   * [Enable KDF](#enable-kdf)
 - [Notes](#notes)
 - [Troubleshooting](#troubleshooting)
 - [Alternative solutions](#alternative-solutions)
@@ -151,51 +154,7 @@ $ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
-Power off, then disconnect internal hard drives and all unnecessary devices, such as the wireless card.
-
-## Improving entropy
-
-Generating cryptographic keys requires high-quality [randomness](https://www.random.org/randomness/), measured as entropy.
-
-Most operating systems use software-based pseudorandom number generators or CPU-based hardware random number generators (HRNG).
-
-Optionally, a device such as [OneRNG](https://onerng.info/onerng/) may be used to [increase the speed](https://lwn.net/Articles/648550/) and possibly the quality of available entropy.
-
-Configure [rng-tools](https://wiki.archlinux.org/title/Rng-tools):
-
-```console
-sudo apt -y install at rng-tools python3-gnupg openssl
-
-wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.7-1_all.deb
-```
-
-Verify the package:
-
-```console
-sha256sum onerng_3.7-1_all.deb
-```
-
-The value must match:
-
-```console
-b7cda2fe07dce219a95dfeabeb5ee0f662f64ba1474f6b9dddacc3e8734d8f57
-```
-
-Install the package:
-
-```console
-sudo dpkg -i onerng_3.7-1_all.deb
-
-echo "HRNGDEVICE=/dev/ttyACM0" | sudo tee /etc/default/rng-tools
-```
-
-Insert the device and restart rng-tools:
-
-```console
-sudo atd
-
-sudo service rng-tools restart
-```
+Power off, disconnect internal hard drives and all unnecessary devices, such as the wireless card.
 
 # Install software
 
@@ -213,9 +172,9 @@ sudo apt update
 sudo apt -y upgrade
 
 sudo apt -y install \
-    wget gnupg2 gnupg-agent dirmngr \
-    cryptsetup scdaemon pcscd \
-    yubikey-personalization yubikey-manager
+  wget gnupg2 gnupg-agent dirmngr \
+  cryptsetup scdaemon pcscd \
+  yubikey-personalization yubikey-manager
 ```
 
 **Note** Live Ubuntu images [may require modification](https://github.com/drduh/YubiKey-Guide/issues/116) to `/etc/apt/sources.list` and may need additional packages:
@@ -296,9 +255,9 @@ wget https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-release-38-1.noa
 sudo rpm -Uvh rpmsphere-release*rpm
 
 sudo dnf install \
-    gnupg2 dirmngr cryptsetup gnupg2-smime \
-    pcsc-tools opensc pcsc-lite secure-delete \
-    pgp-tools yubikey-personalization-gui
+  gnupg2 dirmngr cryptsetup gnupg2-smime \
+  pcsc-tools opensc pcsc-lite secure-delete \
+  pgp-tools yubikey-personalization-gui
 ```
 
 # Prepare GnuPG
@@ -331,7 +290,6 @@ cert-digest-algo SHA512
 s2k-digest-algo SHA512
 s2k-cipher-algo AES256
 charset utf-8
-fixed-list-mode
 no-comments
 no-emit-version
 no-greeting
@@ -357,10 +315,20 @@ Depending on how you plan to use GnuPG, set these values respectively:
 IDENTITY="YubiKey User <yubikey@example>"
 ```
 
-Or use any attribute which will uniquely identity the key:
+Or use any attribute which will uniquely identity the key (this may be incompatible with certain use cases):
 
 ```console
 IDENTITY="My Cool YubiKey - 2024"
+```
+
+## Key
+
+Select the desired algorithm and key size. This guide recommends 4096-bit RSA.
+
+Set the value:
+
+```console
+KEY_TYPE=rsa4096
 ```
 
 ## Expiration
@@ -396,18 +364,14 @@ The passphrase is recommended to consist of only uppercase letters and numbers f
 The following commands will generate and display a strong passphrase which avoids ambiguous characters:
 
 ```console
-PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
+CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
   tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1)
-
-echo $PASS
+  cut -c2- | tr " " "-" | head -1) ; echo "$CERTIFY_PASS"
 ```
 
 Memorize the passphrase or write it in a secure location, ideally separate from the portable storage device used for key material.
 
-This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with transcription. Save the raw file, open it with a browser and print. Use a pen or permanent marker to select a letter or number on each row for each character in the passphrase.
-
-[`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) can also be printed without a browser:
+This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with transcription. Save the raw file, open it with a browser and print. Use a pen or permanent marker to select a letter or number on each row for each character in the passphrase. [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) can also be printed without a browser:
 
 ```console
 lp -d Printer-Name passphrase.csv
@@ -415,41 +379,38 @@ lp -d Printer-Name passphrase.csv
 
 # Create Certify key
 
-The primary key to generate is the Certify key, which will be used to issue Subkeys for encryption, signature and authentication operations.
+The primary key to generate is the Certify key, which is responsible for issuing Subkeys for encryption, signature and authentication operations.
 
 The Certify key should be kept offline at all times and only accessed from a dedicated and secure environment to issue or revoke Subkeys.
 
-This guide recommends 4096-bit RSA. Do not set an expiration date on the Certify key.
+Do not set an expiration date on the Certify key.
 
 Generate the Certify key:
 
 ```console
-gpg --batch --passphrase "$PASS" --quick-generate-key "$IDENTITY" \
-    rsa4096 cert never
+gpg --batch --passphrase "$CERTIFY_PASS" \
+    --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
 ```
 
-Set the Certify key identifier beginning with `0x` as `KEYID` with the following command, or by entering the value manually:
+Set and view the Certify key identifier and fingerprint for use later:
 
 ```console
-KEYID=$(gpg -K | grep -Po "(0x\w+)")
-```
+KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; exit }')
 
-Set the key fingerprint:
+KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
 
-```console
-KEYFPR=$(gpg --fingerprint "$KEYID" | grep -Eo '([0-9A-F][0-9A-F ]{49})' | head -n 1 | tr -d ' ')
+echo $KEYID $KEYFP
 ```
 
 # Create Subkeys
 
-The following command will generate Signature, Encryption and Authentication Subkeys, using the previously configured passphrase and expiration:
+Use the following command to generate Signature, Encryption and Authentication Subkeys using the previously configured key type, passphrase and expiration:
 
 ```console
-for key_type in sign encrypt auth ; do \
-  gpg --batch --pinentry-mode=loopback \
-    --passphrase "$PASS" --quick-add-key "$KEYFPR" \
-    rsa4096 $key_type "$EXPIRATION"
- done
+for SUBKEY in sign encrypt auth ; do \
+  gpg --batch --pinentry-mode=loopback --passphrase "$CERTIFY_PASS" \
+      --quick-add-key "$KEYFP" "$KEY_TYPE" "$SUBKEY" "$EXPIRATION"
+done
 ```
 
 # Verify keys
@@ -466,31 +427,31 @@ The output will display **[C]ertify, [S]ignature, [E]ncryption and [A]uthenticat
 sec   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 uid                   [ultimate] YubiKey User <yubikey@example>
-ssb   rsa4096/0xB3CD10E502E19637 2024-01-01 [S] [expires: 2026-01-01]
-ssb   rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-01-01]
-ssb   rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-01-01]
+ssb   rsa4096/0xB3CD10E502E19637 2024-01-01 [S] [expires: 2026-05-01]
+ssb   rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-05-01]
+ssb   rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-05-01]
 ```
 
 # Backup keys
 
-Save a copy of the Certify key and Subkeys:
+Save a copy of the Certify key, Subkeys and public key:
 
 ```console
 gpg --output $GNUPGHOME/$KEYID-Certify.key \
-    --batch --pinentry-mode=loopback --passphrase "$PASS" \
+    --batch --pinentry-mode=loopback --passphrase "$CERTIFY_PASS" \
     --armor --export-secret-keys $KEYID
 
 gpg --output $GNUPGHOME/$KEYID-Subkeys.key \
-    --batch --pinentry-mode=loopback --passphrase "$PASS" \
+    --batch --pinentry-mode=loopback --passphrase "$CERTIFY_PASS" \
     --armor --export-secret-subkeys $KEYID
 
-gpg --output $GNUPGHOME/$KEYID.asc \
+gpg --output $GNUPGHOME/$KEYID-$(date +%F).asc \
     --armor --export $KEYID
 ```
 
 Create an **encrypted** backup on portable storage to be kept offline in a secure and durable location.
 
-The following process is recommended to be repeated several times on multiple portable storage devices, as they can fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) may be used to make a physical copy of key materials for improved durability.
+The following process is recommended to be repeated several times on multiple portable storage devices, as they are likely to fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can be used to make a physical copy of key materials for improved durability.
 
 **Tip** The [ext2](https://en.wikipedia.org/wiki/Ext2) filesystem without encryption can be mounted on Linux and OpenBSD. Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) filesystem for macOS and Windows compatibility instead.
 
@@ -507,7 +468,7 @@ $ sudo fdisk -l /dev/sdc
 Disk /dev/sdc: 14.9 GiB, 15931539456 bytes, 31116288 sectors
 ```
 
-**Warning** Confirm the destination (`of`) before issuing the following command! This guide uses `/dev/sdc` throughout, but this value may differ on your system.
+**Warning** Confirm the destination (`of`) before issuing the following command - it is destructive! This guide uses `/dev/sdc` throughout, but this value may be different on your system.
 
 Zero the header to prepare for encryption:
 
@@ -538,26 +499,24 @@ EOF
 
 Use [LUKS](https://askubuntu.com/questions/97196/how-secure-is-an-encrypted-luks-filesystem) to encrypt the new partition.
 
-Once again, generate a unique passphrase (different from the [Passphrase](#passphrase) used for the GnuPG identity) to protect the encrypted volume:
+Generate and view another unique [Passphrase](#passphrase) (different from the  one used for the GnuPG identity) to protect the encrypted volume:
 
 ```console
-PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
+LUKS_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
   tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1)
-
-echo $PASS
+  cut -c2- | tr " " "-" | head -1) ; echo $LUKS_PASS
 ```
 
 Memorize or write it down, then format the partition:
 
 ```console
-echo $PASS | sudo cryptsetup -q luksFormat /dev/sdc1
+echo $LUKS_PASS | sudo cryptsetup -q luksFormat /dev/sdc1
 ```
 
 Mount the partition:
 
 ```console
-echo $PASS | sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
+echo $LUKS_PASS | sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
 ```
 
 Create an ext2 filesystem:
@@ -575,14 +534,6 @@ sudo mount /dev/mapper/gnupg-secrets /mnt/encrypted-storage
 
 sudo cp -av $GNUPGHOME /mnt/encrypted-storage/
 ```
-
-**Optional** Backup the OneRNG package:
-
-```console
-sudo cp onerng_3.7-1_all.deb /mnt/encrypted-storage/
-```
-
-**Note** To provision multiple YubiKeys, keep the backup mounted or remember to terminate the GnuPG process before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
 
 Unmount and close the encrypted volume:
 
@@ -664,9 +615,7 @@ doas mount /dev/sd3i /mnt/encrypted-storage
 doas cp -av $GNUPGHOME /mnt/encrypted-storage
 ```
 
-**Note** To set up multiple YubiKeys, keep the backup mounted or terminate GnuPG before [saving](https://lists.gnupg.org/pipermail/gnupg-users/2016-July/056353.html).
-
-Otherwise, unmount and disconnect the encrypted volume:
+Unmount and disconnect the encrypted volume:
 
 ```console
 doas umount /mnt/encrypted-storage
@@ -680,7 +629,7 @@ See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for 
 
 **Important** Without the public key, it will **not** be possible to use GnuPG to decrypt nor sign messages. However, YubiKey can still be used for SSH authentication.
 
-Create another partition on the portable storage device to store the public key, or reconnect networking and upload to a key server.
+Connect another portable storage device or create a new partition on the existing one.
 
 **Linux**
 
@@ -742,39 +691,25 @@ doas mount /dev/sd2b /mnt/public
 gpg --armor --export $KEYID | doas tee /mnt/public/$KEYID-$(date +%F).asc
 ```
 
-**Windows**
+Unmount and remove the storage device:
 
 ```console
-gpg -o \path\to\dir\pubkey.gpg --armor --export $KEYID
+doas umount /mnt/public
 ```
 
 # Configure YubiKey
 
-If the card is locked, [Reset](#reset) it.
-
-**Windows** Use the [YubiKey Manager](https://developers.yubico.com/yubikey-manager) application (note, this is not the similarly named older YubiKey NEO Manager) to enable CCID functionality.
-
-## Enable KDF
-
-Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing the PIN from being passed as plain text.
-
-**Note** This feature may not be compatible with older GnuPG versions, especially mobile clients. These incompatible clients will not function because the PIN will always be rejected.
-
-Enable KDF using the default Admin pin of `12345678`:
+Connect YubiKey and confirm its status:
 
 ```console
-gpg --command-fd=0 --pinentry-mode=loopback --card-edit <<EOF
-admin
-kdf-setup
-12345678
-EOF
+gpg --card-status
 ```
 
-This step must be completed before changing PINs or moving keys or an error will occur: `gpg: error for setup KDF: Conditions of use not satisfied`
+If the card is locked, [Reset](#reset) it.
 
 ## Change PIN
 
-YubiKey's PGP interface has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
+YubiKey's OpenPGP interface has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
 
 Name       | Default value | Capability
 -----------|---------------|-------------------------------------------------------------
@@ -796,7 +731,7 @@ USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w6 | head -1)
 echo "\nAdmin PIN: $ADMIN_PIN\nUser PIN:  $USER_PIN"
 ```
 
-Update the Admin PIN:
+Change the Admin PIN:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
@@ -808,7 +743,7 @@ q
 EOF
 ```
 
-Update the User PIN:
+Change the User PIN:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
@@ -849,11 +784,11 @@ quit
 EOF
 ```
 
+Run `gpg --card-status` to verify results.
+
 # Transfer Subkeys
 
-**Important** Verify a backup of Subkeys was made before proceeding. Transferring keys to YubiKey is a one-way operation: `keytocard` converts the local, on-disk key into a stub, which means the on-disk copy is no longer usable to transfer to subsequent YubiKeys.
-
-The currently selected key(s) are indicated with an `*` symbol.  When transferring keys, only one subkey must be selected at a time.
+**Important** Transferring keys to YubiKey is a one-way operation which converts the on-disk key into a stub making it no longer usable to transfer to subsequent YubiKeys. Ensure a backup was made before proceeding.
 
 The Certify key passphrase and Admin PIN are required to transfer keys.
 
@@ -866,7 +801,7 @@ gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
 key 1
 keytocard
 1
-$PASS
+$CERTIFY_PASS
 $ADMIN_PIN
 save
 EOF
@@ -881,7 +816,7 @@ gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
 key 2
 keytocard
 2
-$PASS
+$CERTIFY_PASS
 $ADMIN_PIN
 save
 EOF
@@ -896,7 +831,7 @@ gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
 key 3
 keytocard
 3
-$PASS
+$CERTIFY_PASS
 $ADMIN_PIN
 save
 EOF
@@ -910,27 +845,31 @@ Verify Subkeys have been moved to YubiKey with `gpg -K` and look for `ssb>`, for
 sec   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 uid                   [ultimate] YubiKey User <yubikey@example>
-ssb>  rsa4096/0xB3CD10E502E19637 2024-01-01 [S] [expires: 2026-01-01]
-ssb>  rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-01-01]
-ssb>  rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-01-01]
+ssb>  rsa4096/0xB3CD10E502E19637 2024-01-01 [S] [expires: 2026-05-01]
+ssb>  rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-05-01]
+ssb>  rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-05-01]
 ```
 
-A `>` after a tag indicates the key is stored on a smart card.
+The `>` after a tag indicates the key is stored on a smart card.
 
 # Finish setup
 
 Verify you have done the following:
 
 - [ ] Memorized or wrote down the Certify key passphrase to a secure and durable location
+  * `echo $CERTIFY_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe it
 - [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
+  * At least two backups are recommended, stored at separate locations
 - [ ] Memorized or wrote down passphrase to encrypted volume on portable storage
+  * `echo $LUKS_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe it
 - [ ] Exported a copy of the public key where is can be easily accessed later
-- [ ] Memorized or wrote down the User Pin and Admin PIN, which are unique and changed from default values
-- [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey (`gpg -K` shows `ssb>` for 3 Subkeys)
+  * Separate device or non-encrypted partition was used
+- [ ] Memorized or wrote down the User PIN and Admin PIN, which are unique and changed from default values
+  * `echo $USER_PIN $ADMIN_PIN` to see them again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe them
+- [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey
+  * `gpg -K` shows `ssb>` for each of the 3 Subkeys
 
 Reboot to clear the ephemeral environment and complete setup.
-
-The YubiKey(s) are now ready for use.
 
 # Using YubiKey
 
@@ -948,15 +887,13 @@ cd ~/.gnupg
 wget https://raw.githubusercontent.com/drduh/config/master/gpg.conf
 ```
 
-Set the following option. This avoids the problem where GnuPG will prompt, repeatedly, for the insertion of an already-inserted YubiKey:
+Set the following option. This avoids the problem where GnuPG will repeatedly prompt for the insertion of an already-inserted YubiKey:
 
 ```console
 touch scdaemon.conf
 
 echo "disable-ccid" >>scdaemon.conf
 ```
-
-> The `disable-ccid` option is only required for GnuPG versions 2.3 or later. However, setting this option does not appear to interfere with the operation of earlier versions of GnuPG so it is recommended for all installations.
 
 Install the required packages:
 
@@ -969,8 +906,6 @@ sudo apt install -y gnupg2 gnupg-agent gnupg-curl scdaemon pcscd
 ```
 
 **OpenBSD**
-
-Requires a reboot.
 
 ```console
 doas pkg_add gnupg pcsc-tools
@@ -1027,7 +962,7 @@ EOF
 
 Remove and re-insert YubiKey.
 
-Verify the status with `gpg --card-status` which will be similar to:
+Verify the status with `gpg --card-status` which will list the available Subkeys:
 
 ```console
 Reader ...........: Yubico YubiKey OTP FIDO CCID 00 00
@@ -1055,17 +990,17 @@ Authentication key: 570E 1355 6D01 4C04 8B6D  E2A3 AD9E 24E1 B8CB 9600
       created ....: 2024-01-01 12:00:00
 General key info..: sub  rsa4096/0xB3CD10E502E19637 2024-01-01 YubiKey User <yubikey@example>
 sec#  rsa4096/0xF0F2CFEB04341FB5  created: 2024-01-01  expires: never
-ssb>  rsa4096/0xB3CD10E502E19637  created: 2024-01-01  expires: 2026-01-01
+ssb>  rsa4096/0xB3CD10E502E19637  created: 2024-01-01  expires: 2026-05-01
                                   card-no: 0006 05553211
-ssb>  rsa4096/0x30CBE8C4B085B9F7  created: 2024-01-01  expires: 2026-01-01
+ssb>  rsa4096/0x30CBE8C4B085B9F7  created: 2024-01-01  expires: 2026-05-01
                                   card-no: 0006 05553211
-ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2024-01-01  expires: 2026-01-01
+ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2024-01-01  expires: 2026-05-01
                                   card-no: 0006 05553211
 ```
 
 `sec#` indicates the corresponding key is not available (the Certify key is offline).
 
-**Note** If `General key info..: [none]` appears in the output instead - go back and import the public key using the previous step.
+If `General key info..: [none]` appears in the output instead - go back and import the public key using the previous step.
 
 ## Encryption
 
@@ -1073,16 +1008,17 @@ Encrypt a message to yourself (useful for storing credentials or protecting back
 
 ```console
 echo "\ntest message string" | \
-  gpg --encrypt --armor --recipient $KEYID -o encrypted.txt
+  gpg --encrypt --armor \
+      --recipient $KEYID --output encrypted.txt
 ```
 
 To encrypt to multiple recipients or keys (the preferred key ID goes last):
 
 ```console
 echo "test message string" | \
-    gpg --encrypt --armor \
-    --recipient $KEYID_0 --recipient $KEYID_1 --recipient $KEYID_2 \
-    -o encrypted.txt
+  gpg --encrypt --armor \
+      --recipient $KEYID_2 --recipient $KEYID_1 --recipient $KEYID \
+      --output encrypted.txt
 ```
 
 Decrypt the message - a User PIN prompt will appear:
@@ -1298,6 +1234,7 @@ Restart the agent:
 
 ```console
 gpg-connect-agent killagent /bye
+
 gpg-connect-agent /bye
 ```
 
@@ -1842,10 +1779,10 @@ KEYID=$(gpg -K | grep -Po "(0x\w+)" | head -1)
 KEYFPR=$(gpg --fingerprint "$KEYID" | grep -Eo '([0-9A-F][0-9A-F ]{49})' | head -n 1 | tr -d ' ')
 ```
 
-Recall the identity passphrase and set it, for example:
+Recall the Certify key passphrase and set it, for example:
 
 ```console
-PASS=ABCD-0123-IJKL-4567-QRST-UVWX
+CERTIFY_PASS=ABCD-0123-IJKL-4567-QRST-UVWX
 ```
 
 ## Renew Subkeys
@@ -1862,7 +1799,7 @@ Renew the Subkeys:
 
 ```console
 gpg --batch --pinentry-mode=loopback \
-  --passphrase "$PASS" --quick-set-expire "$KEYFPR" "$EXPIRATION" "*"
+  --passphrase "$CERTIFY_PASS" --quick-set-expire "$KEYFPR" "$EXPIRATION" "*"
 ```
 
 Export the updated public key:
@@ -1960,6 +1897,70 @@ Success! All data has been cleared and default PINs are set.
 PIN:         123456
 Reset code:  NOT SET
 Admin PIN:   12345678
+```
+
+# Optional hardening
+
+The following steps may improve the security and privacy of YubiKey.
+
+## Improving entropy
+
+Generating cryptographic keys requires high-quality [randomness](https://www.random.org/randomness/), measured as entropy. Most operating systems use software-based pseudorandom number generators or CPU-based hardware random number generators (HRNG).
+
+Optionally, a device such as [OneRNG](https://onerng.info/onerng/) may be used to [increase the speed](https://lwn.net/Articles/648550/) and possibly the quality of available entropy.
+
+Before creating keys, configure [rng-tools](https://wiki.archlinux.org/title/Rng-tools):
+
+```console
+sudo apt -y install at rng-tools python3-gnupg openssl
+
+wget https://github.com/OneRNG/onerng.github.io/raw/master/sw/onerng_3.7-1_all.deb
+```
+
+Verify the package:
+
+```console
+sha256sum onerng_3.7-1_all.deb
+```
+
+The value must match:
+
+```console
+b7cda2fe07dce219a95dfeabeb5ee0f662f64ba1474f6b9dddacc3e8734d8f57
+```
+
+Install the package:
+
+```console
+sudo dpkg -i onerng_3.7-1_all.deb
+
+echo "HRNGDEVICE=/dev/ttyACM0" | sudo tee /etc/default/rng-tools
+```
+
+Insert the device and restart rng-tools:
+
+```console
+sudo atd
+
+sudo service rng-tools restart
+```
+
+## Enable KDF
+
+**Note** This feature may not be compatible with older GnuPG versions, especially mobile clients. These incompatible clients will not function because the PIN will always be rejected.
+
+This step must be completed before changing PINs or moving keys or an error will occur: `gpg: error for setup KDF: Conditions of use not satisfied`
+
+Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing the PIN from being passed as plain text.
+
+Enable KDF using the default Admin PIN of `12345678`:
+
+```console
+gpg --command-fd=0 --pinentry-mode=loopback --card-edit <<EOF
+admin
+kdf-setup
+12345678
+EOF
 ```
 
 # Notes
