@@ -135,10 +135,7 @@ sd 2:0:0:0: [sdc] Attached SCSI removable disk
 Copy the Debian image to the device:
 
 ```console
-$ sudo dd if=debian-live-*-amd64-xfce.iso of=/dev/sdc bs=4M status=progress ; sync
-465+1 records in
-465+1 records out
-1951432704 bytes (2.0 GB, 1.8 GiB) copied, 42.8543 s, 45.5 MB/s
+sudo dd if=debian-live-*-amd64-xfce.iso of=/dev/sdc bs=4M status=progress ; sync
 ```
 
 **OpenBSD**
@@ -175,12 +172,6 @@ sudo apt -y install \
   wget gnupg2 gnupg-agent dirmngr \
   cryptsetup scdaemon pcscd \
   yubikey-personalization yubikey-manager
-```
-
-**Note** Live Ubuntu images [may require modification](https://github.com/drduh/YubiKey-Guide/issues/116) to `/etc/apt/sources.list` and may need additional packages:
-
-```console
-sudo apt -y install libssl-dev swig libpcsclite-dev
 ```
 
 **OpenBSD**
@@ -335,7 +326,7 @@ KEY_TYPE=rsa4096
 
 Determine the desired Subkey validity duration.
 
-Setting a key expiry forces identity and credential lifecycle management. However, setting an expiry on the primary Certify key is pointless, because it can be used to simply extend itself ([revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used instead).
+Setting a Subkey expiry forces identity and credential lifecycle management. However, setting an expiry on the Certify key is pointless, because it can just be used to extend itself. [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should instead be used to revoke an identity.
 
 This guide recommends a two year expiration for Subkeys to balance security and usability, however longer durations are possible to reduce maintenance frequency.
 
@@ -357,11 +348,9 @@ EXPIRATION=2026-05-01
 
 ## Passphrase
 
-Generate a passphrase, which will be used to issue the Certify key and Subkeys.
+Generate a passphrase for the Certify key. It will be used infrequently to manage Subkeys and should be very strong. The passphrase is recommended to consist of only uppercase letters and numbers for improved readability. [Diceware](https://secure.research.vt.edu/diceware) is another method for creating memorable passphrases.
 
-The passphrase is recommended to consist of only uppercase letters and numbers for improved readability. [Diceware](https://secure.research.vt.edu/diceware) is another method for creating strong and memorable passphrases.
-
-The following commands will generate and display a strong passphrase which avoids ambiguous characters:
+The following commands will generate a strong passphrase and avoid ambiguous characters:
 
 ```console
 CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
@@ -369,9 +358,9 @@ CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
   cut -c2- | tr " " "-" | head -1) ; echo "$CERTIFY_PASS"
 ```
 
-Memorize the passphrase or write it in a secure location, ideally separate from the portable storage device used for key material.
+Write the passphrase in a secure location, ideally separate from the portable storage device used for key material, or memorize it.
 
-This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with transcription. Save the raw file, open it with a browser and print. Use a pen or permanent marker to select a letter or number on each row for each character in the passphrase. [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) can also be printed without a browser:
+This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with credential transcription. Save the raw file, open it with a browser and print. Use a pen or permanent marker to select a letter or number on each row for each character in the passphrase. [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) can also be printed without a browser:
 
 ```console
 lp -d Printer-Name passphrase.csv
@@ -497,9 +486,9 @@ w
 EOF
 ```
 
-Use [LUKS](https://askubuntu.com/questions/97196/how-secure-is-an-encrypted-luks-filesystem) to encrypt the new partition.
+Use [LUKS](https://dys2p.com/en/2023-05-luks-security.html) to encrypt the new partition.
 
-Generate and view another unique [Passphrase](#passphrase) (different from the  one used for the GnuPG identity) to protect the encrypted volume:
+Generate another unique [Passphrase](#passphrase) (ideally different from the one used for the Certify key) to protect the encrypted volume:
 
 ```console
 LUKS_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
@@ -507,7 +496,11 @@ LUKS_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
   cut -c2- | tr " " "-" | head -1) ; echo $LUKS_PASS
 ```
 
-Memorize or write it down, then format the partition:
+This passphrase will also be used infrequently to access the Certify key and should be very strong.
+
+Write the passphrase down or memorize it.
+
+Format the partition:
 
 ```console
 echo $LUKS_PASS | sudo cryptsetup -q luksFormat /dev/sdc1
@@ -525,7 +518,7 @@ Create an ext2 filesystem:
 sudo mkfs.ext2 /dev/mapper/gnupg-secrets -L gnupg-$(date +%F)
 ```
 
-Mount the filesystem and copy the temporary GnuPG working directory exported key materials:
+Mount the filesystem and copy the temporary GnuPG working directory with key materials:
 
 ```console
 sudo mkdir /mnt/encrypted-storage
@@ -542,6 +535,8 @@ sudo umount /mnt/encrypted-storage
 
 sudo cryptsetup luksClose gnupg-secrets
 ```
+
+Repeat the process for any additional storage devices (at least two are recommended).
 
 **OpenBSD**
 
@@ -656,7 +651,7 @@ sudo mount /dev/sdc2 /mnt/public
 
 gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
 
-sudo chmod 0444 /mnt/public/0x*.asc
+sudo chmod 0444 /mnt/public/*.asc
 ```
 
 Unmount and remove the storage device:
@@ -709,7 +704,7 @@ If the card is locked, [Reset](#reset) it.
 
 ## Change PIN
 
-YubiKey's OpenPGP interface has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
+YubiKey's [PGP](https://developers.yubico.com/PGP/) interface has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
 
 Name       | Default value | Capability
 -----------|---------------|-------------------------------------------------------------
@@ -717,9 +712,9 @@ User PIN   | `123456`      | cryptographic operations (decrypt, sign, authentica
 Admin PIN  | `12345678`    | reset PIN, change Reset Code, add keys and owner information
 Reset Code | None          | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
-Determine the desired PIN values. They can be shorter than the GnuPG identity passphrase due to limited brute-forcing opportunities. The User PIN should be convenient enough to remember for every-day use.
+Determine the desired PIN values. They can be shorter than the Certify key passphrase due to limited brute-forcing opportunities; the User PIN should be convenient enough to remember for every-day use.
 
-The *User PIN* must be at least 6 characters and the *Admin PIN* must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See the GnuPG documentation on [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
+The *User PIN* must be at least 6 characters and the *Admin PIN* must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See [GnuPG - Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
 
 Set PINs manually or generate them, for example a 6 digit User PIN and 8 digit Admin PIN:
 
@@ -858,10 +853,10 @@ Verify you have done the following:
 
 - [ ] Memorized or wrote down the Certify key passphrase to a secure and durable location
   * `echo $CERTIFY_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe it
-- [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
-  * At least two backups are recommended, stored at separate locations
 - [ ] Memorized or wrote down passphrase to encrypted volume on portable storage
   * `echo $LUKS_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe it
+- [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
+  * At least two backups are recommended, stored at separate locations
 - [ ] Exported a copy of the public key where is can be easily accessed later
   * Separate device or non-encrypted partition was used
 - [ ] Memorized or wrote down the User PIN and Admin PIN, which are unique and changed from default values
@@ -897,12 +892,13 @@ echo "disable-ccid" >>scdaemon.conf
 
 Install the required packages:
 
-**Debian and Ubuntu**
+**Debian/Ubuntu**
 
 ```console
 sudo apt update
 
-sudo apt install -y gnupg2 gnupg-agent gnupg-curl scdaemon pcscd
+sudo apt install -y \
+  gnupg gnupg-agent gnupg-curl scdaemon pcscd
 ```
 
 **OpenBSD**
@@ -917,16 +913,26 @@ doas reboot
 
 Mount the non-encrypted volume with the public key:
 
+**Debian/Ubuntu**
+
+```console
+sudo mkdir /mnt/public
+
+sudo mount /dev/sdc2 /mnt/public
+```
+
+**OpenBSD**
+
 ```console
 doas mkdir /mnt/public
 
 doas mount /dev/sd3i /mnt/public
 ```
 
-Import it:
+Import the public key:
 
 ```console
-gpg --import /mnt/public/0x*.asc
+gpg --import /mnt/public/*.asc
 ```
 
 Or download the public key from a keyserver:
@@ -946,6 +952,8 @@ gpg/card> quit
 Determine the key ID:
 
 ```console
+gpg -k
+
 KEYID=0xF0F2CFEB04341FB5
 ```
 
@@ -1000,7 +1008,7 @@ ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2024-01-01  expires: 2026-05-01
 
 `sec#` indicates the corresponding key is not available (the Certify key is offline).
 
-If `General key info..: [none]` appears in the output instead - go back and import the public key using the previous step.
+YubiKey is now ready for use!
 
 ## Encryption
 
@@ -1012,19 +1020,19 @@ echo "\ntest message string" | \
       --recipient $KEYID --output encrypted.txt
 ```
 
-To encrypt to multiple recipients or keys (the preferred key ID goes last):
+Decrypt the message - a prompt for the User PIN will appear:
+
+```console
+gpg --decrypt --armor encrypted.txt
+```
+
+To encrypt to multiple recipients/keys (set the preferred key ID last):
 
 ```console
 echo "test message string" | \
   gpg --encrypt --armor \
       --recipient $KEYID_2 --recipient $KEYID_1 --recipient $KEYID \
       --output encrypted.txt
-```
-
-Decrypt the message - a User PIN prompt will appear:
-
-```console
-gpg --decrypt --armor encrypted.txt
 ```
 
 Use a [shell function](https://github.com/drduh/config/blob/master/zshrc) to make encrypting files easier:
@@ -1088,7 +1096,7 @@ Primary key fingerprint: 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 
 By default, YubiKey will perform cryptographic operations without requiring any action from the user after the key is unlocked once with the PIN.
 
-To require a touch for each key operation, use [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and the Admin PIN to set policy:
+To require a touch for each key operation, use [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and the Admin PIN to set key policy.
 
 Encryption:
 
@@ -1096,7 +1104,13 @@ Encryption:
 ykman openpgp keys set-touch dec on
 ```
 
-**Note** Versions of YubiKey Manager before 5.1.0 use `enc` instead of `dec` for encryption. Older versions of YubiKey Manager use `touch` instead of `set-touch`
+**Note** Versions of YubiKey Manager before 5.1.0 use `enc` instead of `dec` for encryption:
+
+```console
+ykman openpgp keys set-touch enc on
+```
+
+Even older versions of YubiKey Manager use `touch` instead of `set-touch`
 
 Signature:
 
@@ -1588,7 +1602,7 @@ extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
 
 **Important** Any pinentry program except `pinentry-tty` or `pinentry-curses` may be used. This is because local `gpg-agent` may start headlessly (by systemd without `$GPG_TTY` set locally telling which tty it is on), thus failed to obtain the pin. Errors on the remote may be misleading saying that there is *IO Error*. (Yes, internally there is actually an *IO Error* since it happens when writing to/reading from tty while finding no tty to use, but for end users this is not friendly.)
 
-See [Issue #85](https://github.com/drduh/YubiKey-Guide/issues/85) for more information and troubleshooting.
+See [Issue 85](https://github.com/drduh/YubiKey-Guide/issues/85) for more information and troubleshooting.
 
 ### Chained GnuPG agent forwarding
 
@@ -1769,14 +1783,16 @@ cd $GNUPGHOME
 cp -avi /mnt/encrypted-storage/gnupg-*/* $GNUPGHOME
 ```
 
-Confirm the identity is available, set it and the key fingerprint:
+Confirm the identity is available, set the key id and fingerprint:
 
 ```console
 gpg -K
 
-KEYID=$(gpg -K | grep -Po "(0x\w+)" | head -1)
+KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; exit }')
 
-KEYFPR=$(gpg --fingerprint "$KEYID" | grep -Eo '([0-9A-F][0-9A-F ]{49})' | head -n 1 | tr -d ' ')
+KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
+
+echo $KEYID $KEYFP
 ```
 
 Recall the Certify key passphrase and set it, for example:
@@ -1799,7 +1815,7 @@ Renew the Subkeys:
 
 ```console
 gpg --batch --pinentry-mode=loopback \
-  --passphrase "$CERTIFY_PASS" --quick-set-expire "$KEYFPR" "$EXPIRATION" "*"
+  --passphrase "$CERTIFY_PASS" --quick-set-expire "$KEYFP" "$EXPIRATION" "*"
 ```
 
 Export the updated public key:
@@ -1811,7 +1827,7 @@ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
 Transfer the public key to the destination host and import it:
 
 ```console
-gpg --import 0x*.asc
+gpg --import /mnt/public/*.asc
 ```
 
 Alternatively, publish to a public key server and download it:
@@ -1983,7 +1999,9 @@ EOF
 
 - If you encounter problems connecting to YubiKey with GnuPG - try unplugging and re-inserting YubiKey, and restarting the `gpg-agent` process.
 
-- If you receive the error, `gpg: decryption failed: secret key not available` - you likely need to install GnuPG version 2.x. Another possibility is that there is a problem with the PIN, e.g. it is too short or blocked.
+- If you see `General key info..: [none]` in card status output - import the public key.
+
+- If you receive the error, `gpg: decryption failed: secret key not available` - you likely need to install GnuPG version 2.x. Another possibility is that there is a problem with the PIN, e.g., it is too short or blocked.
 
 - If you receive the error, `Yubikey core error: no yubikey present` - make sure the YubiKey is inserted correctly. It should blink once when plugged in.
 
@@ -1991,7 +2009,7 @@ EOF
 
 - If you receive the error, `Yubikey core error: write error` - YubiKey is likely locked. Install and run yubikey-personalization-gui to unlock it.
 
-- If you receive the error, `Key does not match the card's capability` - you likely need to use 2048 bit RSA key sizes.
+- If you receive the error, `Key does not match the card's capability` - you likely need to use 2048-bit RSA key sizes.
 
 - If you receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - make sure you replaced `ssh-agent` with `gpg-agent` as noted above.
 
