@@ -1,4 +1,4 @@
-This is a guide to using [YubiKey](https://www.yubico.com/products/) as a [smart card](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for secure encryption, signature and authentication operations.
+This is a guide to using [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/) as a [smart card](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for secure encryption, signature and authentication operations.
 
 Keys stored on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for daily use. YubiKey can be configured to require a physical touch for cryptographic operations, reducing the risk of credential compromise.
 
@@ -1092,8 +1092,6 @@ Primary key fingerprint: 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 
 ## Configure touch
 
-**Note** This is not possible on YubiKey NEO.
-
 By default, YubiKey will perform cryptographic operations without requiring any action from the user after the key is unlocked once with the PIN.
 
 To require a touch for each key operation, use [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and the Admin PIN to set key policy.
@@ -1997,15 +1995,15 @@ EOF
 
 - To get more information on potential errors, restart the `gpg-agent` process with debug output to the console with `pkill gpg-agent; gpg-agent --daemon --no-detach -v -v --debug-level advanced --homedir ~/.gnupg`.
 
-- If you encounter problems connecting to YubiKey with GnuPG - try unplugging and re-inserting YubiKey, and restarting the `gpg-agent` process.
-
-- If you see `General key info..: [none]` in card status output - import the public key.
-
-- If you receive the error, `gpg: decryption failed: secret key not available` - you likely need to install GnuPG version 2.x. Another possibility is that there is a problem with the PIN, e.g., it is too short or blocked.
+- A lot of issues can be fixed by unplugging and re-inserting YubiKey, or restarting the `gpg-agent` process.
 
 - If you receive the error, `Yubikey core error: no yubikey present` - make sure the YubiKey is inserted correctly. It should blink once when plugged in.
 
 - If you still receive the error, `Yubikey core error: no yubikey present` - you likely need to install newer versions of yubikey-personalize as outlined in [Install software](#install-software).
+
+- If you see `General key info..: [none]` in card status output - import the public key.
+
+- If you receive the error, `gpg: decryption failed: secret key not available` - you likely need to install GnuPG version 2.x. Another possibility is that there is a problem with the PIN, e.g., it is too short or blocked.
 
 - If you receive the error, `Yubikey core error: write error` - YubiKey is likely locked. Install and run yubikey-personalization-gui to unlock it.
 
@@ -2025,7 +2023,7 @@ EOF
 
 - If you receive the error, `Permission denied (publickey)`, increase ssh verbosity with the `-v` flag and verify the public key from the card is being offered: `Offering public key: RSA SHA256:abcdefg... cardno:00060123456`. If it is, verify the correct user the target system - not the user on the local system. Otherwise, be sure `IdentitiesOnly` is not [enabled](https://github.com/FiloSottile/whosthere#how-do-i-stop-it) for this host.
 
-- If SSH authentication still fails - add up to 3 `-v` flags to the `ssh` client to increase verbosity.
+- If SSH authentication still fails - add up to 3 `-v` flags to the `ssh` command to increase verbosity.
 
 - If it still fails, it may be useful to stop the background `sshd` daemon process service on the server (e.g. using `sudo systemctl stop sshd`) and instead start it in the foreground with extensive debugging output, using `/usr/sbin/sshd -eddd`. Note that the server will not fork and will only process one connection, therefore has to be re-started after every `ssh` test.
 
