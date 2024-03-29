@@ -151,7 +151,7 @@ $ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
-Power off, disconnect internal hard drives and all unnecessary devices, such as the wireless card.
+Power off, remove internal hard drives and all unnecessary devices, such as the wireless card.
 
 # Install software
 
@@ -388,7 +388,7 @@ KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; exit }')
 
 KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
 
-echo $KEYID $KEYFP
+printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
 ```
 
 # Create Subkeys
@@ -464,6 +464,8 @@ Zero the header to prepare for encryption:
 ```console
 sudo dd if=/dev/zero of=/dev/sdc bs=4M count=1
 ```
+
+Remove and re-connect the storage device.
 
 Erase and create a new partition table:
 
@@ -610,7 +612,7 @@ doas mount /dev/sd3i /mnt/encrypted-storage
 doas cp -av $GNUPGHOME /mnt/encrypted-storage
 ```
 
-Unmount and disconnect the encrypted volume:
+Unmount and remove the encrypted volume:
 
 ```console
 doas umount /mnt/encrypted-storage
@@ -723,7 +725,7 @@ ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w8 | head -1)
 
 USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w6 | head -1)
 
-echo "\nAdmin PIN: $ADMIN_PIN\nUser PIN:  $USER_PIN"
+printf "\nAdmin PIN: %12s\nUser PIN: %13s\n\n" "$ADMIN_PIN" "$USER_PIN"
 ```
 
 Change the Admin PIN:
@@ -770,11 +772,8 @@ Or use predetermined values:
 gpg --command-fd=0 --pinentry-mode=loopback --edit-card <<EOF
 admin
 login
-example@yubikey
+$IDENTITY
 $ADMIN_PIN
-name
-User
-YubiKey
 quit
 EOF
 ```
@@ -1142,7 +1141,7 @@ cd ~/.gnupg
 wget https://raw.githubusercontent.com/drduh/config/master/gpg-agent.conf
 ```
 
-**Important** The `cache-ttl` options do **not** apply when using YubiKey as a smart card, because the PIN is [cached by the smart card itself](https://dev.gnupg.org/T3362). To clear the PIN from cache (equivalent to `default-cache-ttl` and `max-cache-ttl`), unplug YubiKey, or set `forcesig` when editing the card to be prompted for the PIN each time.
+**Important** The `cache-ttl` options do **not** apply when using YubiKey as a smart card, because the PIN is [cached by the smart card itself](https://dev.gnupg.org/T3362). To clear the PIN from cache (equivalent to `default-cache-ttl` and `max-cache-ttl`), remove YubiKey, or set `forcesig` when editing the card to be prompted for the PIN each time.
 
 **Tip** Set `pinentry-program` to `/usr/bin/pinentry-gnome3` for a GUI-based prompt.
 
@@ -1322,7 +1321,7 @@ Reload SSH daemon:
 sudo service sshd reload
 ```
 
-Unplug YubiKey, disconnect or reboot. Log back into Windows, open a WSL console and enter `ssh-add -l` - no output should appear.
+Remove YubiKey and reboot. Log back into Windows, open a WSL console and enter `ssh-add -l` - no output should appear.
 
 Plug in YubiKey, enter the same command to display the ssh key.
 
@@ -1749,7 +1748,7 @@ When a Subkey expires, it can either be renewed or replaced. Both actions requir
 
 Neither rotation method is superior and it is up to personal philosophy on identity management and individual threat modeling to decide which one to use, or whether to expire Subkeys at all. Ideally, Subkeys would be ephemeral: used only once for each unique encryption, signature and authentication event, however in practice that is not really practical nor worthwhile with YubiKey. Advanced users may dedicate an air-gapped machine for frequent credential rotation.
 
-To renew or rotate Subkeys, follow the same process as generating keys: boot to a secure environment, install required software and disconnect networking.
+To renew or rotate Subkeys, follow the same process as generating keys: boot to a secure environment, install required software and disable networking.
 
 Connect the portable storage device with the Certify key and identify the disk label.
 
@@ -1874,7 +1873,7 @@ gpg --armor --export $KEYID | sudo tee /mnt/public/$KEYID-$(date +%F).asc
 sudo umount /mnt/public
 ```
 
-Disconnect the storage device and follow the original steps to transfer new Subkeys (`4`, `5` and `6`) to YubiKey, replacing existing ones.
+Remove the storage device and follow the original steps to transfer new Subkeys (`4`, `5` and `6`) to YubiKey, replacing existing ones.
 
 Reboot or securely erase the GnuPG temporary working directory.
 
@@ -1981,11 +1980,11 @@ EOF
 
 1. YubiKey has two configurations, invoked with either a short or long press. By default, the short-press mode is configured for HID OTP; a brief touch will emit an OTP string starting with `cccccccc`. OTP mode can be swapped to the second configuration via the YubiKey Personalization tool or disabled entirely using [YubiKey Manager](https://developers.yubico.com/yubikey-manager): `ykman config usb -d OTP`
 
-1. Using YubiKey for GnuPG keys does not prevent use of other features, such as [WebAuthn](https://en.wikipedia.org/wiki/WebAuthn), [OTP](https://www.yubico.com/resources/glossary/otp/) and [static password](https://support.yubico.com/hc/en-us/articles/360016614980-Understanding-Core-Static-Password-Features).
+1. Using YubiKey for GnuPG does not prevent use of [other features](https://developers.yubico.com/), such as [WebAuthn](https://developers.yubico.com/WebAuthn/) and [OTP](https://developers.yubico.com/OTP/).
 
 1. Add additional identities to a Certify key with the `adduid` command during setup, then trust it ultimately with `trust` and `5` to configure for use.
 
-1. To switch between YubiKeys, unplug the first YubiKey and restart gpg-agent, ssh-agent and pinentry with `pkill "gpg-agent|ssh-agent|pinentry" ; eval $(gpg-agent --daemon --enable-ssh-support)` then insert the other YubiKey and run `gpg-connect-agent updatestartuptty /bye`
+1. To switch between YubiKeys, remove the first YubiKey and restart gpg-agent, ssh-agent and pinentry with `pkill "gpg-agent|ssh-agent|pinentry" ; eval $(gpg-agent --daemon --enable-ssh-support)` then insert the other YubiKey and run `gpg-connect-agent updatestartuptty /bye`
 
 1. To use YubiKey on multiple computers, import the corresponding public keys, then confirm YubiKey is visible with `gpg --card-status`. Trust the imported public keys ultimately with `trust` and `5`, then `gpg --list-secret-keys` will show the correct and trusted key.
 
@@ -1995,7 +1994,7 @@ EOF
 
 - To get more information on potential errors, restart the `gpg-agent` process with debug output to the console with `pkill gpg-agent; gpg-agent --daemon --no-detach -v -v --debug-level advanced --homedir ~/.gnupg`.
 
-- A lot of issues can be fixed by unplugging and re-inserting YubiKey, or restarting the `gpg-agent` process.
+- A lot of issues can be fixed by removing and re-inserting YubiKey, or restarting the `gpg-agent` process.
 
 - If you receive the error, `Yubikey core error: no yubikey present` - make sure the YubiKey is inserted correctly. It should blink once when plugged in.
 
