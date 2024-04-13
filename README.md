@@ -440,9 +440,45 @@ gpg --output $GNUPGHOME/$KEYID-$(date +%F).asc \
 
 Create an **encrypted** backup on portable storage to be kept offline in a secure and durable location.
 
-The following process is recommended to be repeated several times on multiple portable storage devices, as they are likely to fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can be used to make a physical copy of key materials for improved durability.
+The following process is recommended to be repeated several times on multiple portable storage devices, as they are likely to fail over time.
 
 **Tip** The [ext2](https://en.wikipedia.org/wiki/Ext2) filesystem without encryption can be mounted on Linux and OpenBSD. Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) filesystem for macOS and Windows compatibility instead.
+
+As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can be used to make a physical copy of key materials for improved durability.
+
+```console
+gpg --export-secret-key $KEYID | paperkey | lpr
+```
+
+**IMPORTANT** Paperkey will only back up the secret key. A copy of the public key is required in order to later reconstruct the full key. Ensure that copies of the public key are widely distributed and always accessible.
+
+In order to restore the key, the contents of the printout must be entered manually via text editor and fed back into paperkey alongside a copy of the public key.
+
+```console
+$EDITOR paper.key
+paperkey --pubring public-key.gpg --secrets paper.key | \
+    gpg --import
+```
+
+For convenience, a QR code can also be created. QR codes are simple, easy to use, widely deployed and well supported by free and open source software. They support up to around 30% error correction if the key is small enough, and are capable of encoding even 4096 bit RSA keys in binary mode.
+
+```console
+gpg --export-secret-key $KEYID | \
+    paperkey --output-type raw | \
+    qrencode --8bit --output $KEYID.secret-key.qr.png
+```
+
+These QR code keys can later be restored by scanning them through barcode reader software such as [ZBar](https://github.com/mchehab/zbar) and feeding that data back into paperkey alongside a copy of the public key.
+
+```console
+zbarcam -1 --raw -Sbinary | \
+    paperkey --pubring public-key.gpg | \
+    gpg --import
+
+zbarimg -1 --raw -q -Sbinary $KEYID.secret-key.qr.png | \
+    paperkey --pubring public-key.gpg | \
+    gpg --import
+```
 
 **Linux**
 
