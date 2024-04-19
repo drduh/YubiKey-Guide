@@ -6,6 +6,8 @@ To suggest an improvement, send a pull request or open an [issue](https://github
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Prepare environment](#prepare-environment)
+- [Install the OS](#install-the-os)
+- [Configure Networking](#configure-networking)
 - [Install software](#install-software)
 - [Prepare GnuPG](#prepare-gnupg)
    * [Configuration](#configuration)
@@ -153,11 +155,74 @@ $ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 
 Power off, remove internal hard drives and all unnecessary devices, such as the wireless card.
 
-# Install software
+# Install the OS
 
-Load the operating system and configure networking.
+Install the operating system.
 
 **Note** If the screen locks on Debian Live, unlock with `user` / `live`
+
+# Configure Networking
+
+This section is primarily focused on Debian / Ubuntu based systems, but the same concept applies to any system connected to a network.
+
+Whether you're using a VM, installing on dedicated hardware, or running a Live OS temporarily, start *without* a network connection and disable any unnecessary services listening on all interfaces before connecting to the network.
+
+The reasoning for this is because services like cups or avahi can be listening by default. While this isn't an immediate problem it simply broadens the attack surface. Not everyone will have a dedicated subnet or trusted network equipment they can control, and for the purposes of this guide, these steps treat *any* network as untrusted / hostile.
+
+**Disable Listening Services**
+
+- Ensures only essential network services are running
+- If the service doesn't exist you'll get a "Failed to stop" which is fine
+- Only disable `Bluetooth` if you don't need it
+
+```bash
+sudo systemctl stop bluetooth exim4 cups avahi avahi-daemon sshd
+```
+
+**Firewall**
+
+Enable a basic firewall policy of *deny inbound, allow outbound*. Note that Debian does not come with a firewall, simply disabling the services in the previous step is fine. The following options have Ubuntu and similar systems in mind.
+
+On Ubuntu, `ufw` is built in and easy to enable:
+
+```bash
+sudo ufw enable
+```
+
+On systems without `ufw`, `nftables` is replacing `iptables`. The [nftables wiki has examples](https://wiki.nftables.org/wiki-nftables/index.php/Simple_ruleset_for_a_workstation) for a baseline *deny inbound, allow outbound* policy. The `fw.inet.basic` policy covers both IPv4 and IPv6.
+
+(Remember to download this README and any other resources to another external drive when creating the bootable media, to have this information ready to use offline)
+
+Regardless of which policy you use, write the contents to a file (e.g. `nftables.conf`) and apply the policy with the following comand:
+
+```bash
+sudo nft -f ./nftables.conf
+```
+
+**Review the System State**
+
+`NetworkManager` should be the only listening service on port 68/udp to obtain a DHCP lease (and 58/icmp6 if you have IPv6). 
+
+If you want to look at every process's command line arguments you can use `ps axjf`. This prints a process tree which may have a large number of lines but should be easy to read on a live image or fresh install.
+
+```bash
+sudo ss -anp -A inet    # Dump all network state information
+ps axjf                 # List all processes in a process tree
+ps aux                  # BSD syntax, list all processes but no process tree
+```
+
+If you find any additional processes listening on the network that aren't needed, take note and disable them with one of the following: 
+
+```bash
+sudo systemctl stop <process-name>                      # Stops services managed by systemctl
+sudo pkill -f '<process-name-or-command-line-string>'   # Terminate the process by matching it's command line string
+pgrep -f '<process-name-or-command-line-string>'        # Obtain the PID
+sudo kill <pid>                                         # Terminate the process via its PID
+```
+
+Now connect to a network.
+
+# Install software
 
 Open terminal and install required software packages.
 
