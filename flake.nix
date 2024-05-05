@@ -38,7 +38,7 @@
               '';
               shortcut = pkgs.makeDesktopItem {
                 name = "yubikey-guide";
-                icon = "${pkgs.yubikey-manager-qt}/share/ykman-gui/icons/ykman.png";
+                icon = "${pkgs.yubikey-manager-qt}/share/icons/hicolor/128x128/apps/ykman.png";
                 desktopName = "drduh's YubiKey Guide";
                 genericName = "Guide to using YubiKey for GnuPG and SSH";
                 comment = "Open the guide in a reader program";
