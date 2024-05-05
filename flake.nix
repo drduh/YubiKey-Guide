@@ -78,7 +78,10 @@
                 # Comment out to run in a console for a smaller iso and less RAM.
                 xserver = {
                   enable = true;
-                  desktopManager.xfce.enable = true;
+                  desktopManager.xfce = {
+                    enable = true;
+                    enableScreensaver = false;
+                  };
                   displayManager = {
                     lightdm.enable = true;
                     autoLogin = {
