@@ -29,6 +29,8 @@
                 sed '/pinentry-program/d' ${drduhConfig}/gpg-agent.conf > $out
                 echo "pinentry-program ${pkgs.pinentry.curses}/bin/pinentry" >> $out
               '';
+              dicewareAddress = "localhost";
+              dicewarePort = 8080;
               viewYubikeyGuide = pkgs.writeShellScriptBin "view-yubikey-guide" ''
                 viewer="$(type -P xdg-open || true)"
                 if [ -z "$viewer" ]; then
@@ -48,6 +50,38 @@
               yubikeyGuide = pkgs.symlinkJoin {
                 name = "yubikey-guide";
                 paths = [viewYubikeyGuide shortcut];
+              };
+              dicewareScript = pkgs.writeShellScriptBin "diceware-webapp" ''
+                viewer="$(type -P xdg-open || true)"
+                if [ -z "$viewer" ]; then
+                  viewer="firefox"
+                fi
+                exec $viewer "http://"${lib.escapeShellArg dicewareAddress}":${toString dicewarePort}/index.html"
+              '';
+              dicewarePage = pkgs.stdenv.mkDerivation {
+                name = "diceware-page";
+                src = pkgs.fetchFromGitHub {
+                  owner = "grempe";
+                  repo = "diceware";
+                  rev = "9ef886a2a9699f73ae414e35755fd2edd69983c8";
+                  sha256 = "44rpK8svPoKx/e/5aj0DpEfDbKuNjroKT4XUBpiOw2g=";
+                };
+                patches = [
+                  # Include changes published on https://secure.research.vt.edu/diceware/
+                  ./diceware-vt.patch
+                ];
+                buildPhase = ''
+                  cp -a . $out
+                '';
+              };
+              dicewareWebApp = pkgs.makeDesktopItem {
+                name = "diceware";
+                icon = "${dicewarePage}/favicon.ico";
+                desktopName = "Diceware Passphrase Generator";
+                genericName = "Passphrase Generator";
+                comment = "Open the passphrase generator in a web browser";
+                categories = ["Utility"];
+                exec = "${dicewareScript}/bin/${dicewareScript.name}";
               };
             in {
               isoImage = {
@@ -90,9 +124,34 @@
                     };
                   };
                 };
+                # Host the `https://secure.research.vt.edu/diceware/` website offline
+                nginx = {
+                  enable = true;
+                  virtualHosts."diceware.local" = {
+                    listen = [
+                        {
+                        addr = dicewareAddress;
+                        port = dicewarePort;
+                      }
+                    ];
+                    root = "${dicewarePage}";
+                  };
+                };
               };
 
               programs = {
+                # Add firefox for running the diceware web app
+                firefox = {
+                  enable = true;
+                  preferences = {
+                    # Disable data reporting confirmation dialogue
+                    "datareporting.policy.dataSubmissionEnabled" = false;
+                    # Disable welcome tab
+                    "browser.aboutwelcome.enabled" = false;
+                  };
+                  # Make preferences appear as user-defined values
+                  preferencesStatus = "user";
+                };
                 ssh.startAgent = false;
                 gnupg.agent = {
                   enable = true;
@@ -141,6 +200,7 @@
 
                 # Password generation tools
                 diceware
+                dicewareWebApp
                 pwgen
 
                 # Might be useful beyond the scope of the guide
@@ -200,6 +260,7 @@
 
                 cp -R ${self}/contrib/* ${homeDir}
                 ln -sf ${yubikeyGuide}/share/applications/yubikey-guide.desktop ${desktopDir}
+                ln -sf ${dicewareWebApp}/share/applications/${dicewareWebApp.name} ${desktopDir}
                 ln -sfT ${self} ${documentsDir}/YubiKey-Guide
               '';
               system.stateVersion = "23.11";
