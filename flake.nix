@@ -152,6 +152,9 @@
                 # This guide itself (run `view-yubikey-guide` on the terminal
                 # to open it in a non-graphical environment).
                 yubikeyGuide
+
+                # PDF and Markdown viewer
+                okular
               ];
 
               # Disable networking so the system is air-gapped
