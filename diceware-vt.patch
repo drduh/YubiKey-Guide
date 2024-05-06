@@ -1,0 +1,65 @@
+diff --git a/index.html b/index.html
+index 2f26ed9..3b4a2d3 100644
+--- a/index.html
++++ b/index.html
+@@ -920,8 +920,19 @@
+     <!-- core application JS -->
+     <script
+       src="index.js"
+-      integrity="sha384-++jBnvz86d0OUZ3chFxES5Sj6jjOZ/jKegsrHhXhOEzWxrvn7LhRGB0HP+bvLeNI"
++      integrity="sha384-v759g0TMj/jSFxhXsmlahbhJnj5NYNBopqVDq9WQaMOWsLZ0sJzLKxIoP+WzY9Yq"
+       crossorigin="anonymous"
+     ></script>
++    <script>
++      $(document).ready(function () {
++        'use strict'
++        // Use the 6 word list as the default
++        var numWords, numRolls
++        numWords = parseInt(6, 10)
++        numRolls = parseInt(5, 10)
++        displayWords(getWords(numWords, numRolls))
++        displayCrackTime(wordList)
++      })
++    </script>
+   </body>
+ </html>
+diff --git a/index.js b/index.js
+index e95e2a1..9d45377 100644
+--- a/index.js
++++ b/index.js
+@@ -238,11 +238,28 @@ function getWordFromWordNum (wordNum) {
+ function displayWords (words) {
+   'use strict'
+ 
++  // get symbol and number for the first and third words (CMD)
++  if (words.length > 1) {
++	  var symbols = getWords(1,2)
++	  var number = Math.floor(Math.random() * 100)
++	  var symbol_pos = Math.floor(Math.random() * words.length)
++	  var number_pos = Math.floor(Math.random() * words.length)
++	  var capitalize_pos = Math.floor(Math.random() * words.length)
++  }
++
+   // add the word to the global array of words
+   $.each(words, function (index, obj) {
+     var objEntropy = new Big(obj.entropy)
+     totalEntropy = totalEntropy.plus(objEntropy)
+     $('#totalEntropy').text(totalEntropy.toFixed(2))
++    if (words.length > 1) {
++      // add symbol to random word (CMD)
++      if (index == symbol_pos) obj.word = obj.word + symbols[0].word
++      // add number to random word (CMD)
++      if (index == number_pos) obj.word = obj.word + number
++      // capitalize random word (CMD)
++      if (index == capitalize_pos) obj.word = obj.word.charAt(0).toUpperCase() + obj.word.substring(1)
++    }
+     wordList.push(obj.word)
+   })
+ 
+@@ -370,4 +387,4 @@ $(document).ready(function () {
+     $('#addFiveDieRollWord').val('')
+     displayCrackTime(wordList)
+   })
+-})
++})
+\ No newline at end of file
