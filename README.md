@@ -1027,7 +1027,7 @@ Decrypt the message - a prompt for the User PIN will appear:
 gpg --decrypt --armor encrypted.txt
 ```
 
-To encrypt to multiple recipients/keys (set the preferred key ID last):
+To encrypt to multiple recipients/keys, set the preferred key ID last:
 
 ```console
 echo "test message string" | \
@@ -1040,7 +1040,7 @@ Use a [shell function](https://github.com/drduh/config/blob/master/zshrc) to mak
 
 ```console
 secret () {
-  output=~/"${1}".$(date +%s).enc
+  output="${1}".$(date +%s).enc
   gpg --encrypt --armor --output ${output} \
     -r $KEYID "${1}" && echo "${1} -> ${output}"
 }
