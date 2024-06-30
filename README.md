@@ -1815,7 +1815,7 @@ Renew the Subkeys:
 ```console
 gpg --batch --pinentry-mode=loopback \
   --passphrase "$CERTIFY_PASS" --quick-set-expire "$KEYFP" "$EXPIRATION" \
-  $(gpg -k --with-colons $IDENTITY | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
+  $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
 ```
 
 Export the updated public key:
