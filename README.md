@@ -291,6 +291,7 @@ verify-options show-uid-validity
 with-fingerprint
 require-cross-certification
 no-symkey-cache
+armor
 use-agent
 throw-keyids
 ```
@@ -304,13 +305,13 @@ When creating an identity with GnuPG, the default options ask for a "Real name",
 Depending on how you plan to use GnuPG, set these values respectively:
 
 ```console
-IDENTITY="YubiKey User <yubikey@example>"
+export IDENTITY="YubiKey User <yubikey@example>"
 ```
 
 Or use any attribute which will uniquely identity the key (this may be incompatible with certain use cases):
 
 ```console
-IDENTITY="My Cool YubiKey - 2024"
+export IDENTITY="My Cool YubiKey - 2024"
 ```
 
 ## Key
@@ -320,7 +321,7 @@ Select the desired algorithm and key size. This guide recommends 4096-bit RSA.
 Set the value:
 
 ```console
-KEY_TYPE=rsa4096
+export KEY_TYPE=rsa4096
 ```
 
 ## Expiration
@@ -338,13 +339,13 @@ Subkeys must be renewed or rotated using the Certify key - see [Updating Subkeys
 Set the expiration date to two years:
 
 ```console
-EXPIRATION=2y
+export EXPIRATION=2y
 ```
 
 Or set the expiration date to a specific date to schedule maintenace:
 
 ```console
-EXPIRATION=2026-05-01
+export EXPIRATION=2026-05-01
 ```
 
 ## Passphrase
@@ -354,9 +355,9 @@ Generate a passphrase for the Certify key. It will be used infrequently to manag
 The following commands will generate a strong passphrase and avoid ambiguous characters:
 
 ```console
-CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
+export CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
   tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1) ; echo "$CERTIFY_PASS"
+  cut -c2- | tr " " "-" | head -1) ; echo "\n$CERTIFY_PASS\n"
 ```
 
 Write the passphrase in a secure location, ideally separate from the portable storage device used for key material, or memorize it.
@@ -385,9 +386,9 @@ gpg --batch --passphrase "$CERTIFY_PASS" \
 Set and view the Certify key identifier and fingerprint for use later:
 
 ```console
-KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; exit }')
+export KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; exit }')
 
-KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
+export KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
 
 printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
 ```
@@ -494,9 +495,9 @@ Use [LUKS](https://dys2p.com/en/2023-05-luks-security.html) to encrypt the new p
 Generate another unique [Passphrase](#passphrase) (ideally different from the one used for the Certify key) to protect the encrypted volume:
 
 ```console
-LUKS_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
+export LUKS_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
   tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1) ; echo $LUKS_PASS
+  cut -c2- | tr " " "-" | head -1) ; echo "\n$LUKS_PASS\n"
 ```
 
 This passphrase will also be used infrequently to access the Certify key and should be very strong.
@@ -703,7 +704,7 @@ Connect YubiKey and confirm its status:
 gpg --card-status
 ```
 
-If the card is locked, [Reset](#reset) it.
+If the card is locked, [Reset](#reset-yubikey) it.
 
 ## Change PIN
 
@@ -722,9 +723,9 @@ The *User PIN* must be at least 6 characters and the *Admin PIN* must be at leas
 Set PINs manually or generate them, for example a 6 digit User PIN and 8 digit Admin PIN:
 
 ```console
-ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w8 | head -1)
+export ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w8 | head -1)
 
-USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w6 | head -1)
+export USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w6 | head -1)
 
 printf "\nAdmin PIN: %12s\nUser PIN: %13s\n\n" "$ADMIN_PIN" "$USER_PIN"
 ```
@@ -779,7 +780,7 @@ quit
 EOF
 ```
 
-Run `gpg --card-status` to verify results.
+Run `gpg --card-status` to verify results (*Login data* field).
 
 # Transfer Subkeys
 
@@ -851,7 +852,7 @@ The `>` after a tag indicates the key is stored on a smart card.
 
 Verify you have done the following:
 
-- [ ] Memorized or wrote down the Certify key passphrase to a secure and durable location
+- [ ] Memorized or wrote down the Certify key (identity) passphrase to a secure and durable location
   * `echo $CERTIFY_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe it
 - [ ] Memorized or wrote down passphrase to encrypted volume on portable storage
   * `echo $LUKS_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe it
@@ -1026,7 +1027,7 @@ Decrypt the message - a prompt for the User PIN will appear:
 gpg --decrypt --armor encrypted.txt
 ```
 
-To encrypt to multiple recipients/keys (set the preferred key ID last):
+To encrypt to multiple recipients/keys, set the preferred key ID last:
 
 ```console
 echo "test message string" | \
@@ -1039,7 +1040,7 @@ Use a [shell function](https://github.com/drduh/config/blob/master/zshrc) to mak
 
 ```console
 secret () {
-  output=~/"${1}".$(date +%s).enc
+  output="${1}".$(date +%s).enc
   gpg --encrypt --armor --output ${output} \
     -r $KEYID "${1}" && echo "${1} -> ${output}"
 }
@@ -1774,7 +1775,7 @@ sudo mount /dev/sdc2 /mnt/public
 Copy the original private key materials to a temporary working directory:
 
 ```console
-GNUPGHOME=$(mktemp -d -t gnupg-$(date +%Y-%m-%d)-XXXXXXXXXX)
+export GNUPGHOME=$(mktemp -d -t gnupg-$(date +%Y-%m-%d)-XXXXXXXXXX)
 
 cd $GNUPGHOME
 
@@ -1786,9 +1787,9 @@ Confirm the identity is available, set the key id and fingerprint:
 ```console
 gpg -K
 
-KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; exit }')
+export KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; exit }')
 
-KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
+export KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
 
 echo $KEYID $KEYFP
 ```
@@ -1796,7 +1797,7 @@ echo $KEYID $KEYFP
 Recall the Certify key passphrase and set it, for example:
 
 ```console
-CERTIFY_PASS=ABCD-0123-IJKL-4567-QRST-UVWX
+export CERTIFY_PASS=ABCD-0123-IJKL-4567-QRST-UVWX
 ```
 
 ## Renew Subkeys
@@ -1804,16 +1805,17 @@ CERTIFY_PASS=ABCD-0123-IJKL-4567-QRST-UVWX
 Determine the updated expiration, for example:
 
 ```console
-EXPIRATION=2026-09-01
+export EXPIRATION=2026-09-01
 
-EXPIRATION=2y
+export EXPIRATION=2y
 ```
 
 Renew the Subkeys:
 
 ```console
 gpg --batch --pinentry-mode=loopback \
-  --passphrase "$CERTIFY_PASS" --quick-set-expire "$KEYFP" "$EXPIRATION" "*"
+  --passphrase "$CERTIFY_PASS" --quick-set-expire "$KEYFP" "$EXPIRATION" \
+  $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
 ```
 
 Export the updated public key:
