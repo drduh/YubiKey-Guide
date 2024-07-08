@@ -342,7 +342,7 @@ Set the expiration date to two years:
 export EXPIRATION=2y
 ```
 
-Or set the expiration date to a specific date to schedule maintenace:
+Or set the expiration date to a specific date to schedule maintenance:
 
 ```console
 export EXPIRATION=2026-05-01
