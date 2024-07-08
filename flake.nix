@@ -2,7 +2,7 @@
   description = "A Nix Flake for an xfce-based system with YubiKey setup";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     drduhConfig.url = "github:drduh/config";
     drduhConfig.flake = false;
   };
@@ -129,7 +129,7 @@
                   enable = true;
                   virtualHosts."diceware.local" = {
                     listen = [
-                        {
+                      {
                         addr = dicewareAddress;
                         port = dicewarePort;
                       }
@@ -153,9 +153,12 @@
                   preferencesStatus = "user";
                 };
                 ssh.startAgent = false;
-                gnupg.agent = {
-                  enable = true;
-                  enableSSHSupport = true;
+                gnupg = {
+                  dirmngr.enable = true;
+                  agent = {
+                    enable = true;
+                    enableSSHSupport = true;
+                  };
                 };
               };
 
@@ -196,12 +199,12 @@
 
                 # Testing
                 ent
-                haskellPackages.hopenpgp-tools
 
                 # Password generation tools
                 diceware
                 dicewareWebApp
                 pwgen
+                rng-tools
 
                 # Might be useful beyond the scope of the guide
                 cfssl

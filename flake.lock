@@ -3,11 +3,11 @@
     "drduhConfig": {
       "flake": false,
       "locked": {
-        "lastModified": 1697417581,
-        "narHash": "sha256-R45L/Xv3z0lJhGt781wDbjaq1qc+sGTmsUt+XHwgf4A=",
+        "lastModified": 1719781410,
+        "narHash": "sha256-cmtAG7UQX7mVNoHHpVIqasfkjnO7VtBMcz8MJ7frO0k=",
         "owner": "drduh",
         "repo": "config",
-        "rev": "8c21617100795fea2313656abdf25f93b98fdc30",
+        "rev": "4eca229664d056737f1a097cdbdb10e5f247b0bc",
         "type": "github"
       },
       "original": {
@@ -18,16 +18,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1706826059,
-        "narHash": "sha256-N69Oab+cbt3flLvYv8fYnEHlBsWwdKciNZHUbynVEOA=",
+        "lastModified": 1720110830,
+        "narHash": "sha256-E5dN9GDV4LwMEduhBLSkyEz51zM17XkWZ3/9luvNOPs=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "25e3d4c0d3591c99929b1ec07883177f6ea70c9d",
+        "rev": "c0d0be00d4ecc4b51d2d6948e37466194c1e6c51",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-23.11",
+        "ref": "nixos-24.05",
         "repo": "nixpkgs",
         "type": "github"
       }
