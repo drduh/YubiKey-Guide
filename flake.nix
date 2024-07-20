@@ -266,7 +266,7 @@
                 ln -sf ${dicewareWebApp}/share/applications/${dicewareWebApp.name} ${desktopDir}
                 ln -sfT ${self} ${documentsDir}/YubiKey-Guide
               '';
-              system.stateVersion = "23.11";
+              system.stateVersion = "24.05";
             }
           )
         ];
