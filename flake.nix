@@ -118,10 +118,12 @@
                   };
                   displayManager = {
                     lightdm.enable = true;
-                    autoLogin = {
-                      enable = true;
-                      user = "nixos";
-                    };
+                  };
+                };
+                displayManager = {
+                  autoLogin = {
+                    enable = true;
+                    user = "nixos";
                   };
                 };
                 # Host the `https://secure.research.vt.edu/diceware/` website offline
