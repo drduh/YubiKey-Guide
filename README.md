@@ -2032,7 +2032,7 @@ sudo nft -f ./nftables.conf
 
 **Review the System State**
 
-`NetworkManager` should be the only listening service on port 68/udp to obtain a DHCP lease (and 58/icmp6 if you have IPv6). 
+`NetworkManager` should be the only listening service on port 68/udp to obtain a DHCP lease (and 58/icmp6 if you have IPv6).
 
 If you want to look at every process's command line arguments you can use `ps axjf`. This prints a process tree which may have a large number of lines but should be easy to read on a live image or fresh install.
 
@@ -2042,7 +2042,7 @@ ps axjf                 # List all processes in a process tree
 ps aux                  # BSD syntax, list all processes but no process tree
 ```
 
-If you find any additional processes listening on the network that aren't needed, take note and disable them with one of the following: 
+If you find any additional processes listening on the network that aren't needed, take note and disable them with one of the following:
 
 ```bash
 sudo systemctl stop <process-name>                      # Stops services managed by systemctl
