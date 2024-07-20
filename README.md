@@ -225,6 +225,19 @@ sudo cp -v result/iso/yubikeyLive.iso /dev/sdc ; sync
 
 Skip steps to create a temporary working directory and a hardened configuration, as they are already part of the image.
 
+If you want to test your build before copying it into a USB stick, you can try it out on your machine using a tool like QEMU.
+Please keep in mind that a virtualized environment does not provide the same amount of security as an ephemeral system (see *Prepare environment* above).
+Here is an example QEMU invocation after placing `yubikeyLive` in `result/iso` using the above `nix build` command:
+
+```console
+# Launch with 4G memory, 2 CPUs and KVM enabled
+qemu-system-x86_64 \
+    -enable-kvm \
+    -m 4G \
+    -smp 2 \
+    -drive readonly=on,media=cdrom,format=raw,file=result/iso/yubikeyLive.iso
+```
+
 **Arch**
 
 ```console
