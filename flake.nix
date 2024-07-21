@@ -118,10 +118,12 @@
                   };
                   displayManager = {
                     lightdm.enable = true;
-                    autoLogin = {
-                      enable = true;
-                      user = "nixos";
-                    };
+                  };
+                };
+                displayManager = {
+                  autoLogin = {
+                    enable = true;
+                    user = "nixos";
                   };
                 };
                 # Host the `https://secure.research.vt.edu/diceware/` website offline
@@ -266,7 +268,7 @@
                 ln -sf ${dicewareWebApp}/share/applications/${dicewareWebApp.name} ${desktopDir}
                 ln -sfT ${self} ${documentsDir}/YubiKey-Guide
               '';
-              system.stateVersion = "23.11";
+              system.stateVersion = "24.05";
             }
           )
         ];
