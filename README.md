@@ -45,6 +45,7 @@ To suggest an improvement, send a pull request or open an [issue](https://github
       + [Chained GnuPG agent forwarding](#chained-gnupg-agent-forwarding)
    * [Using multiple YubiKeys](#using-multiple-yubikeys)
    * [Email](#email)
+      + [Thunderbird](#thunderbird)
       + [Mailvelope](#mailvelope)
       + [Mutt](#mutt)
    * [Keyserver](#keyserver)
@@ -1669,6 +1670,12 @@ See discussion in Issues [#19](https://github.com/drduh/YubiKey-Guide/issues/19)
 ## Email
 
 YubiKey can be used to decrypt and sign emails and attachments using [Thunderbird](https://www.thunderbird.net/), [Enigmail](https://www.enigmail.net) and [Mutt](http://www.mutt.org/). Thunderbird supports OAuth 2 authentication and can be used with Gmail. See [this EFF guide](https://ssd.eff.org/en/module/how-use-pgp-linux) for more information. Mutt has OAuth 2 support since version 2.0.
+
+### Thunderbird
+
+Follow [instructions on the mozilla wiki](https://wiki.mozilla.org/Thunderbird:OpenPGP:Smartcards#Configure_an_email_account_to_use_an_external_GnuPG_key) to setup your YubiKey with your thunderbird client using the external gpg provider.
+
+**Important** Thunderbird [fails](https://github.com/drduh/YubiKey-Guide/issues/448) to decrypt emails if the ASCII `armor` option is enabled in your `~/.gnupg/gpg.conf`. If you see the error `gpg: [don't know]: invalid packet (ctb=2d)` or `message cannot be decrypted (there are unknown problems with this encrypted message)` simply remove this option from your config file.
 
 ### Mailvelope
 
