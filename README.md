@@ -348,7 +348,7 @@ This guide recommends a two year expiration for Subkeys to balance security and 
 
 When Subkeys expire, they may still be used to decrypt with GnuPG and authenticate with SSH, however they can **not** be used to encrypt nor sign new messages.
 
-Subkeys must be renewed or rotated using the Certify key - see [Updating Subkeys](#updating-subkeys).
+Subkeys must be renewed or rotated using the Certify key - see [Updating keys](#updating-keys).
 
 Set the expiration date to two years:
 
@@ -371,7 +371,7 @@ The following commands will generate a strong passphrase and avoid ambiguous cha
 ```console
 export CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
   tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1) ; echo "\n$CERTIFY_PASS\n"
+  cut -c2- | tr " " "-" | head -1) ; printf "\n$CERTIFY_PASS\n\n"
 ```
 
 Write the passphrase in a secure location, ideally separate from the portable storage device used for key material, or memorize it.
@@ -511,7 +511,7 @@ Generate another unique [Passphrase](#passphrase) (ideally different from the on
 ```console
 export LUKS_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
   tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1) ; echo "\n$LUKS_PASS\n"
+  cut -c2- | tr " " "-" | head -1) ; printf "\n$LUKS_PASS\n\n"
 ```
 
 This passphrase will also be used infrequently to access the Certify key and should be very strong.
@@ -912,8 +912,7 @@ Install the required packages:
 ```console
 sudo apt update
 
-sudo apt install -y \
-  gnupg gnupg-agent gnupg-curl scdaemon pcscd
+sudo apt install -y gnupg gnupg-agent scdaemon pcscd
 ```
 
 **OpenBSD**
@@ -969,7 +968,7 @@ Determine the key ID:
 ```console
 gpg -k
 
-KEYID=0xF0F2CFEB04341FB5
+export KEYID=0xF0F2CFEB04341FB5
 ```
 
 Assign ultimate trust by typing `trust` and selecting option `5` then `quit`:
@@ -1350,14 +1349,6 @@ Agent forwarding may be chained through multiple hosts. Follow the same [protoco
 To launch `gpg-agent` for use by SSH, use the `gpg-connect-agent /bye` or `gpgconf --launch gpg-agent` commands.
 
 Add the following to the shell rc file:
-
-```console
-export GPG_TTY="$(tty)"
-export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
-gpg-connect-agent updatestartuptty /bye > /dev/null
-```
-
-On modern systems, `gpgconf --list-dirs agent-ssh-socket` will automatically set `SSH_AUTH_SOCK` to the correct value and is better than hard-coding to `run/user/$UID/gnupg/S.gpg-agent.ssh`, if available:
 
 ```console
 export GPG_TTY="$(tty)"
