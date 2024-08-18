@@ -1354,6 +1354,7 @@ Add the following to the shell rc file:
 export GPG_TTY="$(tty)"
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
+gpg-connect-agent updatestartuptty /bye > /dev/null
 ```
 
 For fish, `config.fish` should look like this (consider putting them into the `is-interactive` block):
