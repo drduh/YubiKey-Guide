@@ -393,7 +393,7 @@ Do not set an expiration date on the Certify key.
 Generate the Certify key:
 
 ```console
-gpg --batch --passphrase "$CERTIFY_PASS" \
+echo "$CERTIFY_PASS" | gpg --batch --passphrase-fd 0 \
     --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
 ```
 
@@ -413,7 +413,7 @@ Use the following command to generate Signature, Encryption and Authentication S
 
 ```console
 for SUBKEY in sign encrypt auth ; do \
-  gpg --batch --pinentry-mode=loopback --passphrase "$CERTIFY_PASS" \
+  echo "$CERTIFY_PASS" | gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
       --quick-add-key "$KEYFP" "$KEY_TYPE" "$SUBKEY" "$EXPIRATION"
 done
 ```
@@ -442,12 +442,12 @@ ssb   rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-05-01]
 Save a copy of the Certify key, Subkeys and public key:
 
 ```console
-gpg --output $GNUPGHOME/$KEYID-Certify.key \
-    --batch --pinentry-mode=loopback --passphrase "$CERTIFY_PASS" \
+echo "$CERTIFY_PASS" | gpg --output $GNUPGHOME/$KEYID-Certify.key \
+    --batch --pinentry-mode=loopback --passphrase-fd 0 \
     --armor --export-secret-keys $KEYID
 
-gpg --output $GNUPGHOME/$KEYID-Subkeys.key \
-    --batch --pinentry-mode=loopback --passphrase "$CERTIFY_PASS" \
+echo "$CERTIFY_PASS" | gpg --output $GNUPGHOME/$KEYID-Subkeys.key \
+    --batch --pinentry-mode=loopback --passphrase-fd 0 \
     --armor --export-secret-subkeys $KEYID
 
 gpg --output $GNUPGHOME/$KEYID-$(date +%F).asc \
@@ -1825,8 +1825,8 @@ export EXPIRATION=2y
 Renew the Subkeys:
 
 ```console
-gpg --batch --pinentry-mode=loopback \
-  --passphrase "$CERTIFY_PASS" --quick-set-expire "$KEYFP" "$EXPIRATION" \
+echo "$CERTIFY_PASS" | gpg --batch --pinentry-mode=loopback \
+  --passphrase-fd 0 --quick-set-expire "$KEYFP" "$EXPIRATION" \
   $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
 ```
 
