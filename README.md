@@ -14,6 +14,7 @@ To suggest an improvement, send a pull request or open an [issue](https://github
    * [Expiration](#expiration)
    * [Passphrase](#passphrase)
 - [Create Certify key](#create-certify-key)
+- [Add additional uids (optional)](#add-additional-uids-optional)
 - [Create Subkeys](#create-subkeys)
 - [Verify keys](#verify-keys)
 - [Backup keys](#backup-keys)
@@ -405,6 +406,50 @@ export KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; e
 export KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
 
 printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
+```
+
+# Add additional uids (optional)
+
+## Rationale
+
+This is an optional step if you have a use case which requires [additional identities](https://github.com/drduh/YubiKey-Guide/issues/445). Some non-exhaustive example use cases are:
+
+- different email addresses for different languages
+- different email addresses for professional versus personal but please see alternative reason below for not tying these addresses together
+- anonymized email addresses for different git providers
+
+An alternative would be to have distinct keys but you would then require multiple YubiKeys, as each can only hold a single key for each type (signing, encryption, authentication). Nevertheless, there can be good reasons to have multiple YubiKeys:
+
+- if you have different email addresses for professional versus personal use cases, having distinct keys allow you to disassociate the identities
+- if you are also using the YubiKey as a U2F or FIDO2 device, having multiple YubiKeys is generally recommended as a backup measure
+
+## Steps
+
+Define an array containing additional uids. As this is bash syntax, each array element should be surrounded by quotes and each element should be separated by a space:
+
+```
+declare -a additional_uids
+additional_uids=("Super Cool YubiKey 2024" "uid 1 <uid1@example.org>")
+```
+
+Add the additional uids to the key:
+
+```
+for uid in "${additional_uids[@]}" ; do \
+    echo "$CERTIFY_PASS" | gpg --batch --passphrase-fd 0 --pinentry-mode=loopback --quick-add-uid "$KEYFP" "$uid"
+done
+```
+
+Adjust the trust of the additional uids to be ultimate:
+
+```
+gpg --command-fd=0 --pinentry-mode=loopback --edit-key "$KEYID" <<EOF
+uid *
+trust
+5
+y
+save
+EOF
 ```
 
 # Create Subkeys
