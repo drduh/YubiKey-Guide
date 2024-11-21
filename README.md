@@ -427,14 +427,14 @@ An alternative would be to have distinct keys but you would then require multipl
 
 Define an array containing additional uids. As this is bash syntax, each array element should be surrounded by quotes and each element should be separated by a space:
 
-```
+```console
 declare -a additional_uids
 additional_uids=("Super Cool YubiKey 2024" "uid 1 <uid1@example.org>")
 ```
 
 Add the additional uids to the key:
 
-```
+```console
 for uid in "${additional_uids[@]}" ; do \
     echo "$CERTIFY_PASS" | gpg --batch --passphrase-fd 0 --pinentry-mode=loopback --quick-add-uid "$KEYFP" "$uid"
 done
@@ -442,7 +442,7 @@ done
 
 Adjust the trust of the additional uids to be ultimate:
 
-```
+```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-key "$KEYID" <<EOF
 uid *
 trust
