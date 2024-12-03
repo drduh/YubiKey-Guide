@@ -1228,7 +1228,7 @@ Load it:
 launchctl load $HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist
 ```
 
-Reboot or to activate changes.
+Reboot to activate changes.
 
 **Windows**
 
