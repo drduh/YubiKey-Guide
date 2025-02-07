@@ -194,6 +194,16 @@ brew install \
 
 **Note** An additional Python package dependency may need to be installed to use [`ykman`](https://support.yubico.com/support/solutions/articles/15000012643-yubikey-manager-cli-ykman-user-guide) - `pip install yubikey-manager`
 
+Or 
+
+Install [MacPorts](https://www.macports.org/install.php) and the following packages:
+
+```console
+sudo port install gnupg2 yubikey-manager pinentry wget
+```
+
+**Optional** [Yubikey Manager - Qt](https://www.yubico.com/support/download/yubikey-manager/) which is the supported version of the Yubikey Personalization.
+
 **NixOS**
 
 Build an air-gapped NixOS LiveCD image:
