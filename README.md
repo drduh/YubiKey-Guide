@@ -970,6 +970,12 @@ sudo apt update
 sudo apt install -y gnupg gnupg-agent scdaemon pcscd
 ```
 
+**macOS**
+
+```console
+sudo port install gnupg2 pcsc-tools
+```
+
 **OpenBSD**
 
 ```console
@@ -1011,6 +1017,8 @@ gpg --recv $KEYID
 ```
 
 Or with the URL on YubiKey, retrieve the public key:
+
+using the command `gpg-card`
 
 ```console
 gpg/card> fetch
