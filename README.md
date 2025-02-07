@@ -1225,10 +1225,10 @@ wget https://raw.githubusercontent.com/drduh/config/master/gpg-agent.conf
 
 **macOS**
 
-Install pinentry with `brew install pinentry-mac` then edit `gpg-agent.conf` to set the `pinentry-program` path to:
+Install pinentry with `brew install pinentry-mac` or `sudo port install pinentry` then edit `gpg-agent.conf` to set the `pinentry-program` path to:
 
 * Apple Silicon Macs: `/opt/homebrew/bin/pinentry-mac`
-* Intel Macs: `/usr/local/bin/pinentry-mac`
+* Intel Macs: `/usr/local/bin/pinentry-mac` or `/opt/local/bin/pinentry` (MacPorts)
 * MacGPG Suite: `/usr/local/MacGPG2/libexec/pinentry-mac.app/Contents/MacOS/pinentry-mac`
 
 Then run `gpgconf --kill gpg-agent` for the change to take effect.
