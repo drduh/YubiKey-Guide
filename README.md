@@ -1074,7 +1074,7 @@ YubiKey is now ready for use!
 Encrypt a message to yourself (useful for storing credentials or protecting backups):
 
 ```console
-echo "\ntest message string" | \
+echo -e "\ntest message string" | \
   gpg --encrypt --armor \
       --recipient $KEYID --output encrypted.txt
 ```
