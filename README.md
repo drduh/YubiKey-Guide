@@ -1416,7 +1416,7 @@ To launch `gpg-agent` for use by SSH, use the `gpg-connect-agent /bye` or `gpgco
 Add the following to the shell rc file:
 
 ```console
-export GPG_TTY="$(tty)"
+export GPG_TTY=$(tty)
 export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
 gpgconf --launch gpg-agent
 gpg-connect-agent updatestartuptty /bye > /dev/null
