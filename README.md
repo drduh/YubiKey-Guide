@@ -272,7 +272,7 @@ sudo dnf install \
 Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs) and set it as the GnuPG directory:
 
 ```console
-export GNUPGHOME=$(mktemp -d -t gnupg-$(date +%Y-%m-%d)-XXXXXXXXXX)
+export GNUPGHOME=$(mktemp -d -t $(date +%Y.%m.%d)-XXXX)
 ```
 
 ## Configuration
@@ -1849,14 +1849,12 @@ sudo mkdir /mnt/public
 sudo mount /dev/sdc2 /mnt/public
 ```
 
-Copy the original private key materials to a temporary working directory:
+Copy the original private key materials (after updating the encrypted storage directory name) to a temporary working directory:
 
 ```console
-export GNUPGHOME=$(mktemp -d -t gnupg-$(date +%Y-%m-%d)-XXXXXXXXXX)
+export GNUPGHOME=$(mktemp -d -t $(date +%Y.%m.%d)-XXXX)
 
-cd $GNUPGHOME
-
-cp -avi /mnt/encrypted-storage/gnupg-*/* $GNUPGHOME
+cp -avi /mnt/encrypted-storage/2025.12.31-AbCd/* $GNUPGHOME/
 ```
 
 Confirm the identity is available, set the key id and fingerprint:
