@@ -277,12 +277,12 @@ export GNUPGHOME=$(mktemp -d -t gnupg-$(date +%Y-%m-%d)-XXXXXXXXXX)
 
 ## Configuration
 
-Import or create a [hardened configuration](https://github.com/drduh/config/blob/master/gpg.conf):
+Import or create a [hardened configuration](https://github.com/drduh/config/blob/main/gpg.conf):
 
 ```console
 cd $GNUPGHOME
 
-wget https://raw.githubusercontent.com/drduh/config/master/gpg.conf
+wget https://raw.githubusercontent.com/drduh/config/main/gpg.conf
 ```
 
 The options will look similar to:
@@ -934,12 +934,12 @@ Initialize GnuPG:
 gpg -k
 ```
 
-Import or create a [hardened configuration](https://github.com/drduh/config/blob/master/gpg.conf):
+Import or create a [hardened configuration](https://github.com/drduh/config/blob/main/gpg.conf):
 
 ```console
 cd ~/.gnupg
 
-wget https://raw.githubusercontent.com/drduh/config/master/gpg.conf
+wget https://raw.githubusercontent.com/drduh/config/main/gpg.conf
 ```
 
 Set the following option. This avoids the problem where GnuPG will repeatedly prompt for the insertion of an already-inserted YubiKey:
@@ -1094,7 +1094,7 @@ echo "test message string" | \
       --output encrypted.txt
 ```
 
-Use a [shell function](https://github.com/drduh/config/blob/master/zshrc) to make encrypting files easier:
+Use a [shell function](https://github.com/drduh/config/blob/main/zshrc) to make encrypting files easier:
 
 ```console
 secret () {
@@ -1193,12 +1193,12 @@ YubiKey will blink when it is waiting for a touch. On Linux, [maximbaz/yubikey-t
 
 ## SSH
 
-Import or create a [hardened configuration](https://github.com/drduh/config/blob/master/gpg-agent.conf):
+Import or create a [hardened configuration](https://github.com/drduh/config/blob/main/gpg-agent.conf):
 
 ```console
 cd ~/.gnupg
 
-wget https://raw.githubusercontent.com/drduh/config/master/gpg-agent.conf
+wget https://raw.githubusercontent.com/drduh/config/main/gpg-agent.conf
 ```
 
 **Important** The `cache-ttl` options do **not** apply when using YubiKey as a smart card, because the PIN is [cached by the smart card itself](https://dev.gnupg.org/T3362). To clear the PIN from cache (equivalent to `default-cache-ttl` and `max-cache-ttl`), remove YubiKey, or set `forcesig` when editing the card to be prompted for the PIN each time.
