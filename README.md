@@ -970,6 +970,13 @@ sudo apt update
 sudo apt install -y gnupg gnupg-agent scdaemon pcscd
 ```
 
+**Arch**
+
+```console
+sudo pacman -S --needed gnupg pcsc-tools
+sudo systemctl enable --now pcscd.service
+```
+
 **macOS**
 
 ```console
