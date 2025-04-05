@@ -365,9 +365,11 @@ export EXPIRATION=2026-05-01
 
 ## Passphrase
 
-Generate a passphrase for the Certify key. It will be used infrequently to manage Subkeys and should be very strong. The passphrase is recommended to consist of only uppercase letters and numbers for improved readability. [Diceware](https://secure.research.vt.edu/diceware) is another method for creating memorable passphrases.
+Generate a passphrase for the Certify key. This credential will be used infrequently to manage Subkeys and should be very strong.
 
-The following commands will generate a strong passphrase and avoid ambiguous characters:
+To improve readability, this guide recommends a passphrase consisting only of uppercase letters and numbers.
+
+The following commands will generate a strong[^1] passphrase while avoiding certain similar-looking characters:
 
 ```console
 export CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
@@ -384,6 +386,8 @@ Mark the corresponding character on sequential rows for each character in the pa
 ```console
 lp -d Printer-Name passphrase.txt
 ```
+
+[Diceware](https://secure.research.vt.edu/diceware) is another popular method for creating memorable passphrases.
 
 # Create Certify key
 
@@ -2227,3 +2231,5 @@ EOF
 * [PGP and SSH keys on a Yubikey NEO (2015)](https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/)
 * [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
 * [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
+
+[^1]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
