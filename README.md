@@ -365,9 +365,11 @@ export EXPIRATION=2026-05-01
 
 ## Passphrase
 
-Generate a passphrase for the Certify key. It will be used infrequently to manage Subkeys and should be very strong. The passphrase is recommended to consist of only uppercase letters and numbers for improved readability. [Diceware](https://secure.research.vt.edu/diceware) is another method for creating memorable passphrases.
+Generate a passphrase for the Certify key. This credential will be used infrequently to manage Subkeys and should be very strong.
 
-The following commands will generate a strong passphrase and avoid ambiguous characters:
+To improve readability, this guide recommends a passphrase consisting only of uppercase letters and numbers.
+
+The following commands will generate a strong[^1] passphrase while avoiding certain similar-looking characters:
 
 ```console
 export CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
@@ -377,11 +379,15 @@ export CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
 
 Write the passphrase in a secure location, ideally separate from the portable storage device used for key material, or memorize it.
 
-This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with credential transcription. Save the raw file, open it with a browser and print. Use a pen or permanent marker to select a letter or number on each row for each character in the passphrase. [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) can also be printed without a browser:
+This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with credential transcription. Save the [raw file](https://github.com/drduh/YubiKey-Guide/raw/refs/heads/master/passphrase.html), open in a browser to render and print.
+
+Mark the corresponding character on sequential rows for each character in the passphrase. [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.txt) can also be printed without a browser:
 
 ```console
-lp -d Printer-Name passphrase.csv
+lp -d Printer-Name passphrase.txt
 ```
+
+[Diceware](https://secure.research.vt.edu/diceware) is another popular method for creating memorable passphrases.
 
 # Create Certify key
 
@@ -912,15 +918,15 @@ The `>` after a tag indicates the key is stored on a smart card.
 Verify you have done the following:
 
 - [ ] Memorized or wrote down the Certify key (identity) passphrase to a secure and durable location
-  * `echo $CERTIFY_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe it
+  * `echo $CERTIFY_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.txt) to transcribe it
 - [ ] Memorized or wrote down passphrase to encrypted volume on portable storage
-  * `echo $LUKS_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe it
+  * `echo $LUKS_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.txt) to transcribe it
 - [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
   * At least two backups are recommended, stored at separate locations
 - [ ] Exported a copy of the public key where is can be easily accessed later
   * Separate device or non-encrypted partition was used
 - [ ] Memorized or wrote down the User PIN and Admin PIN, which are unique and changed from default values
-  * `echo $USER_PIN $ADMIN_PIN` to see them again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.csv`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.csv) to transcribe them
+  * `echo $USER_PIN $ADMIN_PIN` to see them again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.txt) to transcribe them
 - [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey
   * `gpg -K` shows `ssb>` for each of the 3 Subkeys
 
@@ -2225,3 +2231,5 @@ EOF
 * [PGP and SSH keys on a Yubikey NEO (2015)](https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/)
 * [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
 * [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
+
+[^1]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
