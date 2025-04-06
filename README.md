@@ -160,7 +160,8 @@ Power off, remove internal hard drives and all unnecessary devices, such as the 
 
 Load the operating system and configure networking. Optional hardening steps related to networking can be found [below](#network-considerations).
 
-**Note** If the screen locks on Debian Live, unlock with `user` / `live`
+> [!TIP]
+> If the screen locks on Debian Live, unlock with `user` / `live`
 
 Open terminal and install required software packages.
 
