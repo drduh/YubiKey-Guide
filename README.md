@@ -527,7 +527,8 @@ $ sudo fdisk -l /dev/sdc
 Disk /dev/sdc: 14.9 GiB, 15931539456 bytes, 31116288 sectors
 ```
 
-**Warning** Confirm the destination (`of`) before issuing the following command - it is destructive! This guide uses `/dev/sdc` throughout, but this value may be different on your system.
+> [!WARNING]
+> Confirm the destination (`of`) before issuing the following command - it is destructive! This guide uses `/dev/sdc` throughout, but this value may be different on your system.
 
 Zero the header to prepare for encryption:
 
@@ -824,7 +825,8 @@ EOF
 
 Remove and re-insert YubiKey.
 
-**Warning** Three incorrect *User PIN* entries will cause it to become blocked and must be unblocked with either the *Admin PIN* or *Reset Code*. Three incorrect *Admin PIN* or *Reset Code* entries will destroy data on YubiKey.
+> [!CAUTION]
+> Three incorrect *User PIN* entries will cause it to become blocked and must be unblocked with either the *Admin PIN* or *Reset Code*. Three incorrect *Admin PIN* or *Reset Code* entries will destroy data on YubiKey.
 
 The number of [retry attempts](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries) can be changed, for example to 5 attempts:
 
@@ -1536,7 +1538,8 @@ When using the key `pinentry` will be invoked to request the key passphrase. The
 
 ### SSH agent forwarding
 
-**Warning** SSH Agent Forwarding can [add additional risk](https://matrix.org/blog/2019/05/08/post-mortem-and-remediations-for-apr-11-security-incident/#ssh-agent-forwarding-should-be-disabled) - proceed with caution!
+> [!CAUTION]
+> SSH Agent Forwarding can [add additional risk](https://matrix.org/blog/2019/05/08/post-mortem-and-remediations-for-apr-11-security-incident/#ssh-agent-forwarding-should-be-disabled) - proceed with caution!
 
 There are two methods for ssh-agent forwarding, one is provided by OpenSSH and the other is provided by GnuPG.
 
