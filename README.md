@@ -160,7 +160,8 @@ Power off, remove internal hard drives and all unnecessary devices, such as the 
 
 Load the operating system and configure networking. Optional hardening steps related to networking can be found [below](#network-considerations).
 
-**Note** If the screen locks on Debian Live, unlock with `user` / `live`
+> [!TIP]
+> If the screen locks on Debian Live, unlock with `user` / `live`
 
 Open terminal and install required software packages.
 
@@ -192,7 +193,8 @@ brew install \
   gnupg yubikey-personalization ykman pinentry-mac wget
 ```
 
-**Note** An additional Python package dependency may need to be installed to use [`ykman`](https://support.yubico.com/support/solutions/articles/15000012643-yubikey-manager-cli-ykman-user-guide) - `pip install yubikey-manager`
+> [!NOTE]
+> An additional Python package dependency may need to be installed to use [`ykman`](https://support.yubico.com/support/solutions/articles/15000012643-yubikey-manager-cli-ykman-user-guide) - `pip install yubikey-manager`
 
 **NixOS**
 
@@ -311,7 +313,8 @@ use-agent
 throw-keyids
 ```
 
-**Note** Networking can be disabled for the remainder of the setup.
+> [!IMPORTANT]
+> Networking should be disabled for the remainder of the setup.
 
 ## Identity
 
@@ -524,7 +527,8 @@ $ sudo fdisk -l /dev/sdc
 Disk /dev/sdc: 14.9 GiB, 15931539456 bytes, 31116288 sectors
 ```
 
-**Warning** Confirm the destination (`of`) before issuing the following command - it is destructive! This guide uses `/dev/sdc` throughout, but this value may be different on your system.
+> [!WARNING]
+> Confirm the destination (`of`) before issuing the following command - it is destructive! This guide uses `/dev/sdc` throughout, but this value may be different on your system.
 
 Zero the header to prepare for encryption:
 
@@ -821,7 +825,8 @@ EOF
 
 Remove and re-insert YubiKey.
 
-**Warning** Three incorrect *User PIN* entries will cause it to become blocked and must be unblocked with either the *Admin PIN* or *Reset Code*. Three incorrect *Admin PIN* or *Reset Code* entries will destroy data on YubiKey.
+> [!CAUTION]
+> Three incorrect *User PIN* entries will cause it to become blocked and must be unblocked with either the *Admin PIN* or *Reset Code*. Three incorrect *Admin PIN* or *Reset Code* entries will destroy data on YubiKey.
 
 The number of [retry attempts](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries) can be changed, for example to 5 attempts:
 
@@ -1167,7 +1172,8 @@ Encryption:
 ykman openpgp keys set-touch dec on
 ```
 
-**Note** Versions of YubiKey Manager before 5.1.0 use `enc` instead of `dec` for encryption:
+> [!NOTE]
+> YubiKey Manager prior to versions 5.1.0 use `enc` instead of `dec` for encryption:
 
 ```console
 ykman openpgp keys set-touch enc on
@@ -1351,7 +1357,7 @@ The goal is to configure SSH client inside WSL work together with the Windows ag
 
 See the [WSL agent architecture](media/schema_gpg.png) illustration for an overview.
 
-**Note** GnuPG forwarding for cryptographic operations is not supported. See [vuori/weasel-pageant](https://github.com/vuori/weasel-pageant) for more information.
+GnuPG forwarding for cryptographic operations is not supported. See [vuori/weasel-pageant](https://github.com/vuori/weasel-pageant) for more information.
 
 One way to forward is just `ssh -A` (still need to eval weasel to setup local ssh-agent), and only relies on OpenSSH. In this track, `ForwardAgent` and `AllowAgentForwarding` in ssh/sshd config may be involved. However, when using ssh socket forwarding, do not enable `ForwardAgent` in ssh config. See [SSH Agent Forwarding](#ssh-agent-forwarding) for more information. This requires Ubuntu 16.04 or newer for WSL and Kleopatra.
 
@@ -1367,7 +1373,7 @@ Edit `~/.ssh/config` to add the following for each agent forwarding host:
 RemoteForward <remote SSH socket path> /tmp/S.weasel-pageant
 ```
 
-**Note** The remote SSH socket path can be found with `gpgconf --list-dirs agent-ssh-socket`
+The remote SSH socket path can be found with `gpgconf --list-dirs agent-ssh-socket`
 
 Add the following to the shell rc file:
 
@@ -1442,7 +1448,8 @@ For `S.gpg-agent.ssh` (see [SSH Agent Forwarding](#ssh-agent-forwarding) for mor
 
 ### Copy public key
 
-**Note** It is **not** necessary to import the GnuPG public key in order to use SSH only.
+> [!TIP]
+> It is **not** necessary to import the GnuPG public key in order to use SSH only.
 
 Copy and paste the output from `ssh-add` to the server's `authorized_keys` file:
 
@@ -1531,7 +1538,8 @@ When using the key `pinentry` will be invoked to request the key passphrase. The
 
 ### SSH agent forwarding
 
-**Warning** SSH Agent Forwarding can [add additional risk](https://matrix.org/blog/2019/05/08/post-mortem-and-remediations-for-apr-11-security-incident/#ssh-agent-forwarding-should-be-disabled) - proceed with caution!
+> [!CAUTION]
+> SSH Agent Forwarding can [add additional risk](https://matrix.org/blog/2019/05/08/post-mortem-and-remediations-for-apr-11-security-incident/#ssh-agent-forwarding-should-be-disabled) - proceed with caution!
 
 There are two methods for ssh-agent forwarding, one is provided by OpenSSH and the other is provided by GnuPG.
 
@@ -1574,7 +1582,7 @@ export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 
 After sourcing the shell rc file, `ssh-add -l` will return the correct public key.
 
-**Note** In this process no gpg-agent in the remote is involved, hence `gpg-agent.conf` in the remote is of no use. Also pinentry is invoked locally.
+In this process no gpg-agent in the remote is involved, hence `gpg-agent.conf` in the remote is of no use. Also pinentry is invoked locally.
 
 #### Chained forwarding
 
@@ -1618,8 +1626,6 @@ git config --global gpg.program 'C:\Program Files (x86)\GnuPG\bin\gpg.exe'
 ```
 
 Then update the repository URL to `git@github.com:USERNAME/repository`
-
-**Note** For the error `gpg: signing failed: No secret key` - run `gpg --card-status` with YubiKey plugged in and try the git command again.
 
 ## GnuPG agent forwarding
 
@@ -1674,7 +1680,8 @@ pinentry-program /usr/bin/pinentry-gtk-2
 extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
 ```
 
-**Note** The pinentry program starts on the *local* host, not remote.
+> [!IMPORTANT]
+> The pinentry program starts on the *local* host, not remote.
 
 **Important** Any pinentry program except `pinentry-tty` or `pinentry-curses` may be used. This is because local `gpg-agent` may start headlessly (by systemd without `$GPG_TTY` set locally telling which tty it is on), thus failed to obtain the pin. Errors on the remote may be misleading saying that there is *IO Error*. (Yes, internally there is actually an *IO Error* since it happens when writing to/reading from tty while finding no tty to use, but for end users this is not friendly.)
 
@@ -1694,7 +1701,7 @@ Host third
 
 You should change the path according to `gpgconf --list-dirs agent-socket` on *remote* and *third*.
 
-**Note** On *local* you have `S.gpg-agent.extra` whereas on *remote* and *third*, you only have `S.gpg-agent`
+On *local* you have `S.gpg-agent.extra` whereas on *remote* and *third*, you only have `S.gpg-agent`
 
 ## Using multiple YubiKeys
 
@@ -2044,7 +2051,8 @@ sudo service rng-tools restart
 
 ## Enable KDF
 
-**Note** This feature may not be compatible with older GnuPG versions, especially mobile clients. These incompatible clients will not function because the PIN will always be rejected.
+> [!IMPORTANT]
+> This feature may not be compatible with older GnuPG versions, especially mobile clients. These incompatible clients will not function because the PIN will always be rejected.
 
 This step must be completed before changing PINs or moving keys or an error will occur: `gpg: error for setup KDF: Conditions of use not satisfied`
 
