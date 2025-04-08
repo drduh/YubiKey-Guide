@@ -512,7 +512,9 @@ Create an **encrypted** backup on portable storage to be kept offline in a secur
 
 The following process is recommended to be repeated several times on multiple portable storage devices, as they are likely to fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can be used to make a physical copy of key materials for improved durability.
 
-**Tip** The [ext2](https://en.wikipedia.org/wiki/Ext2) filesystem without encryption can be mounted on Linux and OpenBSD. Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) filesystem for macOS and Windows compatibility instead.
+> [!TIP]
+> [ext2](https://en.wikipedia.org/wiki/Ext2) volumes (without encryption) can be mounted on Linux and OpenBSD.
+> Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) volumes for macOS and Windows compatibility instead.
 
 **Linux**
 
@@ -1218,7 +1220,8 @@ wget https://raw.githubusercontent.com/drduh/config/main/gpg-agent.conf
 > [!NOTE]
 > `cache-ttl` options do **not** apply when using YubiKey as a smart card, because the PIN is [cached by the smart card itself](https://dev.gnupg.org/T3362). To clear the PIN from cache (equivalent to `default-cache-ttl` and `max-cache-ttl`), remove YubiKey, or set `forcesig` when editing the card to be prompted for the PIN each time.
 
-**Tip** Set `pinentry-program` to `/usr/bin/pinentry-gnome3` for a GUI-based prompt.
+> [!TIP]
+> Set `pinentry-program` to `/usr/bin/pinentry-gnome3` for a GUI-based prompt.
 
 **macOS**
 
@@ -1506,7 +1509,8 @@ debug1: Authentication succeeded (publickey).
 [...]
 ```
 
-**Tip** To make multiple connections or securely transfer many files, use the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) ssh option.
+> [!TIP]
+> To enable multiple connections, use the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) SSH option.
 
 ### Import SSH keys
 
