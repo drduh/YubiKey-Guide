@@ -527,7 +527,7 @@ $ sudo fdisk -l /dev/sdc
 Disk /dev/sdc: 14.9 GiB, 15931539456 bytes, 31116288 sectors
 ```
 
-> [!WARNING]
+> [!CAUTION]
 > Confirm the destination (`of`) before issuing the following command - it is destructive! This guide uses `/dev/sdc` throughout, but this value may be different on your system.
 
 Zero the header to prepare for encryption:
@@ -695,7 +695,8 @@ See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for 
 
 # Export public key
 
-**Important** Without the public key, it will **not** be possible to use GnuPG to decrypt nor sign messages. However, YubiKey can still be used for SSH authentication.
+> [!IMPORTANT]
+> Without the public key, it will **not** be possible to use GnuPG to decrypt/sign messages. However, YubiKey can still be used for SSH authentication.
 
 Connect another portable storage device or create a new partition on the existing one.
 
@@ -854,7 +855,8 @@ Run `gpg --card-status` to verify results (*Login data* field).
 
 # Transfer Subkeys
 
-**Important** Transferring keys to YubiKey is a one-way operation which converts the on-disk key into a stub making it no longer usable to transfer to subsequent YubiKeys. Ensure a backup was made before proceeding.
+> [!IMPORTANT]
+> Transferring keys to YubiKey is a one-way operation which converts the on-disk key into a stub making it no longer usable to transfer to subsequent YubiKeys. Ensure a backup was made before proceeding.
 
 The Certify key passphrase and Admin PIN are required to transfer keys.
 
@@ -1213,7 +1215,8 @@ cd ~/.gnupg
 wget https://raw.githubusercontent.com/drduh/config/main/gpg-agent.conf
 ```
 
-**Important** The `cache-ttl` options do **not** apply when using YubiKey as a smart card, because the PIN is [cached by the smart card itself](https://dev.gnupg.org/T3362). To clear the PIN from cache (equivalent to `default-cache-ttl` and `max-cache-ttl`), remove YubiKey, or set `forcesig` when editing the card to be prompted for the PIN each time.
+> [!NOTE]
+> `cache-ttl` options do **not** apply when using YubiKey as a smart card, because the PIN is [cached by the smart card itself](https://dev.gnupg.org/T3362). To clear the PIN from cache (equivalent to `default-cache-ttl` and `max-cache-ttl`), remove YubiKey, or set `forcesig` when editing the card to be prompted for the PIN each time.
 
 **Tip** Set `pinentry-program` to `/usr/bin/pinentry-gnome3` for a GUI-based prompt.
 
@@ -1611,7 +1614,7 @@ Configure a signing key:
 git config --global user.signingkey $KEYID
 ```
 
-**Important** The `user.email` option must match the email address associated with the PGP identity.
+Configure the `user.email` option to match the email address associated with the PGP identity.
 
 To sign commits or tags, use the `-S` option.
 
@@ -1683,7 +1686,7 @@ extra-socket /run/user/1000/gnupg/S.gpg-agent.extra
 > [!IMPORTANT]
 > The pinentry program starts on the *local* host, not remote.
 
-**Important** Any pinentry program except `pinentry-tty` or `pinentry-curses` may be used. This is because local `gpg-agent` may start headlessly (by systemd without `$GPG_TTY` set locally telling which tty it is on), thus failed to obtain the pin. Errors on the remote may be misleading saying that there is *IO Error*. (Yes, internally there is actually an *IO Error* since it happens when writing to/reading from tty while finding no tty to use, but for end users this is not friendly.)
+Any pinentry program except `pinentry-tty` or `pinentry-curses` may be used. This is because local `gpg-agent` may start headlessly (by systemd without `$GPG_TTY` set locally telling which tty it is on), thus failed to obtain the pin. Errors on the remote may be misleading saying that there is *IO Error*. (Yes, internally there is actually an *IO Error* since it happens when writing to/reading from tty while finding no tty to use, but for end users this is not friendly.)
 
 See [Issue 85](https://github.com/drduh/YubiKey-Guide/issues/85) for more information and troubleshooting.
 
@@ -1745,13 +1748,15 @@ YubiKey can be used to decrypt and sign emails and attachments using [Thunderbir
 
 Follow [instructions on the mozilla wiki](https://wiki.mozilla.org/Thunderbird:OpenPGP:Smartcards#Configure_an_email_account_to_use_an_external_GnuPG_key) to setup your YubiKey with your thunderbird client using the external gpg provider.
 
-**Important** Thunderbird [fails](https://github.com/drduh/YubiKey-Guide/issues/448) to decrypt emails if the ASCII `armor` option is enabled in your `~/.gnupg/gpg.conf`. If you see the error `gpg: [don't know]: invalid packet (ctb=2d)` or `message cannot be decrypted (there are unknown problems with this encrypted message)` simply remove this option from your config file.
+> [!NOTE]
+> Thunderbird will [fail](https://github.com/drduh/YubiKey-Guide/issues/448) to decrypt emails if the ASCII `armor` option is enabled in `gpg.conf`. If you see the error `gpg: [don't know]: invalid packet (ctb=2d)` or `message cannot be decrypted (there are unknown problems with this encrypted message)` simply remove this option.
 
 ### Mailvelope
 
 [Mailvelope](https://www.mailvelope.com/en) allows YubiKey to be used with Gmail and others.
 
-**Important** Mailvelope [does not work](https://github.com/drduh/YubiKey-Guide/issues/178) with the `throw-keyids` option set in `gpg.conf`
+> [!NOTE]
+> Mailvelope [does not work](https://github.com/drduh/YubiKey-Guide/issues/178) with the `throw-keyids` option set in `gpg.conf`
 
 On macOS, install gpgme using Homebrew:
 
@@ -1791,7 +1796,8 @@ Edit the file to enable options `pgp_default_key`, `pgp_sign_as` and `pgp_autosi
 
 `source` the file in `muttrc`
 
-**Important** `pinentry-tty` set as the pinentry program in `gpg-agent.conf` is reported to cause problems with Mutt TUI, because it uses curses. It is recommended to use `pinentry-curses` or other graphic pinentry program instead.
+> [!NOTE]
+> `pinentry-tty` set as the pinentry program (in `gpg-agent.conf`) is reported to cause problems with Mutt TUI, because it uses curses; use `pinentry-curses` or other graphic pinentry program instead.
 
 ## Keyserver
 
