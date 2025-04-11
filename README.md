@@ -87,7 +87,7 @@ The following is a general ranking of environments least to most hospitable to g
 
 Debian Live is used in this guide to balance usability and security, with some additional instructions for OpenBSD.
 
-Download the latest image and signature files:
+Download the latest Debian Live image and signature files:
 
 ```console
 export IMAGE_URL="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
@@ -107,8 +107,11 @@ gpg --keyserver hkps://keyring.debian.org \
 If the public key cannot be received, use a different keyserver or DNS server:
 
 ```console
-gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
+gpg --keyserver hkps://keyserver.ubuntu.com:443 \
+    --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 ```
+
+The Debian Live signing public key is also available in [`pubkeys`](https://github.com/drduh/YubiKey-Guide/tree/master/pubkeys).
 
 Verify the signature:
 
