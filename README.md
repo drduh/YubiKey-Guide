@@ -204,8 +204,6 @@ Install [MacPorts](https://www.macports.org/install.php) and the following packa
 sudo port install gnupg2 yubikey-manager pinentry wget
 ```
 
-**Optional** [Yubikey Manager - Qt](https://www.yubico.com/support/download/yubikey-manager/) which is the supported version of the Yubikey Personalization.
-
 **NixOS**
 
 Build an air-gapped NixOS LiveCD image:
