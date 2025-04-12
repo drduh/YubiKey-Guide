@@ -87,27 +87,31 @@ The following is a general ranking of environments least to most hospitable to g
 
 Debian Live is used in this guide to balance usability and security, with some additional instructions for OpenBSD.
 
-Download the latest image and signature files:
+Download the latest Debian Live image and signature files:
 
 ```console
-curl -fLO "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS"
+export IMAGE_URL="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
 
-curl -fLO "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/SHA512SUMS.sign"
+curl -fLO "$IMAGE_URL/SHA512SUMS" -O "$IMAGE_URL/SHA512SUMS.sign"
 
-curl -fLO "https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/$(awk '/xfce.iso$/ {print $2}' SHA512SUMS)"
+curl -fLO "$IMAGE_URL/$(awk '/xfce.iso$/ {print $2}' SHA512SUMS)"
 ```
 
 Download the Debian signing public key:
 
 ```console
-gpg --keyserver hkps://keyring.debian.org --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
+gpg --keyserver hkps://keyring.debian.org \
+    --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 ```
 
 If the public key cannot be received, use a different keyserver or DNS server:
 
 ```console
-gpg --keyserver hkps://keyserver.ubuntu.com:443 --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
+gpg --keyserver hkps://keyserver.ubuntu.com:443 \
+    --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 ```
+
+The Debian Live signing public key is also available in [`pubkeys`](https://github.com/drduh/YubiKey-Guide/tree/master/pubkeys).
 
 Verify the signature:
 
