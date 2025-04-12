@@ -200,6 +200,14 @@ brew install \
 > [!NOTE]
 > An additional Python package dependency may need to be installed to use [`ykman`](https://support.yubico.com/support/solutions/articles/15000012643-yubikey-manager-cli-ykman-user-guide) - `pip install yubikey-manager`
 
+Or 
+
+Install [MacPorts](https://www.macports.org/install.php) and the following packages:
+
+```console
+sudo port install gnupg2 yubikey-manager pinentry wget
+```
+
 **NixOS**
 
 Build an air-gapped NixOS LiveCD image:
@@ -249,7 +257,7 @@ qemu-system-x86_64 \
 **Arch**
 
 ```console
-sudo pacman -Syu gnupg pcsclite ccid yubikey-personalization
+sudo pacman -Syu --needed gnupg pcsclite ccid yubikey-personalization
 ```
 
 **RHEL7**
@@ -979,6 +987,19 @@ sudo apt update
 sudo apt install -y gnupg gnupg-agent scdaemon pcscd
 ```
 
+**Arch**
+
+```console
+sudo pacman -S --needed gnupg pcsc-tools
+sudo systemctl enable --now pcscd.service
+```
+
+**macOS**
+
+```console
+sudo port install gnupg2 pcsc-tools
+```
+
 **OpenBSD**
 
 ```console
@@ -1020,6 +1041,8 @@ gpg --recv $KEYID
 ```
 
 Or with the URL on YubiKey, retrieve the public key:
+
+using the command `gpg-card`
 
 ```console
 gpg/card> fetch
@@ -1229,10 +1252,10 @@ wget https://raw.githubusercontent.com/drduh/config/main/gpg-agent.conf
 
 **macOS**
 
-Install pinentry with `brew install pinentry-mac` then edit `gpg-agent.conf` to set the `pinentry-program` path to:
+Install pinentry with `brew install pinentry-mac` or `sudo port install pinentry` then edit `gpg-agent.conf` to set the `pinentry-program` path to:
 
 * Apple Silicon Macs: `/opt/homebrew/bin/pinentry-mac`
-* Intel Macs: `/usr/local/bin/pinentry-mac`
+* Intel Macs: `/usr/local/bin/pinentry-mac` or `/opt/local/bin/pinentry` (MacPorts)
 * MacGPG Suite: `/usr/local/MacGPG2/libexec/pinentry-mac.app/Contents/MacOS/pinentry-mac`
 
 Then run `gpgconf --kill gpg-agent` for the change to take effect.
