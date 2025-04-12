@@ -204,9 +204,7 @@ brew install \
 > [!NOTE]
 > An additional Python package dependency may need to be installed to use [`ykman`](https://support.yubico.com/support/solutions/articles/15000012643-yubikey-manager-cli-ykman-user-guide) - `pip install yubikey-manager`
 
-Or 
-
-Install [MacPorts](https://www.macports.org/install.php) and the following packages:
+Or using [MacPorts](https://www.macports.org/install.php), install the following packages:
 
 ```console
 sudo port install gnupg2 yubikey-manager pinentry wget
@@ -237,7 +235,7 @@ Build the image:
 nix build --experimental-features "nix-command flakes" .#nixosConfigurations.yubikeyLive.x86_64-linux.config.system.build.isoImage
 ```
 
-Copy it to a USB drive:
+Copy to USB drive:
 
 ```console
 sudo cp -v result/iso/yubikeyLive.iso /dev/sdc ; sync
@@ -245,8 +243,8 @@ sudo cp -v result/iso/yubikeyLive.iso /dev/sdc ; sync
 
 Skip steps to create a temporary working directory and a hardened configuration, as they are already part of the image.
 
-If you want to test your build before copying it into a USB stick, you can try it out on your machine using a tool like QEMU.
-Please keep in mind that a virtualized environment does not provide the same amount of security as an ephemeral system (see *Prepare environment* above).
+Test builds using virtualization tools like QEMU. Keep in mind a virtualized environment does not provide the same amount of security as an ephemeral system (see *Prepare environment* above).
+
 Here is an example QEMU invocation after placing `yubikeyLive` in `result/iso` using the above `nix build` command:
 
 ```console
