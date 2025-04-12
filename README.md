@@ -343,7 +343,7 @@ export IDENTITY="YubiKey User <yubikey@example>"
 Or use any attribute which will uniquely identity the key (this may be incompatible with certain use cases):
 
 ```console
-export IDENTITY="My Cool YubiKey - 2024"
+export IDENTITY="My Cool YubiKey - 2025"
 ```
 
 ## Key
@@ -360,7 +360,7 @@ export KEY_TYPE=rsa4096
 
 Determine the desired Subkey validity duration.
 
-Setting a Subkey expiry forces identity and credential lifecycle management. However, setting an expiry on the Certify key is pointless, because it can just be used to extend itself. [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should instead be used to revoke an identity.
+Setting a Subkey expiry forces identity and credential lifecycle management. However, setting an expiry on the Certify key is pointless, because it can just be used to extend itself.[^1]
 
 This guide recommends a two year expiration for Subkeys to balance security and usability, however longer durations are possible to reduce maintenance frequency.
 
@@ -382,11 +382,11 @@ export EXPIRATION=2026-05-01
 
 ## Passphrase
 
-Generate a passphrase for the Certify key. This credential will be used infrequently to manage Subkeys and should be very strong.
+Generate a passphrase for the Certify key. This credential will be used to manage identity Subkeys.
 
 To improve readability, this guide recommends a passphrase consisting only of uppercase letters and numbers.
 
-The following commands will generate a strong[^1] passphrase while avoiding certain similar-looking characters:
+The following commands will generate a strong[^2] passphrase while avoiding certain similar-looking characters:
 
 ```console
 export CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
@@ -452,7 +452,7 @@ Define an array containing additional uids. As this is bash syntax, each array e
 
 ```console
 declare -a additional_uids
-additional_uids=("Super Cool YubiKey 2024" "uid 1 <uid1@example.org>")
+additional_uids=("Super Cool YubiKey 2025" "uid 1 <uid1@example.org>")
 ```
 
 Add the additional uids to the key:
@@ -2279,4 +2279,5 @@ EOF
 * [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
 * [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
 
-[^1]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
+[^1]: [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used to revoke an identity.
+[^2]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
