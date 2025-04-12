@@ -293,12 +293,12 @@ export GNUPGHOME=$(mktemp -d -t $(date +%Y.%m.%d)-XXXX)
 
 ## Configuration
 
-Import or create a [hardened configuration](https://github.com/drduh/config/blob/main/gpg.conf):
+Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
 
 ```console
 cd $GNUPGHOME
 
-wget https://raw.githubusercontent.com/drduh/config/main/gpg.conf
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf
 ```
 
 The options will look similar to:
@@ -963,12 +963,12 @@ Initialize GnuPG:
 gpg -k
 ```
 
-Import or create a [hardened configuration](https://github.com/drduh/config/blob/main/gpg.conf):
+Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
 
 ```console
 cd ~/.gnupg
 
-wget https://raw.githubusercontent.com/drduh/config/main/gpg.conf
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf
 ```
 
 Set the following option. This avoids the problem where GnuPG will repeatedly prompt for the insertion of an already-inserted YubiKey:
@@ -1238,12 +1238,12 @@ YubiKey will blink when it is waiting for a touch. On Linux, [maximbaz/yubikey-t
 
 ## SSH
 
-Import or create a [hardened configuration](https://github.com/drduh/config/blob/main/gpg-agent.conf):
+Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg-agent.conf):
 
 ```console
 cd ~/.gnupg
 
-wget https://raw.githubusercontent.com/drduh/config/main/gpg-agent.conf
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg-agent.conf
 ```
 
 > [!NOTE]
