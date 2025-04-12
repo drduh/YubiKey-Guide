@@ -111,7 +111,11 @@ gpg --keyserver hkps://keyserver.ubuntu.com:443 \
     --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 ```
 
-The Debian Live signing public key is also available in [`pubkeys`](https://github.com/drduh/YubiKey-Guide/tree/master/pubkeys).
+The Debian Live signing public key is also available for import in [pubkeys](https://github.com/drduh/YubiKey-Guide/tree/master/pubkeys):
+
+```console
+gpg --import pubkeys/debian-DA87E80D6294BE9B.asc
+```
 
 Verify the signature:
 
