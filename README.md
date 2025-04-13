@@ -111,7 +111,11 @@ gpg --keyserver hkps://keyserver.ubuntu.com:443 \
     --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 ```
 
-The Debian Live signing public key is also available in [`pubkeys`](https://github.com/drduh/YubiKey-Guide/tree/master/pubkeys).
+The Debian Live signing public key is also available for import in [pubkeys](https://github.com/drduh/YubiKey-Guide/tree/master/pubkeys):
+
+```console
+gpg --import pubkeys/debian-DA87E80D6294BE9B.asc
+```
 
 Verify the signature:
 
@@ -200,9 +204,7 @@ brew install \
 > [!NOTE]
 > An additional Python package dependency may need to be installed to use [`ykman`](https://support.yubico.com/support/solutions/articles/15000012643-yubikey-manager-cli-ykman-user-guide) - `pip install yubikey-manager`
 
-Or 
-
-Install [MacPorts](https://www.macports.org/install.php) and the following packages:
+Or using [MacPorts](https://www.macports.org/install.php), install the following packages:
 
 ```console
 sudo port install gnupg2 yubikey-manager pinentry wget
@@ -233,7 +235,7 @@ Build the image:
 nix build --experimental-features "nix-command flakes" .#nixosConfigurations.yubikeyLive.x86_64-linux.config.system.build.isoImage
 ```
 
-Copy it to a USB drive:
+Copy to USB drive:
 
 ```console
 sudo cp -v result/iso/yubikeyLive.iso /dev/sdc ; sync
@@ -241,8 +243,8 @@ sudo cp -v result/iso/yubikeyLive.iso /dev/sdc ; sync
 
 Skip steps to create a temporary working directory and a hardened configuration, as they are already part of the image.
 
-If you want to test your build before copying it into a USB stick, you can try it out on your machine using a tool like QEMU.
-Please keep in mind that a virtualized environment does not provide the same amount of security as an ephemeral system (see *Prepare environment* above).
+Test builds using virtualization tools like QEMU. Keep in mind a virtualized environment does not provide the same amount of security as an ephemeral system (see *Prepare environment* above).
+
 Here is an example QEMU invocation after placing `yubikeyLive` in `result/iso` using the above `nix build` command:
 
 ```console
@@ -291,12 +293,12 @@ export GNUPGHOME=$(mktemp -d -t $(date +%Y.%m.%d)-XXXX)
 
 ## Configuration
 
-Import or create a [hardened configuration](https://github.com/drduh/config/blob/main/gpg.conf):
+Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
 
 ```console
 cd $GNUPGHOME
 
-wget https://raw.githubusercontent.com/drduh/config/main/gpg.conf
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf
 ```
 
 The options will look similar to:
@@ -341,7 +343,7 @@ export IDENTITY="YubiKey User <yubikey@example>"
 Or use any attribute which will uniquely identity the key (this may be incompatible with certain use cases):
 
 ```console
-export IDENTITY="My Cool YubiKey - 2024"
+export IDENTITY="My Cool YubiKey - 2025"
 ```
 
 ## Key
@@ -358,7 +360,7 @@ export KEY_TYPE=rsa4096
 
 Determine the desired Subkey validity duration.
 
-Setting a Subkey expiry forces identity and credential lifecycle management. However, setting an expiry on the Certify key is pointless, because it can just be used to extend itself. [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should instead be used to revoke an identity.
+Setting a Subkey expiry forces identity and credential lifecycle management. However, setting an expiry on the Certify key is pointless, because it can just be used to extend itself.[^1]
 
 This guide recommends a two year expiration for Subkeys to balance security and usability, however longer durations are possible to reduce maintenance frequency.
 
@@ -380,11 +382,11 @@ export EXPIRATION=2026-05-01
 
 ## Passphrase
 
-Generate a passphrase for the Certify key. This credential will be used infrequently to manage Subkeys and should be very strong.
+Generate a passphrase for the Certify key. This credential will be used to manage identity Subkeys.
 
 To improve readability, this guide recommends a passphrase consisting only of uppercase letters and numbers.
 
-The following commands will generate a strong[^1] passphrase while avoiding certain similar-looking characters:
+The following commands will generate a strong[^2] passphrase while avoiding certain similar-looking characters:
 
 ```console
 export CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
@@ -394,9 +396,9 @@ export CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
 
 Write the passphrase in a secure location, ideally separate from the portable storage device used for key material, or memorize it.
 
-This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) template to help with credential transcription. Save the [raw file](https://github.com/drduh/YubiKey-Guide/raw/refs/heads/master/passphrase.html), open in a browser to render and print.
+This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) template to help with credential transcription. Save the [raw file](https://github.com/drduh/YubiKey-Guide/raw/refs/heads/master/templates/passphrase.html), open in a browser to render and print.
 
-Mark the corresponding character on sequential rows for each character in the passphrase. [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.txt) can also be printed without a browser:
+Mark the corresponding character on sequential rows for each character in the passphrase. [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) can also be printed without a browser:
 
 ```console
 lp -d Printer-Name passphrase.txt
@@ -450,7 +452,7 @@ Define an array containing additional uids. As this is bash syntax, each array e
 
 ```console
 declare -a additional_uids
-additional_uids=("Super Cool YubiKey 2024" "uid 1 <uid1@example.org>")
+additional_uids=("Super Cool YubiKey 2025" "uid 1 <uid1@example.org>")
 ```
 
 Add the additional uids to the key:
@@ -939,15 +941,15 @@ The `>` after a tag indicates the key is stored on a smart card.
 Verify you have done the following:
 
 - [ ] Memorized or wrote down the Certify key (identity) passphrase to a secure and durable location
-  * `echo $CERTIFY_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.txt) to transcribe it
+  * `echo $CERTIFY_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe it
 - [ ] Memorized or wrote down passphrase to encrypted volume on portable storage
-  * `echo $LUKS_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.txt) to transcribe it
+  * `echo $LUKS_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe it
 - [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
   * At least two backups are recommended, stored at separate locations
 - [ ] Exported a copy of the public key where is can be easily accessed later
   * Separate device or non-encrypted partition was used
 - [ ] Memorized or wrote down the User PIN and Admin PIN, which are unique and changed from default values
-  * `echo $USER_PIN $ADMIN_PIN` to see them again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/passphrase.txt) to transcribe them
+  * `echo $USER_PIN $ADMIN_PIN` to see them again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe them
 - [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey
   * `gpg -K` shows `ssb>` for each of the 3 Subkeys
 
@@ -961,12 +963,12 @@ Initialize GnuPG:
 gpg -k
 ```
 
-Import or create a [hardened configuration](https://github.com/drduh/config/blob/main/gpg.conf):
+Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
 
 ```console
 cd ~/.gnupg
 
-wget https://raw.githubusercontent.com/drduh/config/main/gpg.conf
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf
 ```
 
 Set the following option. This avoids the problem where GnuPG will repeatedly prompt for the insertion of an already-inserted YubiKey:
@@ -1236,12 +1238,12 @@ YubiKey will blink when it is waiting for a touch. On Linux, [maximbaz/yubikey-t
 
 ## SSH
 
-Import or create a [hardened configuration](https://github.com/drduh/config/blob/main/gpg-agent.conf):
+Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg-agent.conf):
 
 ```console
 cd ~/.gnupg
 
-wget https://raw.githubusercontent.com/drduh/config/main/gpg-agent.conf
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg-agent.conf
 ```
 
 > [!NOTE]
@@ -2277,4 +2279,5 @@ EOF
 * [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
 * [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
 
-[^1]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
+[^1]: [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used to revoke an identity.
+[^2]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
