@@ -14,7 +14,6 @@ To suggest an improvement, send a pull request or open an [issue](https://github
    * [Expiration](#expiration)
    * [Passphrase](#passphrase)
 - [Create Certify key](#create-certify-key)
-- [Add additional uids (optional)](#add-additional-uids-optional)
 - [Create Subkeys](#create-subkeys)
 - [Verify keys](#verify-keys)
 - [Backup keys](#backup-keys)
@@ -431,11 +430,10 @@ export KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; 
 printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
 ```
 
-# Add additional uids (optional)
+<details>
+<summary>Add additional IDs (optional)</summary>
 
-## Rationale
-
-This is an optional step if you have a use case which requires [additional identities](https://github.com/drduh/YubiKey-Guide/issues/445). Some non-exhaustive example use cases are:
+This is an optional step for use cases requiring [additional identities](https://github.com/drduh/YubiKey-Guide/issues/445), for example:
 
 - different email addresses for different languages
 - different email addresses for professional versus personal but please see alternative reason below for not tying these addresses together
@@ -448,14 +446,14 @@ An alternative would be to have distinct keys but you would then require multipl
 
 ## Steps
 
-Define an array containing additional uids. As this is bash syntax, each array element should be surrounded by quotes and each element should be separated by a space:
+Define an array containing additional user IDs. As this is bash syntax, each array element should be surrounded by quotes and each element should be separated by a space:
 
 ```console
 declare -a additional_uids
 additional_uids=("Super Cool YubiKey 2025" "uid 1 <uid1@example.org>")
 ```
 
-Add the additional uids to the key:
+Add the additional user IDs to the key:
 
 ```console
 for uid in "${additional_uids[@]}" ; do \
@@ -463,7 +461,7 @@ for uid in "${additional_uids[@]}" ; do \
 done
 ```
 
-Adjust the trust of the additional uids to be ultimate:
+Adjust the trust of the additional IDs to *ultimate*:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-key "$KEYID" <<EOF
@@ -474,6 +472,7 @@ y
 save
 EOF
 ```
+</details>
 
 # Create Subkeys
 
