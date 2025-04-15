@@ -14,7 +14,6 @@ To suggest an improvement, send a pull request or open an [issue](https://github
    * [Expiration](#expiration)
    * [Passphrase](#passphrase)
 - [Create Certify key](#create-certify-key)
-- [Add additional uids (optional)](#add-additional-uids-optional)
 - [Create Subkeys](#create-subkeys)
 - [Verify keys](#verify-keys)
 - [Backup keys](#backup-keys)
@@ -368,16 +367,16 @@ When Subkeys expire, they may still be used to decrypt with GnuPG and authentica
 
 Subkeys must be renewed or rotated using the Certify key - see [Updating keys](#updating-keys).
 
-Set the expiration date to two years:
+Set the Subkeys expiration to a specific date:
+
+```console
+export EXPIRATION=2027-05-01
+```
+
+The expiration date may also be relative, for example set to two years:
 
 ```console
 export EXPIRATION=2y
-```
-
-Or set the expiration date to a specific date to schedule maintenance:
-
-```console
-export EXPIRATION=2026-05-01
 ```
 
 ## Passphrase
@@ -431,11 +430,10 @@ export KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; 
 printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
 ```
 
-# Add additional uids (optional)
+<details>
+<summary>Add additional IDs (optional)</summary>
 
-## Rationale
-
-This is an optional step if you have a use case which requires [additional identities](https://github.com/drduh/YubiKey-Guide/issues/445). Some non-exhaustive example use cases are:
+This is an optional step for use cases requiring [additional identities](https://github.com/drduh/YubiKey-Guide/issues/445), for example:
 
 - different email addresses for different languages
 - different email addresses for professional versus personal but please see alternative reason below for not tying these addresses together
@@ -446,16 +444,14 @@ An alternative would be to have distinct keys but you would then require multipl
 - if you have different email addresses for professional versus personal use cases, having distinct keys allow you to disassociate the identities
 - if you are also using the YubiKey as a U2F or FIDO2 device, having multiple YubiKeys is generally recommended as a backup measure
 
-## Steps
-
-Define an array containing additional uids. As this is bash syntax, each array element should be surrounded by quotes and each element should be separated by a space:
+Define an array containing additional user IDs. Each array element must be wrapped in quotes and each element must be space-delimited:
 
 ```console
 declare -a additional_uids
 additional_uids=("Super Cool YubiKey 2025" "uid 1 <uid1@example.org>")
 ```
 
-Add the additional uids to the key:
+Add the additional user IDs to the Certify key:
 
 ```console
 for uid in "${additional_uids[@]}" ; do \
@@ -463,7 +459,7 @@ for uid in "${additional_uids[@]}" ; do \
 done
 ```
 
-Adjust the trust of the additional uids to be ultimate:
+Adjust the trust of the additional IDs to *ultimate*:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-key "$KEYID" <<EOF
@@ -474,10 +470,11 @@ y
 save
 EOF
 ```
+</details>
 
 # Create Subkeys
 
-Use the following command to generate Signature, Encryption and Authentication Subkeys using the previously configured key type, passphrase and expiration:
+Generate Signature, Encryption and Authentication Subkeys using the previously configured key type, passphrase and expiration:
 
 ```console
 for SUBKEY in sign encrypt auth ; do \
@@ -497,12 +494,12 @@ gpg -K
 The output will display **[C]ertify, [S]ignature, [E]ncryption and [A]uthentication** keys:
 
 ```console
-sec   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
+sec   rsa4096/0xF0F2CFEB04341FB5 2025-01-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 uid                   [ultimate] YubiKey User <yubikey@example>
-ssb   rsa4096/0xB3CD10E502E19637 2024-01-01 [S] [expires: 2026-05-01]
-ssb   rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-05-01]
-ssb   rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-05-01]
+ssb   rsa4096/0xB3CD10E502E19637 2025-01-01 [S] [expires: 2027-05-01]
+ssb   rsa4096/0x30CBE8C4B085B9F7 2025-01-01 [E] [expires: 2027-05-01]
+ssb   rsa4096/0xAD9E24E1B8CB9600 2025-01-01 [A] [expires: 2027-05-01]
 ```
 
 # Backup keys
@@ -926,12 +923,12 @@ EOF
 Verify Subkeys have been moved to YubiKey with `gpg -K` and look for `ssb>`, for example:
 
 ```console
-sec   rsa4096/0xF0F2CFEB04341FB5 2024-01-01 [C]
+sec   rsa4096/0xF0F2CFEB04341FB5 2025-01-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 uid                   [ultimate] YubiKey User <yubikey@example>
-ssb>  rsa4096/0xB3CD10E502E19637 2024-01-01 [S] [expires: 2026-05-01]
-ssb>  rsa4096/0x30CBE8C4B085B9F7 2024-01-01 [E] [expires: 2026-05-01]
-ssb>  rsa4096/0xAD9E24E1B8CB9600 2024-01-01 [A] [expires: 2026-05-01]
+ssb>  rsa4096/0xB3CD10E502E19637 2025-01-01 [S] [expires: 2027-05-01]
+ssb>  rsa4096/0x30CBE8C4B085B9F7 2025-01-01 [E] [expires: 2027-05-01]
+ssb>  rsa4096/0xAD9E24E1B8CB9600 2025-01-01 [A] [expires: 2027-05-01]
 ```
 
 The `>` after a tag indicates the key is stored on a smart card.
@@ -1094,18 +1091,18 @@ PIN retry counter : 3 3 3
 Signature counter : 0
 KDF setting ......: on
 Signature key ....: CF5A 305B 808B 7A0F 230D  A064 B3CD 10E5 02E1 9637
-      created ....: 2024-01-01 12:00:00
+      created ....: 2025-01-01 12:00:00
 Encryption key....: A5FA A005 5BED 4DC9 889D  38BC 30CB E8C4 B085 B9F7
-      created ....: 2024-01-01 12:00:00
+      created ....: 2025-01-01 12:00:00
 Authentication key: 570E 1355 6D01 4C04 8B6D  E2A3 AD9E 24E1 B8CB 9600
-      created ....: 2024-01-01 12:00:00
-General key info..: sub  rsa4096/0xB3CD10E502E19637 2024-01-01 YubiKey User <yubikey@example>
-sec#  rsa4096/0xF0F2CFEB04341FB5  created: 2024-01-01  expires: never
-ssb>  rsa4096/0xB3CD10E502E19637  created: 2024-01-01  expires: 2026-05-01
+      created ....: 2025-01-01 12:00:00
+General key info..: sub  rsa4096/0xB3CD10E502E19637 2025-01-01 YubiKey User <yubikey@example>
+sec#  rsa4096/0xF0F2CFEB04341FB5  created: 2025-01-01  expires: never
+ssb>  rsa4096/0xB3CD10E502E19637  created: 2025-01-01  expires: 2027-05-01
                                   card-no: 0006 05553211
-ssb>  rsa4096/0x30CBE8C4B085B9F7  created: 2024-01-01  expires: 2026-05-01
+ssb>  rsa4096/0x30CBE8C4B085B9F7  created: 2025-01-01  expires: 2027-05-01
                                   card-no: 0006 05553211
-ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2024-01-01  expires: 2026-05-01
+ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2025-01-01  expires: 2027-05-01
                                   card-no: 0006 05553211
 ```
 
@@ -1186,7 +1183,7 @@ gpg --verify signed.txt
 The output will be similar to:
 
 ```console
-gpg: Signature made Mon 01 Jan 2024 12:00:00 PM UTC
+gpg: Signature made Mon 01 Jan 2025 12:00:00 PM UTC
 gpg:                using RSA key CF5A305B808B7A0F230DA064B3CD10E502E19637
 gpg: Good signature from "YubiKey User <yubikey@example>" [ultimate]
 Primary key fingerprint: 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
@@ -1932,9 +1929,7 @@ export CERTIFY_PASS=ABCD-0123-IJKL-4567-QRST-UVWX
 Determine the updated expiration, for example:
 
 ```console
-export EXPIRATION=2026-09-01
-
-export EXPIRATION=2y
+export EXPIRATION=2027-09-01
 ```
 
 Renew the Subkeys:
