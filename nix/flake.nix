@@ -36,7 +36,7 @@
                 if [ -z "$viewer" ]; then
                   viewer="${pkgs.glow}/bin/glow -p"
                 fi
-                exec $viewer "${self}/README.md"
+                exec $viewer "${self}/../README.md"
               '';
               shortcut = pkgs.makeDesktopItem {
                 name = "yubikey-guide";
