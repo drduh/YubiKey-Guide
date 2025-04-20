@@ -850,9 +850,7 @@ ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
 
 ## Set attributes
 
-Set the [smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) with `gpg --edit-card` and `admin` mode - use `help` to see available options.
-
-Or use predetermined values:
+Use previously set values:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-card <<EOF
@@ -863,6 +861,8 @@ $ADMIN_PIN
 quit
 EOF
 ```
+
+[Smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) can also be set with `gpg --edit-card` and `admin` mode. Use `help` to see available options. The `login` attribute is [required](https://github.com/drduh/YubiKey-Guide/issues/461).
 
 Run `gpg --card-status` to verify results (*Login data* field).
 
