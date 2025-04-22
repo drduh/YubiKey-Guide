@@ -3,14 +3,11 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
-    drduhConfig.url = "github:drduh/config";
-    drduhConfig.flake = false;
   };
 
   outputs = {
     self,
     nixpkgs,
-    drduhConfig,
   }: let
     mkSystem = system:
       nixpkgs.lib.nixosSystem {
@@ -26,7 +23,7 @@
               ...
             }: let
               gpgAgentConf = pkgs.runCommand "gpg-agent.conf" {} ''
-                sed '/pinentry-program/d' ${drduhConfig}/gpg-agent.conf > $out
+                sed '/pinentry-program/d' ${self}/../config/gpg-agent.conf > $out
                 echo "pinentry-program ${pkgs.pinentry.curses}/bin/pinentry" >> $out
               '';
               dicewareAddress = "localhost";
@@ -36,14 +33,14 @@
                 if [ -z "$viewer" ]; then
                   viewer="${pkgs.glow}/bin/glow -p"
                 fi
-                exec $viewer "${self}/README.md"
+                exec $viewer "${self}/../README.md"
               '';
               shortcut = pkgs.makeDesktopItem {
                 name = "yubikey-guide";
                 icon = "${pkgs.yubikey-manager-qt}/share/icons/hicolor/128x128/apps/ykman.png";
-                desktopName = "drduh's YubiKey Guide";
+                desktopName = "YubiKey Guide";
                 genericName = "Guide to using YubiKey for GnuPG and SSH";
-                comment = "Open the guide in a reader program";
+                comment = "Open YubiKey Guide in a reader program";
                 categories = ["Documentation"];
                 exec = "${viewYubikeyGuide}/bin/view-yubikey-guide";
               };
@@ -247,7 +244,7 @@
                   echo "Creating \$GNUPGHOME…"
                   install --verbose -m=0700 --directory="$GNUPGHOME"
                 fi
-                [ ! -f "$GNUPGHOME/gpg.conf" ] && cp --verbose "${drduhConfig}/gpg.conf" "$GNUPGHOME/gpg.conf"
+                [ ! -f "$GNUPGHOME/gpg.conf" ] && cp --verbose "${self}/../config/gpg.conf" "$GNUPGHOME/gpg.conf"
                 [ ! -f "$GNUPGHOME/gpg-agent.conf" ] && cp --verbose ${gpgAgentConf} "$GNUPGHOME/gpg-agent.conf"
                 echo "\$GNUPGHOME is \"$GNUPGHOME\""
               '';
