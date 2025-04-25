@@ -391,17 +391,18 @@ The following commands will generate a strong[^2] passphrase while avoiding cert
 ```console
 export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom | \
     tr -d "IOUS5" | \
-    fold  -w  ${PASS_FOLD:-4} | \
-    paste -sd ${PASS_DELIM:--} - | \
-    head  -c  ${PASS_LENGTH:-29}) ; printf "\n$CERTIFY_PASS\n\n"
+    fold  -w  ${PASS_GROUPSIZE:-4} | \
+    paste -sd ${PASS_DELIMITER:--} - | \
+    head  -c  ${PASS_LENGTH:-29})
+printf "\n$CERTIFY_PASS\n\n"
 ```
 
 To change the passphrase length, delimiting character or group sizes, export the respective variable(s) prior to running the passphrase generation command, for example:
 
 ```console
+export PASS_GROUPSIZE=6
+export PASS_DELIMITER=+
 export PASS_LENGTH=48
-export PASS_FOLD=6
-export PASS_DELIM=+
 ```
 
 Write the passphrase in a secure location - separate from the portable storage device used for key material, or memorize it.
@@ -427,16 +428,19 @@ Do not set an expiration date on the Certify key.
 Generate the Certify key:
 
 ```console
-echo "$CERTIFY_PASS" | gpg --batch --passphrase-fd 0 \
+echo "$CERTIFY_PASS" | \
+    gpg --batch --passphrase-fd 0 \
     --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
 ```
 
 Set and view the Certify key identifier and fingerprint for use later:
 
 ```console
-export KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; exit }')
+export KEYID=$(gpg -k --with-colons "$IDENTITY" | \
+    awk -F: '/^pub:/ { print $5; exit }')
 
-export KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
+export KEYFP=$(gpg -k --with-colons "$IDENTITY" | \
+    awk -F: '/^fpr:/ { print $10; exit }')
 
 printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
 ```
@@ -466,7 +470,9 @@ Add the additional user IDs to the Certify key:
 
 ```console
 for uid in "${additional_uids[@]}" ; do \
-    echo "$CERTIFY_PASS" | gpg --batch --passphrase-fd 0 --pinentry-mode=loopback --quick-add-uid "$KEYFP" "$uid"
+    echo "$CERTIFY_PASS" | \
+    gpg --batch --passphrase-fd 0 \
+    --pinentry-mode=loopback --quick-add-uid "$KEYFP" "$uid"
 done
 ```
 
@@ -489,8 +495,9 @@ Generate Signature, Encryption and Authentication Subkeys using the previously c
 
 ```console
 for SUBKEY in sign encrypt auth ; do \
-  echo "$CERTIFY_PASS" | gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
-      --quick-add-key "$KEYFP" "$KEY_TYPE" "$SUBKEY" "$EXPIRATION"
+    echo "$CERTIFY_PASS" | \
+    gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+    --quick-add-key "$KEYFP" "$KEY_TYPE" "$SUBKEY" "$EXPIRATION"
 done
 ```
 
@@ -590,9 +597,10 @@ Generate another unique [Passphrase](#passphrase) (ideally different from the on
 ```console
 export LUKS_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom | \
     tr -d "IOUS5" | \
-    fold  -w  ${PASS_FOLD:-4} | \
-    paste -sd ${PASS_DELIM:--} - | \
-    head  -c  ${PASS_LENGTH:-29}) ; printf "\n$LUKS_PASS\n\n"
+    fold  -w  ${PASS_GROUPSIZE:-4} | \
+    paste -sd ${PASS_DELIMITER:--} - | \
+    head  -c  ${PASS_LENGTH:-29})
+printf "\n$LUKS_PASS\n\n"
 ```
 
 This passphrase will also be used infrequently to access the Certify key and should be very strong.
@@ -806,11 +814,11 @@ If the card is locked, [Reset](#reset-yubikey) it.
 
 YubiKey's [PGP](https://developers.yubico.com/PGP/) interface has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
 
-Name       | Default value | Capability
------------|---------------|-------------------------------------------------------------
-User PIN   | `123456`      | cryptographic operations (decrypt, sign, authenticate)
-Admin PIN  | `12345678`    | reset PIN, change Reset Code, add keys and owner information
-Reset Code | None          | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
+Name | Default | Capability
+:---: | :---: | ---
+User PIN | `123456` | cryptographic operations (decrypt, sign, authenticate)
+Admin PIN | `12345678` | reset PIN, change Reset Code, add keys and owner information
+Reset Code | None | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
 Determine the desired PIN values. They can be shorter than the Certify key passphrase due to limited brute-forcing opportunities; the User PIN should be convenient enough to remember for every-day use.
 
