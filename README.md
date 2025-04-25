@@ -368,13 +368,13 @@ When Subkeys expire, they may still be used to decrypt with GnuPG and authentica
 
 Subkeys must be renewed or rotated using the Certify key - see [Updating keys](#updating-keys).
 
-Set the Subkeys expiration to a specific date:
+Set Subkeys to expire on a planned date:
 
 ```console
 export EXPIRATION=2027-05-01
 ```
 
-The expiration date may also be relative, for example set to two years:
+The expiration date may also be relative, for example set to two years from today:
 
 ```console
 export EXPIRATION=2y
@@ -430,7 +430,7 @@ Generate the Certify key:
 ```console
 echo "$CERTIFY_PASS" | \
     gpg --batch --passphrase-fd 0 \
-    --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
+        --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
 ```
 
 Set and view the Certify key identifier and fingerprint for use later:
@@ -472,7 +472,7 @@ Add the additional user IDs to the Certify key:
 for uid in "${additional_uids[@]}" ; do \
     echo "$CERTIFY_PASS" | \
     gpg --batch --passphrase-fd 0 \
-    --pinentry-mode=loopback --quick-add-uid "$KEYFP" "$uid"
+        --pinentry-mode=loopback --quick-add-uid "$KEYFP" "$uid"
 done
 ```
 
@@ -497,7 +497,7 @@ Generate Signature, Encryption and Authentication Subkeys using the previously c
 for SUBKEY in sign encrypt auth ; do \
     echo "$CERTIFY_PASS" | \
     gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
-    --quick-add-key "$KEYFP" "$KEY_TYPE" "$SUBKEY" "$EXPIRATION"
+        --quick-add-key "$KEYFP" "$KEY_TYPE" "$SUBKEY" "$EXPIRATION"
 done
 ```
 
@@ -525,13 +525,15 @@ ssb   rsa4096/0xAD9E24E1B8CB9600 2025-01-01 [A] [expires: 2027-05-01]
 Save a copy of the Certify key, Subkeys and public key:
 
 ```console
-echo "$CERTIFY_PASS" | gpg --output $GNUPGHOME/$KEYID-Certify.key \
-    --batch --pinentry-mode=loopback --passphrase-fd 0 \
-    --armor --export-secret-keys $KEYID
+echo "$CERTIFY_PASS" | \
+    gpg --output $GNUPGHOME/$KEYID-Certify.key \
+        --batch --pinentry-mode=loopback --passphrase-fd 0 \
+        --armor --export-secret-keys $KEYID
 
-echo "$CERTIFY_PASS" | gpg --output $GNUPGHOME/$KEYID-Subkeys.key \
-    --batch --pinentry-mode=loopback --passphrase-fd 0 \
-    --armor --export-secret-subkeys $KEYID
+echo "$CERTIFY_PASS" | \
+    gpg --output $GNUPGHOME/$KEYID-Subkeys.key \
+        --batch --pinentry-mode=loopback --passphrase-fd 0 \
+        --armor --export-secret-subkeys $KEYID
 
 gpg --output $GNUPGHOME/$KEYID-$(date +%F).asc \
     --armor --export $KEYID
@@ -610,13 +612,15 @@ Write the passphrase down or memorize it.
 Format the partition:
 
 ```console
-echo $LUKS_PASS | sudo cryptsetup -q luksFormat /dev/sdc1
+echo $LUKS_PASS | \
+    sudo cryptsetup -q luksFormat /dev/sdc1
 ```
 
 Mount the partition:
 
 ```console
-echo $LUKS_PASS | sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
+echo $LUKS_PASS | \
+    sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
 ```
 
 Create an ext2 filesystem:
@@ -808,7 +812,7 @@ Connect YubiKey and confirm its status:
 gpg --card-status
 ```
 
-If the card is locked, [Reset](#reset-yubikey) it.
+If the YubiKey is locked, [Reset](#reset-yubikey) it.
 
 ## Change PIN
 
@@ -822,16 +826,19 @@ Reset Code | None | reset PIN ([more information](https://forum.yubico.com/viewt
 
 Determine the desired PIN values. They can be shorter than the Certify key passphrase due to limited brute-forcing opportunities; the User PIN should be convenient enough to remember for every-day use.
 
-The *User PIN* must be at least 6 characters and the *Admin PIN* must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See [GnuPG - Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
+The *User PIN* must be at least 6 characters and the *Admin PIN* must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
 
-Set PINs manually or generate them, for example a 6 digit User PIN and 8 digit Admin PIN:
+Set PIN values, for example a 6 digit User PIN and 8 digit Admin PIN:
 
 ```console
-export ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w8 | head -1)
+export ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
+    fold -w8 | head -1)
 
-export USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | fold -w6 | head -1)
+export USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
+    fold -w6 | head -1)
 
-printf "\nAdmin PIN: %12s\nUser PIN: %13s\n\n" "$ADMIN_PIN" "$USER_PIN"
+printf "\nAdmin PIN: %12s\nUser PIN: %13s\n\n" \
+    "$ADMIN_PIN" "$USER_PIN"
 ```
 
 Change the Admin PIN:
@@ -1137,8 +1144,8 @@ Encrypt a message to yourself (useful for storing credentials or protecting back
 
 ```console
 echo -e "\ntest message string" | \
-  gpg --encrypt --armor \
-      --recipient $KEYID --output encrypted.txt
+    gpg --encrypt --armor \
+        --recipient $KEYID --output encrypted.txt
 ```
 
 Decrypt the message - a prompt for the User PIN will appear:
@@ -1151,9 +1158,9 @@ To encrypt to multiple recipients/keys, set the preferred key ID last:
 
 ```console
 echo "test message string" | \
-  gpg --encrypt --armor \
-      --recipient $KEYID_2 --recipient $KEYID_1 --recipient $KEYID \
-      --output encrypted.txt
+    gpg --encrypt --armor \
+        --recipient $KEYID_2 --recipient $KEYID_1 --recipient $KEYID \
+        --output encrypted.txt
 ```
 
 Use a [shell function](https://github.com/drduh/config/blob/main/zshrc) to make encrypting files easier:
@@ -1619,11 +1626,11 @@ Edit `.ssh/config` to add the remote host:
 
 ```console
 Host
-  Hostname remote-host.tld
-  StreamLocalBindUnlink yes
-  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
-  # RemoteForward [remote socket] [local socket]
-  # Note that ForwardAgent is not wanted here!
+    Hostname remote-host.tld
+    StreamLocalBindUnlink yes
+    RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
+    #RemoteForward [remote socket] [local socket]
+    #Note that ForwardAgent is not wanted here!
 ```
 
 After successfully ssh into the remote host, confirm `/run/user/1000/gnupg/S.gpg-agent.ssh` exists.
@@ -1646,11 +1653,11 @@ Meanwhile, if you use `S.gpg-agent.ssh`, assume you have gone through the steps 
 
 ```console
 Host third
-  Hostname third-host.tld
-  StreamLocalBindUnlink yes
-  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
-  #RemoteForward [remote socket] [local socket]
-  #Note that ForwardAgent is not wanted here!
+    Hostname third-host.tld
+    StreamLocalBindUnlink yes
+    RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
+    #RemoteForward [remote socket] [local socket]
+    #Note that ForwardAgent is not wanted here!
 ```
 
 The path must be set according to `gpgconf --list-dirs agent-ssh-socket` on *remote* and *third* hosts.
@@ -1769,7 +1776,7 @@ To scan an additional YubiKey and recreate the correct stub:
 gpg-connect-agent "scd serialno" "learn --force" /bye
 ```
 
-Alternatively, use a script to delete the GnuPG shadowed key, where the card serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)):
+Alternatively, use a script to delete the GnuPG shadowed key, where the serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)):
 
 ```console
 cat >> ~/scripts/remove-keygrips.sh <<EOF
@@ -1932,9 +1939,11 @@ Confirm the identity is available, set the key id and fingerprint:
 ```console
 gpg -K
 
-export KEYID=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^pub:/ { print $5; exit }')
+export KEYID=$(gpg -k --with-colons "$IDENTITY" | \
+    awk -F: '/^pub:/ { print $5; exit }')
 
-export KEYFP=$(gpg -k --with-colons "$IDENTITY" | awk -F: '/^fpr:/ { print $10; exit }')
+export KEYFP=$(gpg -k --with-colons "$IDENTITY" | \
+    awk -F: '/^fpr:/ { print $10; exit }')
 
 echo $KEYID $KEYFP
 ```
@@ -1947,7 +1956,7 @@ export CERTIFY_PASS=ABCD-0123-IJKL-4567-QRST-UVWX
 
 ## Renew Subkeys
 
-Determine the updated expiration, for example:
+Set the updated expiration date:
 
 ```console
 export EXPIRATION=2027-09-01
@@ -1956,9 +1965,10 @@ export EXPIRATION=2027-09-01
 Renew the Subkeys:
 
 ```console
-echo "$CERTIFY_PASS" | gpg --batch --pinentry-mode=loopback \
-  --passphrase-fd 0 --quick-set-expire "$KEYFP" "$EXPIRATION" \
-  $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
+echo "$CERTIFY_PASS" | \
+    gpg --batch --pinentry-mode=loopback \
+        --passphrase-fd 0 --quick-set-expire "$KEYFP" "$EXPIRATION" \
+    $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
 ```
 
 Export the updated public key:
@@ -2027,7 +2037,7 @@ Reboot or securely erase the GnuPG temporary working directory.
 
 If PIN attempts are exceeded, the YubiKey is locked and must be [Reset](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html) and set up again using the encrypted backup.
 
-Copy the following to a file and run `gpg-connect-agent -r $file` to lock and terminate the card. Then re-insert YubiKey to complete reset.
+Copy the following to a file and run `gpg-connect-agent -r $file`, then re-insert the YubiKey to complete reset.
 
 ```console
 /hex
