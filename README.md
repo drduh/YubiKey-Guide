@@ -334,10 +334,10 @@ throw-keyids
 
 When creating an identity with GnuPG, the default options ask for a "Real name", "Email address" and optional "Comment".
 
-Depending on how you plan to use GnuPG, set these values respectively:
+Depending on how you plan to use GnuPG, set these values respectively[^1]:
 
 ```console
-export IDENTITY="YubiKey User <yubikey@example>"
+export IDENTITY="YubiKey User <yubikey@example.domain>"
 ```
 
 Or use any attribute which will uniquely identity the key (this may be incompatible with certain use cases):
@@ -348,9 +348,7 @@ export IDENTITY="My Cool YubiKey - 2025"
 
 ## Key
 
-Select the desired algorithm and key size. This guide recommends 4096-bit RSA.
-
-Set the value:
+Set the algorithm and key size - RSA/4096 is recommended:
 
 ```console
 export KEY_TYPE=rsa4096
@@ -360,7 +358,7 @@ export KEY_TYPE=rsa4096
 
 Determine the desired Subkey validity duration.
 
-Setting a Subkey expiry forces identity and credential lifecycle management. However, setting an expiry on the Certify key is pointless, because it can just be used to extend itself.[^1]
+Setting a Subkey expiry forces identity and credential lifecycle management. However, setting an expiry on the Certify key is pointless, because it can just be used to extend itself[^2].
 
 This guide recommends a two year expiration for Subkeys to balance security and usability, however longer durations are possible to reduce maintenance frequency.
 
@@ -386,7 +384,7 @@ Generate a passphrase for the Certify key. This credential will be used to manag
 
 To improve readability, this guide recommends a passphrase consisting only of uppercase letters and numbers.
 
-The following commands will generate a strong[^2] passphrase while avoiding certain similar-looking characters:
+The following commands will generate a strong[^3] passphrase while avoiding certain similar-looking characters:
 
 ```console
 export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom | \
@@ -2305,5 +2303,6 @@ EOF
 * [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
 * [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
 
-[^1]: [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used to revoke an identity.
-[^2]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
+[^1]: Use single quotes to wrap double quote character(s) (`"`) - `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
+[^2]: [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used to revoke an identity.
+[^3]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
