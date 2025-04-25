@@ -303,7 +303,7 @@ wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.con
 The options will look similar to:
 
 ```console
-$ grep -ve "^#" $GNUPGHOME/gpg.conf
+$ grep -v "^#" $GNUPGHOME/gpg.conf
 personal-cipher-preferences AES256 AES192 AES
 personal-digest-preferences SHA512 SHA384 SHA256
 personal-compress-preferences ZLIB BZIP2 ZIP Uncompressed
@@ -320,6 +320,7 @@ list-options show-uid-validity
 verify-options show-uid-validity
 with-fingerprint
 require-cross-certification
+require-secmem
 no-symkey-cache
 armor
 use-agent
@@ -388,12 +389,22 @@ To improve readability, this guide recommends a passphrase consisting only of up
 The following commands will generate a strong[^2] passphrase while avoiding certain similar-looking characters:
 
 ```console
-export CERTIFY_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
-  tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1) ; printf "\n$CERTIFY_PASS\n\n"
+export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom | \
+    tr -d "IOUS5" | \
+    fold  -w  ${PASS_FOLD:-4} | \
+    paste -sd ${PASS_DELIM:--} - | \
+    head  -c  ${PASS_LENGTH:-29}) ; printf "\n$CERTIFY_PASS\n\n"
 ```
 
-Write the passphrase in a secure location, ideally separate from the portable storage device used for key material, or memorize it.
+To change the passphrase length, delimiting character or group sizes, export the respective variable(s) prior to running the passphrase generation command, for example:
+
+```console
+export PASS_LENGTH=48
+export PASS_FOLD=6
+export PASS_DELIM=+
+```
+
+Write the passphrase in a secure location - separate from the portable storage device used for key material, or memorize it.
 
 This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) template to help with credential transcription. Save the [raw file](https://github.com/drduh/YubiKey-Guide/raw/refs/heads/master/templates/passphrase.html), open in a browser to render and print.
 
@@ -577,9 +588,11 @@ Use [LUKS](https://dys2p.com/en/2023-05-luks-security.html) to encrypt the new p
 Generate another unique [Passphrase](#passphrase) (ideally different from the one used for the Certify key) to protect the encrypted volume:
 
 ```console
-export LUKS_PASS=$(LC_ALL=C tr -dc 'A-Z1-9' < /dev/urandom | \
-  tr -d "1IOS5U" | fold -w 30 | sed "-es/./ /"{1..26..5} | \
-  cut -c2- | tr " " "-" | head -1) ; printf "\n$LUKS_PASS\n\n"
+export LUKS_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom | \
+    tr -d "IOUS5" | \
+    fold  -w  ${PASS_FOLD:-4} | \
+    paste -sd ${PASS_DELIM:--} - | \
+    head  -c  ${PASS_LENGTH:-29}) ; printf "\n$LUKS_PASS\n\n"
 ```
 
 This passphrase will also be used infrequently to access the Certify key and should be very strong.
