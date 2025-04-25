@@ -1,8 +1,6 @@
 This is a guide to using [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/) as a [smart card](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for secure encryption, signature and authentication operations.
 
-Keys stored on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for daily use. YubiKey can be configured to require a physical touch for cryptographic operations, reducing the risk of credential compromise.
-
-To suggest an improvement, send a pull request or open an [issue](https://github.com/drduh/YubiKey-Guide/issues).
+Cryptographic keys on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for regular use. YubiKey can be configured to require a physical touch for cryptographic operations, reducing the risk of unauthorized access.
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Prepare environment](#prepare-environment)
@@ -64,7 +62,7 @@ To suggest an improvement, send a pull request or open an [issue](https://github
 
 # Purchase YubiKey
 
-[Current YubiKeys](https://www.yubico.com/store/compare/) except the FIDO-only Security Key Series and Bio Series YubiKeys are compatible with this guide.
+[All YubiKeys](https://www.yubico.com/store/compare/) *except* FIDO-only Security Key Series and Bio Series YubiKeys are compatible with this guide.
 
 [Verify YubiKey](https://support.yubico.com/hc/en-us/articles/360013723419-How-to-Confirm-Your-Yubico-Device-is-Genuine) by visiting [yubico.com/genuine](https://www.yubico.com/genuine/). Select *Verify Device* to begin the process. Touch the YubiKey when prompted and allow the site to see the make and model of the device when prompted. This device attestation may help mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
@@ -81,7 +79,7 @@ The following is a general ranking of environments least to most hospitable to g
 1. Virtualized operating system with limited capabilities (using [virt-manager](https://virt-manager.org/), VirtualBox or VMware, for example)
 1. Dedicated and hardened [Debian](https://www.debian.org/) or [OpenBSD](https://www.openbsd.org/) installation
 1. Ephemeral [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html) booted without primary storage attached
-1. Hardened hardware and firmware ([Coreboot](https://www.coreboot.org/), [Intel ME removed](https://github.com/corna/me_cleaner))
+1. Hardened hardware and firmware (e.g., [Coreboot](https://www.coreboot.org/), [Intel ME removed](https://github.com/corna/me_cleaner))
 1. Air-gapped system without network capabilities, preferably ARM-based Raspberry Pi or other architecturally diverse equivalent
 
 Debian Live is used in this guide to balance usability and security, with some additional instructions for OpenBSD.
@@ -180,9 +178,9 @@ sudo apt update
 sudo apt -y upgrade
 
 sudo apt -y install \
-  wget gnupg2 gnupg-agent dirmngr \
-  cryptsetup scdaemon pcscd \
-  yubikey-personalization yubikey-manager
+    wget gnupg2 gnupg-agent dirmngr \
+    cryptsetup scdaemon pcscd \
+    yubikey-personalization yubikey-manager
 ```
 
 **OpenBSD**
@@ -197,7 +195,7 @@ Download and install [Homebrew](https://brew.sh/) and the following packages:
 
 ```console
 brew install \
-  gnupg yubikey-personalization ykman pinentry-mac wget
+    gnupg yubikey-personalization ykman pinentry-mac wget
 ```
 
 > [!NOTE]
@@ -217,7 +215,7 @@ Build an air-gapped NixOS LiveCD image:
 ref=$(git ls-remote https://github.com/drduh/Yubikey-Guide refs/heads/master | awk '{print $1}')
 
 nix build --experimental-features "nix-command flakes" \
-  github:drduh/YubiKey-Guide/$ref#nixosConfigurations.yubikeyLive.x86_64-linux.config.system.build.isoImage
+    github:drduh/YubiKey-Guide/$ref#nixosConfigurations.yubikeyLive.x86_64-linux.config.system.build.isoImage
 ```
 
 If you have this repository checked out:
@@ -277,9 +275,9 @@ wget https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-release-38-1.noa
 sudo rpm -Uvh rpmsphere-release*rpm
 
 sudo dnf install \
-  gnupg2 dirmngr cryptsetup gnupg2-smime \
-  pcsc-tools opensc pcsc-lite secure-delete \
-  pgp-tools yubikey-personalization-gui
+    gnupg2 dirmngr cryptsetup gnupg2-smime \
+    pcsc-tools opensc pcsc-lite secure-delete \
+    pgp-tools yubikey-personalization-gui
 ```
 
 # Prepare GnuPG
@@ -895,13 +893,13 @@ Run `gpg --card-status` to verify results (*Login data* field).
 # Transfer Subkeys
 
 > [!IMPORTANT]
-> Transferring keys to YubiKey is a one-way operation which converts the on-disk key into a stub making it no longer usable to transfer to subsequent YubiKeys. Ensure a backup was made before proceeding.
+> Transferring keys to YubiKey converts the on-disk key into a "stub" - making it no longer usable to transfer to subsequent YubiKeys. Ensure keys were backed up before proceeding.
 
 The Certify key passphrase and Admin PIN are required to transfer keys.
 
 ## Signature key
 
-Transfer the first key:
+Transfer the Signature key:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
@@ -916,7 +914,7 @@ EOF
 
 ## Encryption key
 
-Repeat the process for the second key:
+Repeat the process for the Encryption key:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
@@ -931,7 +929,7 @@ EOF
 
 ## Authentication key
 
-Repeat the process for the third key:
+Repeat the process for the Authentication key:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEYID <<EOF
@@ -946,7 +944,7 @@ EOF
 
 # Verify transfer
 
-Verify Subkeys have been moved to YubiKey with `gpg -K` and look for `ssb>`, for example:
+Verify Subkeys are on YubiKey with `gpg -K` - indicated by `ssb>`:
 
 ```console
 sec   rsa4096/0xF0F2CFEB04341FB5 2025-01-01 [C]
@@ -961,7 +959,7 @@ The `>` after a tag indicates the key is stored on a smart card.
 
 # Finish setup
 
-Verify you have done the following:
+Verify the following steps were performed correctly:
 
 - [ ] Memorized or wrote down the Certify key (identity) passphrase to a secure and durable location
   * `echo $CERTIFY_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe it
@@ -976,7 +974,7 @@ Verify you have done the following:
 - [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey
   * `gpg -K` shows `ssb>` for each of the 3 Subkeys
 
-Reboot to clear the ephemeral environment and complete setup.
+Reboot, clearing the ephemeral environment, to complete setup.
 
 # Using YubiKey
 
@@ -1016,6 +1014,7 @@ sudo apt install -y gnupg gnupg-agent scdaemon pcscd
 
 ```console
 sudo pacman -S --needed gnupg pcsc-tools
+
 sudo systemctl enable --now pcscd.service
 ```
 
@@ -1896,9 +1895,9 @@ PGP does not provide [forward secrecy](https://en.wikipedia.org/wiki/Forward_sec
 
 When a Subkey expires, it can either be renewed or replaced. Both actions require access to the Certify key.
 
-- Renewing Subkeys by updating expiration indicates continued possession of the Certify key and is more convenient.
+- Renewing Subkeys by updating expiration indicates continued custody of the Certify key and is generally more convenient.
 
-- Replacing Subkeys is less convenient but potentially more secure: the new Subkeys will **not** be able to decrypt previous messages, authenticate with SSH, etc. Contacts will need to receive the updated public key and any encrypted secrets need to be decrypted and re-encrypted to new Subkeys to be usable. This process is functionally equivalent to losing the YubiKey and provisioning a new one.
+- Replacing Subkeys is less convenient, but potentially more secure: new Subkeys will **not** be able to decrypt previous messages, nor authenticate with SSH, etc. Recipients will need the updated public key. Any encrypted secrets must be decrypted and re-encrypted to new Subkeys. This process is functionally equivalent to losing the YubiKey and provisioning a new one.
 
 Neither rotation method is superior and it is up to personal philosophy on identity management and individual threat modeling to decide which one to use, or whether to expire Subkeys at all. Ideally, Subkeys would be ephemeral: used only once for each unique encryption, signature and authentication event, however in practice that is not really practical nor worthwhile with YubiKey. Advanced users may dedicate an air-gapped machine for frequent credential rotation.
 
@@ -2139,7 +2138,7 @@ Whether you're using a VM, installing on dedicated hardware, or running a Live O
 
 The reasoning for this is because services like cups or avahi can be listening by default. While this isn't an immediate problem it simply broadens the attack surface. Not everyone will have a dedicated subnet or trusted network equipment they can control, and for the purposes of this guide, these steps treat *any* network as untrusted / hostile.
 
-**Disable Listening Services**
+**Disable listening services**
 
 - Ensures only essential network services are running
 - If the service doesn't exist you'll get a "Failed to stop" which is fine
@@ -2169,7 +2168,7 @@ Regardless of which policy you use, write the contents to a file (e.g. `nftables
 sudo nft -f ./nftables.conf
 ```
 
-**Review the System State**
+**Review system state**
 
 `NetworkManager` should be the only listening service on port 68/udp to obtain a DHCP lease (and 58/icmp6 if you have IPv6).
 
@@ -2190,7 +2189,7 @@ pgrep -f '<process-name-or-command-line-string>'        # Obtain the PID
 sudo kill <pid>                                         # Terminate the process via its PID
 ```
 
-Now connect to a network.
+Now connect networking.
 
 # Notes
 
