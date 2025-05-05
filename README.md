@@ -1663,15 +1663,32 @@ The path must be set according to `gpgconf --list-dirs agent-ssh-socket` on *rem
 
 YubiKey can be used to sign commits and tags, and authenticate SSH to GitHub when configured in [Settings](https://github.com/settings/keys).
 
-Configure a signing key:
+Configure the signing key:
 
 ```console
 git config --global user.signingkey $KEYID
 ```
 
-Configure the `user.email` option to match the email address associated with the PGP identity.
+Alternatively, if you are using the aforementioned `IdentityFile` (SSH key) for signing:
 
-To sign commits or tags, use the `-S` option.
+```console
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_rsa_yubikey.pub
+```
+
+Configure the `user.name` and `user.email` option to match the email address associated with the PGP identity:
+
+```console
+git config --global user.name 'YubiKey User'
+git config --global user.email yubikey@example
+```
+
+To sign commits or tags, use the `-S` option, or consider enabling commit and tag signing by default:
+
+```console
+git config --global commit.gpgsign true
+git config --global tag.gpgSign true
+```
 
 **Windows**
 
