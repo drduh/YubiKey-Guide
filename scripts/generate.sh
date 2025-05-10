@@ -65,23 +65,38 @@ gen_key_subs () {
 
 gen_key_subs
 
-gpg -K
+list_keys () {
+    # Prints available secret keys.
+    gpg --list-secret-keys
+}
 
-echo "$CERTIFY_PASS" | \
-    gpg --output $GNUPGHOME/$KEYID-Certify.key \
-        --batch --pinentry-mode=loopback --passphrase-fd 0 \
-        --armor --export-secret-keys $KEYID
+save_secrets () {
+    # Exports secret keys to local files.
+    echo "$CERTIFY_PASS" | \
+        gpg --output $GNUPGHOME/$KEYID-Certify.key \
+            --batch --pinentry-mode=loopback --passphrase-fd 0 \
+            --armor --export-secret-keys $KEYID
 
-echo "$CERTIFY_PASS" | \
-    gpg --output $GNUPGHOME/$KEYID-Subkeys.key \
-        --batch --pinentry-mode=loopback --passphrase-fd 0 \
-        --armor --export-secret-subkeys $KEYID
+    echo "$CERTIFY_PASS" | \
+        gpg --output $GNUPGHOME/$KEYID-Subkeys.key \
+            --batch --pinentry-mode=loopback --passphrase-fd 0 \
+            --armor --export-secret-subkeys $KEYID
+}
 
-gpg --output $GNUPGHOME/$KEYID-$(date +%F).asc \
-    --armor --export $KEYID
+save_pubkey () {
+    # Exports public key to local file.
+    gpg --output $GNUPGHOME/$KEYID-$(date +%F).asc \
+        --armor --export $KEYID
+}
 
-export LUKS_PASS="$(get_pass)"
+list_keys
+
+save_secrets
+
+save_pubkey
 
 printf "CERTIFY PASS: \n$CERTIFY_PASS\n\n"
+
+export LUKS_PASS="$(get_pass)"
 
 printf "LUKS PASS:\n$LUKS_PASS\n\n"
