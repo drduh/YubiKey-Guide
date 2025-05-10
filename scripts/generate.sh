@@ -11,7 +11,7 @@ export LC_ALL="C"
 
 export GNUPGHOME=$(mktemp -d -t $(date +%Y.%m.%d)-XXXX)
 
-cd "${GNUPGHOME}" ; pwd
+cd "${GNUPGHOME}" ; printf "saving to %s\n" "$(pwd)"
 
 export IDENTITY="YubiKey User <yubikey@example.domain>"
 
@@ -30,23 +30,40 @@ get_pass () {
 
 export CERTIFY_PASS="$(get_pass)"
 
-echo "$CERTIFY_PASS" | \
-    gpg --batch --passphrase-fd 0 \
-        --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
+gen_key_certify () {
+    # Generates Certify key with no expiration.
+    echo "$CERTIFY_PASS" | \
+        gpg --batch --passphrase-fd 0 \
+            --quick-generate-key "$IDENTITY" \
+            "$KEY_TYPE" "cert" "never"
+}
 
-export KEYID=$(gpg -k --with-colons "$IDENTITY" | \
-    awk -F: '/^pub:/ { print $5; exit }')
+set_key_id_fp () {
+    # Sets Key ID and Fingerprint environment vars.
+    export KEYID=$(gpg -k --with-colons "$IDENTITY" | \
+        awk -F: '/^pub:/ { print $5; exit }')
+    export KEYFP=$(gpg -k --with-colons "$IDENTITY" | \
+        awk -F: '/^fpr:/ { print $10; exit }')
+}
 
-export KEYFP=$(gpg -k --with-colons "$IDENTITY" | \
-    awk -F: '/^fpr:/ { print $10; exit }')
+gen_key_certify
+
+set_key_id_fp
 
 printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
 
-for SUBKEY in sign encrypt auth ; do \
-    echo "$CERTIFY_PASS" | \
-        gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
-            --quick-add-key "$KEYFP" "$KEY_TYPE" "$SUBKEY" "$KEY_EXPIRATION"
-done
+gen_key_subs () {
+    # Generates Subkeys with specified expiration.
+    for SUBKEY in sign encrypt auth ; do \
+        echo "$CERTIFY_PASS" | \
+            gpg --batch --passphrase-fd 0 \
+                --pinentry-mode=loopback \
+                --quick-add-key "$KEYFP" \
+                "$KEY_TYPE" "$SUBKEY" "$KEY_EXPIRATION"
+    done
+}
+
+gen_key_subs
 
 gpg -K
 
