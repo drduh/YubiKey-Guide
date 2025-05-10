@@ -19,11 +19,16 @@ export KEY_TYPE="rsa4096"
 
 export KEY_EXPIRATION="2027-05-01"
 
-export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom | \
-    tr -d "IOUS5" | \
-    fold  -w  ${PASS_GROUPSIZE:-4} | \
-    paste -sd ${PASS_DELIMITER:--} - | \
-    head  -c  ${PASS_LENGTH:-29})
+get_pass () {
+    # Returns random passphrase.
+    tr -dc "A-Z2-9" < /dev/urandom | \
+        tr -d "IOUS5" | \
+        fold  -w  ${PASS_GROUPSIZE:-4} | \
+        paste -sd ${PASS_DELIMITER:--} - | \
+        head  -c  ${PASS_LENGTH:-29}
+}
+
+export CERTIFY_PASS="$(get_pass)"
 
 echo "$CERTIFY_PASS" | \
     gpg --batch --passphrase-fd 0 \
@@ -58,11 +63,7 @@ echo "$CERTIFY_PASS" | \
 gpg --output $GNUPGHOME/$KEYID-$(date +%F).asc \
     --armor --export $KEYID
 
-export LUKS_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom | \
-    tr -d "IOUS5" | \
-    fold  -w  ${PASS_GROUPSIZE:-4} | \
-    paste -sd ${PASS_DELIMITER:--} - | \
-    head  -c  ${PASS_LENGTH:-29})
+export LUKS_PASS="$(get_pass)"
 
 printf "CERTIFY PASS: \n$CERTIFY_PASS\n\n"
 
