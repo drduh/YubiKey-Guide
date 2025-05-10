@@ -21,19 +21,15 @@ get_id_label () {
     printf "YubiKey User <yubikey@example.domain>"
 }
 
-export GNUPGHOME="$(get_temp_dir)"
+get_key_type () {
+    # Returns key type and size.
+    printf "rsa2048"
+}
 
-cd "$GNUPGHOME"
-
-printf "set temp dir (path=%s)\n" "$(pwd)"
-
-export IDENTITY="$(get_id_label)"
-
-printf "set id (label=%s)\n" "$IDENTITY"
-
-export KEY_TYPE="rsa4096"
-
-export KEY_EXPIRATION="2027-05-01"
+get_key_expiration () {
+    # Returns key expiration date.
+    printf "2027-05-01"
+}
 
 get_pass () {
     # Returns random passphrase.
@@ -43,6 +39,16 @@ get_pass () {
         paste -sd ${PASS_DELIMITER:--} - | \
         head  -c  ${PASS_LENGTH:-29}
 }
+
+export GNUPGHOME="$(get_temp_dir)"
+cd "$GNUPGHOME"
+printf "set temp dir (path='%s')\n" "$(pwd)"
+
+export IDENTITY="$(get_id_label)"
+export KEY_TYPE="$(get_key_type)"
+export KEY_EXPIRATION="$(get_key_expiration)"
+printf "set id (label='%s', type='%s', expire='%s')\n" \
+    "$IDENTITY" "$KEY_TYPE" "$KEY_EXPIRATION"
 
 export CERTIFY_PASS="$(get_pass)"
 
