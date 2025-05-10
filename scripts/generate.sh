@@ -40,17 +40,13 @@ get_pass () {
         head  -c  ${PASS_LENGTH:-29}
 }
 
-export GNUPGHOME="$(get_temp_dir)"
-cd "$GNUPGHOME"
-printf "set temp dir (path='%s')\n" "$(pwd)"
-
-export IDENTITY="$(get_id_label)"
-export KEY_TYPE="$(get_key_type)"
-export KEY_EXPIRATION="$(get_key_expiration)"
-printf "set id (label='%s', type='%s', expire='%s')\n" \
-    "$IDENTITY" "$KEY_TYPE" "$KEY_EXPIRATION"
-
-export CERTIFY_PASS="$(get_pass)"
+set_pass () {
+    # Exports Certify and LUKS passphrases.
+    export CERTIFY_PASS="$(get_pass)"
+    export LUKS_PASS="$(get_pass)"
+    printf "set passphrases (certify='%s', luks='%s')\n" \
+        "$CERTIFY_PASS" "$LUKS_PASS"
+}
 
 gen_key_certify () {
     # Generates Certify key with no expiration.
@@ -60,19 +56,15 @@ gen_key_certify () {
             "$KEY_TYPE" "cert" "never"
 }
 
-set_key_id_fp () {
+set_id_fp () {
     # Sets Key ID and Fingerprint environment vars.
-    export KEYID=$(gpg -k --with-colons "$IDENTITY" | \
+    export KEY_ID=$(gpg -k --with-colons "$IDENTITY" | \
         awk -F: '/^pub:/ { print $5; exit }')
-    export KEYFP=$(gpg -k --with-colons "$IDENTITY" | \
+    export KEY_FP=$(gpg -k --with-colons "$IDENTITY" | \
         awk -F: '/^fpr:/ { print $10; exit }')
+    printf "got identity (fp='%s', id='%s')\n" \
+        "$KEY_FP" "$KEY_ID"
 }
-
-gen_key_certify
-
-set_key_id_fp
-
-printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
 
 gen_key_subs () {
     # Generates Subkeys with specified expiration.
@@ -80,12 +72,10 @@ gen_key_subs () {
         echo "$CERTIFY_PASS" | \
             gpg --batch --passphrase-fd 0 \
                 --pinentry-mode=loopback \
-                --quick-add-key "$KEYFP" \
+                --quick-add-key "$KEY_FP" \
                 "$KEY_TYPE" "$SUBKEY" "$KEY_EXPIRATION"
     done
 }
-
-gen_key_subs
 
 list_keys () {
     # Prints available secret keys.
@@ -95,30 +85,42 @@ list_keys () {
 save_secrets () {
     # Exports secret keys to local files.
     echo "$CERTIFY_PASS" | \
-        gpg --output $GNUPGHOME/$KEYID-Certify.key \
+        gpg --output $GNUPGHOME/$KEY_ID-Certify.key \
             --batch --pinentry-mode=loopback --passphrase-fd 0 \
-            --armor --export-secret-keys $KEYID
+            --armor --export-secret-keys $KEY_ID
 
     echo "$CERTIFY_PASS" | \
-        gpg --output $GNUPGHOME/$KEYID-Subkeys.key \
+        gpg --output $GNUPGHOME/$KEY_ID-Subkeys.key \
             --batch --pinentry-mode=loopback --passphrase-fd 0 \
-            --armor --export-secret-subkeys $KEYID
+            --armor --export-secret-subkeys $KEY_ID
 }
 
 save_pubkey () {
     # Exports public key to local file.
-    gpg --output $GNUPGHOME/$KEYID-$(date +%F).asc \
-        --armor --export $KEYID
+    gpg --output $GNUPGHOME/$KEY_ID-$(date +%F).asc \
+        --armor --export $KEY_ID
 }
+
+export GNUPGHOME="$(get_temp_dir)"
+cd "$GNUPGHOME"
+printf "set temp dir (path='%s')\n" "$(pwd)"
+
+export IDENTITY="$(get_id_label)"
+export KEY_TYPE="$(get_key_type)"
+export KEY_EXPIRATION="$(get_key_expiration)"
+printf "set attributes (label='%s', type='%s', expire='%s')\n" \
+    "$IDENTITY" "$KEY_TYPE" "$KEY_EXPIRATION"
+
+set_pass
+
+gen_key_certify
+
+set_id_fp
+
+gen_key_subs
 
 list_keys
 
 save_secrets
 
 save_pubkey
-
-printf "CERTIFY PASS: \n$CERTIFY_PASS\n\n"
-
-export LUKS_PASS="$(get_pass)"
-
-printf "LUKS PASS:\n$LUKS_PASS\n\n"
