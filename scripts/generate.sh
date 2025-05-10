@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# https://github.com/drduh/YubiKey-Guide/blob/master/scripts/generate.sh
+# Generates GnuPG keys and corresponding passphrases to secure them.
 
 #set -x  # uncomment to debug
 set -o errtrace
@@ -9,11 +11,25 @@ umask 077
 
 export LC_ALL="C"
 
-export GNUPGHOME=$(mktemp -d -t $(date +%Y.%m.%d)-XXXX)
+get_temp_dir () {
+    # Returns temporary working directory path.
+    mktemp -d -t $(date +%Y.%m.%d)-XXXX
+}
 
-cd "${GNUPGHOME}" ; printf "saving to %s\n" "$(pwd)"
+get_id_label () {
+    # Returns Identity name/label.
+    printf "YubiKey User <yubikey@example.domain>"
+}
 
-export IDENTITY="YubiKey User <yubikey@example.domain>"
+export GNUPGHOME="$(get_temp_dir)"
+
+cd "$GNUPGHOME"
+
+printf "set temp dir (path=%s)\n" "$(pwd)"
+
+export IDENTITY="$(get_id_label)"
+
+printf "set id (label=%s)\n" "$IDENTITY"
 
 export KEY_TYPE="rsa4096"
 
