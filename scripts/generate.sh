@@ -103,26 +103,24 @@ gen_key_subs () {
     done
 }
 
-list_keys () {
-    # Prints available secret keys.
-    gpg --list-secret-keys
-}
-
 save_secrets () {
     # Exports secret keys to local files.
+    export OUTPUT_CERTIFY="$GNUPGHOME/$KEY_ID-Certify.key"
+    export OUTPUT_SUBKEYS="$GNUPGHOME/$KEY_ID-Subkeys.key"
     echo "$CERTIFY_PASS" | \
-        gpg --output "$GNUPGHOME/$KEY_ID-Certify.key" \
+        gpg --output "$OUTPUT_CERTIFY" \
             --batch --pinentry-mode=loopback --passphrase-fd 0 \
             --armor --export-secret-keys "$KEY_ID"
     echo "$CERTIFY_PASS" | \
-        gpg --output "$GNUPGHOME/$KEY_ID-Subkeys.key" \
+        gpg --output "$OUTPUT_SUBKEYS" \
             --batch --pinentry-mode=loopback --passphrase-fd 0 \
             --armor --export-secret-subkeys "$KEY_ID"
 }
 
 save_pubkey () {
     # Exports public key to local file.
-    gpg --output "$GNUPGHOME/$KEY_ID-$(date +%F).asc" \
+    export OUTPUT_PUBKEY="$GNUPGHOME/$KEY_ID-Public.asc"
+    gpg --output "$OUTPUT_PUBKEY" \
         --armor --export "$KEY_ID"
 }
 
@@ -136,28 +134,41 @@ finish () {
     printf "subkeys expiration:     "
     print_id "$KEY_EXPIRATION"
 
+    printf "\nsecrets and pubkey:      "
+    print_id "$GNUPGHOME"
+    print_id "$OUTPUT_PUBKEY"
+
     printf "\ncertify passphrase:     "
     print_cred "$CERTIFY_PASS"
     printf "encrypt passphrase:     "
     print_cred "$ENCRYPT_PASS"
+
+    exit 0
 }
 
+# 1. Set temporary working directory for GnuPG ops.
 set_temp_dir
 
+# 2. Set identity and key attributes, such as label and type.
 set_attrs
 
+# 3. Set passphrases for identity and storage encryption.
 set_pass
 
+# 4. Generate the Certify key.
 gen_key_certify
 
+# 5. Set resulting identity fingerprint.
 set_id_fp
 
+# 6. Generate the Subkeys.
 gen_key_subs
 
-list_keys
-
+# 7. Export Certify and Subkeys to local storage.
 save_secrets
 
+# 8. Export public key to local storage.
 save_pubkey
 
+# 9. Print results and exit.
 finish
