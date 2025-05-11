@@ -11,9 +11,9 @@ umask 077
 
 export LC_ALL="C"
 
-get_temp_dir () {
-    # Returns temporary working directory path.
-    mktemp -d -t $(date +%Y.%m.%d)-XXXX
+print_cred () {
+  # Print a credential string in red.
+  tput setaf 1 ; printf "%s\n" "${1}" ; tput sgr0
 }
 
 get_id_label () {
@@ -31,6 +31,27 @@ get_key_expiration () {
     printf "2027-05-01"
 }
 
+get_temp_dir () {
+    # Returns temporary working directory path.
+    mktemp -d -t $(date +%Y.%m.%d)-XXXX
+}
+
+set_temp_dir () {
+    # Exports and switches to temporary dir.
+    export GNUPGHOME="$(get_temp_dir)"
+    cd "$GNUPGHOME"
+    printf "set temp dir (path='%s')\n" "$(pwd)"
+}
+
+set_attrs () {
+    # Sets identity and key attributes.
+    export IDENTITY="$(get_id_label)"
+    export KEY_TYPE="$(get_key_type)"
+    export KEY_EXPIRATION="$(get_key_expiration)"
+    printf "set attributes (label='%s', type='%s', expire='%s')\n" \
+        "$IDENTITY" "$KEY_TYPE" "$KEY_EXPIRATION"
+}
+
 get_pass () {
     # Returns random passphrase.
     tr -dc "A-Z2-9" < /dev/urandom | \
@@ -43,9 +64,9 @@ get_pass () {
 set_pass () {
     # Exports Certify and LUKS passphrases.
     export CERTIFY_PASS="$(get_pass)"
-    export LUKS_PASS="$(get_pass)"
-    printf "set passphrases (certify='%s', luks='%s')\n" \
-        "$CERTIFY_PASS" "$LUKS_PASS"
+    export ENCRYPT_PASS="$(get_pass)"
+    printf "set passphrases (certify='%s', encrypt='%s')\n" \
+        "$CERTIFY_PASS" "$ENCRYPT_PASS"
 }
 
 gen_key_certify () {
@@ -101,15 +122,18 @@ save_pubkey () {
         --armor --export $KEY_ID
 }
 
-export GNUPGHOME="$(get_temp_dir)"
-cd "$GNUPGHOME"
-printf "set temp dir (path='%s')\n" "$(pwd)"
+finish () {
+    # Prints final message with credentials.
+    printf "certify passphrase: "
+    print_cred $CERTIFY_PASS
 
-export IDENTITY="$(get_id_label)"
-export KEY_TYPE="$(get_key_type)"
-export KEY_EXPIRATION="$(get_key_expiration)"
-printf "set attributes (label='%s', type='%s', expire='%s')\n" \
-    "$IDENTITY" "$KEY_TYPE" "$KEY_EXPIRATION"
+    printf "encrypt passphrase: "
+    print_cred $ENCRYPT_PASS
+}
+
+set_temp_dir
+
+set_attrs
 
 set_pass
 
@@ -124,3 +148,5 @@ list_keys
 save_secrets
 
 save_pubkey
+
+finish
