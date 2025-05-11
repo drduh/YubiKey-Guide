@@ -28,7 +28,7 @@ get_id_label () {
 
 get_key_type () {
     # Returns key type and size.
-    printf "rsa2048"
+    printf "rsa4096"
 }
 
 get_key_expiration () {
@@ -82,14 +82,12 @@ gen_key_certify () {
             "$KEY_TYPE" "cert" "never"
 }
 
-set_id_fp () {
+set_fingerprint () {
     # Sets Key ID and Fingerprint environment vars.
-    export KEY_ID=$(gpg -k --with-colons "$IDENTITY" | \
-        awk -F: '/^pub:/ { print $5; exit }')
-    export KEY_FP=$(gpg -k --with-colons "$IDENTITY" | \
-        awk -F: '/^fpr:/ { print $10; exit }')
-    printf "got identity (fp='%s', id='%s')\n" \
-        "$KEY_FP" "$KEY_ID"
+    key_list=$(gpg --list-secret-keys --with-colons)
+    export KEY_ID=$(printf "$key_list" | awk -F: '/^sec/ { print  $5; exit }')
+    export KEY_FP=$(printf "$key_list" | awk -F: '/^fpr/ { print $10; exit }')
+    printf "got identity (fp='%s', id='%s')\n" "$KEY_FP" "$KEY_ID"
 }
 
 gen_key_subs () {
@@ -134,7 +132,7 @@ finish () {
     printf "subkeys expiration:     "
     print_id "$KEY_EXPIRATION"
 
-    printf "\nsecrets and pubkey:      "
+    printf "\nsecrets and pubkey:     "
     print_id "$GNUPGHOME"
     print_id "$OUTPUT_PUBKEY"
 
@@ -159,7 +157,7 @@ set_pass
 gen_key_certify
 
 # 5. Set resulting identity fingerprint.
-set_id_fp
+set_fingerprint
 
 # 6. Generate the Subkeys.
 gen_key_subs
