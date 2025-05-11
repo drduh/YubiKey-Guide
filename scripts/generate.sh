@@ -16,6 +16,11 @@ print_cred () {
   tput setaf 1 ; printf "%s\n" "${1}" ; tput sgr0
 }
 
+print_id () {
+  # Print an identity string in yellow.
+  tput setaf 3 ; printf "%s\n" "${1}" ; tput sgr0
+}
+
 get_id_label () {
     # Returns Identity name/label.
     printf "YubiKey User <yubikey@example.domain>"
@@ -33,13 +38,13 @@ get_key_expiration () {
 
 get_temp_dir () {
     # Returns temporary working directory path.
-    mktemp -d -t $(date +%Y.%m.%d)-XXXX
+    mktemp -d -t "$(date +%Y.%m.%d)-XXXX"
 }
 
 set_temp_dir () {
     # Exports and switches to temporary dir.
     export GNUPGHOME="$(get_temp_dir)"
-    cd "$GNUPGHOME"
+    cd "$GNUPGHOME" || exit 1
     printf "set temp dir (path='%s')\n" "$(pwd)"
 }
 
@@ -56,9 +61,9 @@ get_pass () {
     # Returns random passphrase.
     tr -dc "A-Z2-9" < /dev/urandom | \
         tr -d "IOUS5" | \
-        fold  -w  ${PASS_GROUPSIZE:-4} | \
-        paste -sd ${PASS_DELIMITER:--} - | \
-        head  -c  ${PASS_LENGTH:-29}
+        fold  -w  "${PASS_GROUPSIZE:-4}" | \
+        paste -sd "${PASS_DELIMITER:--}" - | \
+        head  -c  "${PASS_LENGTH:-29}"
 }
 
 set_pass () {
@@ -106,29 +111,35 @@ list_keys () {
 save_secrets () {
     # Exports secret keys to local files.
     echo "$CERTIFY_PASS" | \
-        gpg --output $GNUPGHOME/$KEY_ID-Certify.key \
+        gpg --output "$GNUPGHOME/$KEY_ID-Certify.key" \
             --batch --pinentry-mode=loopback --passphrase-fd 0 \
-            --armor --export-secret-keys $KEY_ID
-
+            --armor --export-secret-keys "$KEY_ID"
     echo "$CERTIFY_PASS" | \
-        gpg --output $GNUPGHOME/$KEY_ID-Subkeys.key \
+        gpg --output "$GNUPGHOME/$KEY_ID-Subkeys.key" \
             --batch --pinentry-mode=loopback --passphrase-fd 0 \
-            --armor --export-secret-subkeys $KEY_ID
+            --armor --export-secret-subkeys "$KEY_ID"
 }
 
 save_pubkey () {
     # Exports public key to local file.
-    gpg --output $GNUPGHOME/$KEY_ID-$(date +%F).asc \
-        --armor --export $KEY_ID
+    gpg --output "$GNUPGHOME/$KEY_ID-$(date +%F).asc" \
+        --armor --export "$KEY_ID"
 }
 
 finish () {
-    # Prints final message with credentials.
-    printf "certify passphrase: "
-    print_cred $CERTIFY_PASS
+    # Prints final message with id and credentials.
+    printf "\nidentity/key label:     "
+    print_id "$IDENTITY"
+    printf "key id/fingerprint:     "
+    print_id "$KEY_ID"
+    print_id "$KEY_FP"
+    printf "subkeys expiration:     "
+    print_id "$KEY_EXPIRATION"
 
-    printf "encrypt passphrase: "
-    print_cred $ENCRYPT_PASS
+    printf "\ncertify passphrase:     "
+    print_cred "$CERTIFY_PASS"
+    printf "encrypt passphrase:     "
+    print_cred "$ENCRYPT_PASS"
 }
 
 set_temp_dir
