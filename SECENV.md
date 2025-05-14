@@ -40,7 +40,7 @@ After running the above command, the downloaded packages will be found downloade
 ### 1.3 Building the Secure Environment
 Once an intermediary environment has been finalized and selected to become the new imaging host environment, the user may begin to build out their final working environment, including but not limited to the base OS, and any post-installation scripts, packages, tools, etc. needed for work.
 
-**Example.** The user elects to use Tails OS as the last intermediate environment (the new imaging host environment) following a series of abstracted pre-environments. During its creation (prior to booting), an encrypted persistent storage is configured (e.g., LUKS) and used to store an offline, verified copy of Alpine Linux (32-bit) for their Raspberry Pi, along with all prefetched APK packages required for use in the final working environment. With permanent storage detached and networking completely disabled, the user proceeds to boot into Tails OS with Persistent Storage unlocked. Once booted, they use the disk utility program (Disks) to to "Restore Disk Image" to an SD card using the Alpine Linux image residing in Persistent Storage. Once imaged, the use proceeds to mount its writable 80 MB boot partition to copy relevant prefetched APK packages into a subfolder for post-installation. The SD card should now have everything needed to boot a securely created environment without the need to be connected to the Internet or other extraneous storage medium or peripherals.
+**Example.** The user elects to use Tails OS as the last intermediate environment (the new imaging host environment) following a series of abstracted pre-environments. During its creation (prior to booting), an encrypted persistent storage is configured (e.g., LUKS) and used to store an offline, verified copy of Alpine Linux (32-bit) for their Raspberry Pi, along with all prefetched APK packages required for use in the final working environment. With permanent storage detached and networking completely disabled, the user proceeds to boot into Tails OS with Persistent Storage unlocked. Once booted, they use the disk utility program (Disks) to "Restore Disk Image" to an SD card using the Alpine Linux image residing in Persistent Storage. Once imaged, the use proceeds to mount its writable 80 MB boot partition to copy relevant prefetched APK packages into a subfolder for post-installation. The SD card should now have everything needed to boot a securely created environment without the need to be connected to the Internet or other extraneous storage medium or peripherals.
 
 ## Stage 2. Secure Environment
 
@@ -57,7 +57,7 @@ Additional setup requirements within the secure environment may include:
 - Importing keys
 
 ### 2.1 Installing Offline Packages
-After booting into the secure environment, the user proceeds to verify the SHA256 checksums of the previously GPG-verified APK packages stored in the boot partition. Once verified, the user issues they following command within the package subdirectory to install them:
+After booting into the secure environment, the user proceeds to verify the SHA256 checksums of the previously GPG-verified APK packages stored in the boot partition. Once verified, the user issues the following command within the package subdirectory to install them:
 
 ```shell
 $ apk --allow-untrusted --force-non-repository add *.apk
