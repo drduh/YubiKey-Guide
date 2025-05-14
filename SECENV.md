@@ -16,7 +16,7 @@ Therefore, to mitigate the potential of host contamination, an *intermediary ima
 
 **Note.** It will be necessary for this first working environment to either be: a) Internet-connected, or b) connected to a USB storage medium containing images for the final environment; for the purpose building and deploying the final secure image.
 
-### Obtaining Alpine Linux
+### 1.1 Obtaining Alpine Linux
 **Smartphone Device Example.** The user connects a USB storage medium to their fully updated iPhone (cannot be jail broken) using an Apple-certified USB camera adapter. The iPhone in this scenario can serve as an initial intermediary environment reserved solely for the purpose of downloading an [official Alpine Linux ISO image](https://alpinelinux.org/downloads/) for the Raspberry Pi along with its corresponding signatures and public keys to the connected USB storage medium via the Files app.
 
 Note: This same acquisition method can be applied to any desired OS supported by the target device.
@@ -25,7 +25,7 @@ Note: This same acquisition method can be applied to any desired OS supported by
 
 Note: While this is the same OS that will ultimately be used for GPG, we are merely borrowing it as a "post-environment" at this stage in the process, solely for the purpose of prefetching an offline copy of the selfsame OS-specific APK packages that will be required for GPG (and smart card use) later on.
 
-### Downloading APK packages for offline use
+### 1.2 Downloading APK packages for offline use
 While still booted in the "post-environment," you can run the following commands to update APK and download the relevant packages:
 ```shell
 $ apk update && apk upgrade && apk fetch --recursive gpg gnupg-scdaemon pcsc-lite
@@ -37,7 +37,7 @@ After running the above command, the downloaded packages will be found downloade
 
 **CI/CD Considerations.** It is possible to bypass this entire user story if a CI/CD pipeline were to be carefully designed to demonstrate software provenance in the curation and signing of a custom Alpine Linux image with these requirements.
 
-### Building the Secure Environment
+### 1.3 Building the Secure Environment
 Once an intermediary environment has been finalized and selected to become the new imaging host environment, the user may begin to build out their final working environment, including but not limited to the base OS, and any post-installation scripts, packages, tools, etc. needed for work.
 
 **Example.** The user elects to use Tails OS as the last intermediate environment (the new imaging host environment) following a series of abstracted pre-environments. During its creation (prior to booting), an encrypted persistent storage is configured (e.g., LUKS) and used to store an offline, verified copy of Alpine Linux (32-bit) for their Raspberry Pi, along with all prefetched APK packages required for use in the final working environment. With permanent storage detached and networking completely disabled, the user proceeds to boot into Tails OS with Persistent Storage unlocked. Once booted, they use the disk utility program (Disks) to to "Restore Disk Image" to an SD card using the Alpine Linux image residing in Persistent Storage. Once imaged, the use proceeds to mount its writable 80 MB boot partition to copy relevant prefetched APK packages into a subfolder for post-installation. The SD card should now have everything needed to boot a securely created environment without the need to be connected to the Internet or other extraneous storage medium or peripherals.
@@ -56,13 +56,15 @@ Additional setup requirements within the secure environment may include:
 - Adding entropy sources
 - Importing keys
 
-**Example.** After booting into the secure environment, the user proceeds to verify the SHA256 checksums of the previously GPG-verified APK packages stored in the boot partition. Once verified, the user issues they following command within the package subdirectory to install them:
+### 2.1 Installing Offline Packages
+After booting into the secure environment, the user proceeds to verify the SHA256 checksums of the previously GPG-verified APK packages stored in the boot partition. Once verified, the user issues they following command within the package subdirectory to install them:
 
 ```shell
 $ apk --allow-untrusted --force-non-repository add *.apk
 ```
 
-The user can now begin working with GPG and smart cards in their new environment:
+### 2.2 GPG Environment
+The user can now begin [working with GPG](https://github.com/drduh/YubiKey-Guide?tab=readme-ov-file#prepare-gnupg) and smart cards in their new environment:
 
 ```shell
 $ gpg --import yubikey.pub
@@ -70,6 +72,6 @@ $ gpg --card-status
 $ gpg --list-secret-keys
 ```
 
-### Stage 3. Takedown
+## Stage 3. Takedown
 
 When finished performing tasks, the secure environment should either be a) promptly destroyed or b) properly secured away; to close the window on unknown threats to a dormant system (e.g., physical, technological, theoretical, unknown).
