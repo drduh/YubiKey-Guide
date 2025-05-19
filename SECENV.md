@@ -79,14 +79,23 @@ Additional setup requirements within the secure environment may include:
 - Importing keys
 
 ### 2.1 Installing Offline Packages
-After booting into the secure environment, the user proceeds to verify the SHA256 checksums of the previously GPG-verified APK packages stored in the boot partition. Once verified, the user issues the following command within the package subdirectory to install them:
+After booting into the secure environment, the user proceeds to verify the SHA256 checksums of the previously GPG-verified APK packages download to removable storage:
 
 ```shell
-$ apk --allow-untrusted --force-non-repository add *.apk
+root@host:~$ date -s 'YYYY-MM-DD hh:mm:ss'
+root@host:~$ mount -t exfat /dev/sda1 /mnt
+root@host:~$ cp /mnt/gpg-bundle.* .
+root@host:~$ umount /mnt
+root@host:~$ sha256sum -c gpg-bundle.tar.gz.sha256 && tar -xzvf gpg-bundle-tar-gz
+```
+
+Once verified and extracted from the tarball, the user issues the following command within the package subdirectory to install them:
+```shell
+root@host:~$ apk --allow-untrusted --force-non-repository add *.apk
 ```
 
 ### 2.2 GPG Environment
-The user can now begin [working with GPG](https://github.com/drduh/YubiKey-Guide?tab=readme-ov-file#prepare-gnupg) and smart cards in their new environment:
+At this point, the user can now begin [working with GPG](https://github.com/drduh/YubiKey-Guide?tab=readme-ov-file#prepare-gnupg) and smart cards in their new environment:
 
 ```shell
 $ gpg --import yubikey.pub
