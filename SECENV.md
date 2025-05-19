@@ -1,114 +1,135 @@
 # Creating a Secure Environment for GPG in Alpine Linux
 
-by Matt Borja
+Copyright (c) 2025 Matt Borja
 
-**Abstract.** This document describes a process for creating a secure environment for GPG key management using Alpine Linux: a lightweight and secure Linux distribution capable of supporting newer versions of GPG with smart card support on very modest hardware such as the ARM-based Raspberry Pi 1 Model B (32-bit). This document also demonstrates the highly portable nature of Alpine Package Keeper (APK) for ease of dependency installation in air-gapped environments.
+## Abstract
+This document describes a process for creating a secure environment for GPG key management using Alpine Linux: a lightweight and secure Linux distribution capable of supporting newer versions of GPG with smart card support on very modest hardware such as the ARM-based Raspberry Pi 1 Model B (32-bit). This document also considers the highly portable nature of Alpine Package Keeper (APK) for ease of dependency installation in air-gapped environments and a tightly coupled process to further assert package integrity as an installation prerequisite within the air-gapped environment.
 
 **Tags.** Tails OS, Alpine Linux, GnuPG, Raspberry Pi.
 
-**Disclaimer.** The procedures outlined in this document are provided as best effort measures for creating a safer working environment for managing GPG keys; and are not intended to eliminate every possible threat scenario including, but not limited to those arising from the presence of: advanced persistent threats, viruses, infected firmware, or other similarly compromised peripherals or protocols used by these procedures. Caution must still be exercised when considering the use, proximity, and direct connection of any “active” or unshielded electronic device.
+## Disclaimer
+The procedures outlined in this document are provided as best effort measures for creating a safer working environment for managing GPG keys; and are not intended to eliminate every possible threat scenario including, but not limited to those arising from the presence of: advanced persistent threats, viruses, infected firmware, or other similarly compromised peripherals or protocols used by these procedures. Caution must still be exercised when considering the use, proximity, and direct connection of any “active” or unshielded electronic device.
 
-## Stage 1: Establish a Secure Imaging Host
+Furthermore:
 
-Preparing a secure environment for GPG normally involves the initial use of an external host system (e.g., Windows, Mac OS) to create its bootable disk. While this might be satisfactory to many, it is worth considering the risk of host contamination through daily use. Therefore, we will establish an *intermediary environment* from which we will then create the bootable disk. One might think of this seemingly superfluous step as merely grabbing a clean plate before putting food on it to eat!
+THIS DOCUMENTATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THIS DOCUMENTATION OR THE USE OR OTHER DEALINGS IN THIS DOCUMENTATION.
 
-We will also consider a tightly coupled process for verifying the target image before writing it to disk.
+## 1. Prepare a Secure Imaging Host
+
+Preparing a secure environment for GPG normally involves the initial use of an external host system (e.g., Windows, Mac OS, etc.) to create its bootable disk. While this might be satisfactory to many, it is worth considering the risk of host contamination through daily use. Therefore we will consider an *intermediary environment* from which we will then create the bootable disk. One might think of this seemingly superfluous step as merely grabbing a clean plate before putting food on it to eat!
  
 ### 1.1. Use Tails OS as an Intermediary (Recommended)
 [Tails OS](https://tails.net/install/expert/index.en.html) provides for a convenient, isolated ephemeral environment, placing special emphasis on proper verification of its USB images before use. Consider booting into a system like this before starting in on these procedures.
 
+As mentioned before, this environment alone may arguably be considered satisfactory for GPG purposes, but it is out of an abundance of caution we are limiting our use of it for verification and imaging purposes only.
+
 ### 1.2. Use the target OS to download packages
 
+If you haven't already, follow the [Tails installation guide](https://tails.net/install/expert/index.en.html) *carefully* to ensure you have [verified](https://tails.net/install/expert/index.en.html#verify-key) and booted into a valid Tails environment before continuing.
+
 #### 1.2.1. Acquire the target image
-Let's assume you've gone through the steps of downloading, verifying, and booting into **Tails**. You'll now need to import a copy of the target OS image ([Alpine Linux](https://alpinelinux.org/downloads/)) by either:
-- Connecting Tails to the Internet and using its Tor Browser to download the image
+Next, import a copy of [Alpine Linux](https://alpinelinux.org/downloads/) by either:
+- Connecting Tails to the Internet and using the Tor Browser to download the image
 - Leaving Tails disconnected from the Internet and instead using another device (e.g., smartphone) to bring over the downloaded image using a removable storage device
 
-**Important.** You must verify this image using its GPG signature and corresponding signing key just as you should have done to verify Tails prior to using as an intermediary. These steps may seem repetitive, but are critical to building a clean path into a highly secure environment.
+**Note.** If you have designated an older Raspberry Pi as your preferred air-gapped device, you will need to provide a SD card for imaging and likely use the ARMhf (hard float) images from their [downloads page](https://www.alpinelinux.org/downloads/).
 
-#### 1.2.2. Boot the target image and download OS packages
-In the same way you installed Tails onto a USB stick using the `dd` command, you will want to do this *within Tails* for the Alpine Linux image you've just acquired. Clearly, this will require its own separate USB stick, but what you've now accomplished will be an Alpine Linux image written to a USB stick from the intermediary environment as a preferred alternative to a contaminated host environment.
+**Important.** In the same way you should have done for Tails, you must verify the Alpine Linux image using its corresponding GPG signature against its signing key before continuing. Always check [official sources](https://docs.alpinelinux.org/user-handbook/0.1a/Installing/medium.html#_optional_verifying_the_downloaded_files_pgp) and consider additional evidence sources ([example](https://sig3.dev)) for validity completness. These steps may seem repetitive and strenuous, but are critical to building a verifiable path into a highly secure environment.
 
-Next, you will want to boot into the Alpine Linux system you've just created, login as `root`, and connect to the Internet to download the required packages for this specific platform:
+Once you've verified the image download, you can use the **Restore Disk Image...** in the *Disks* utility from within Tails to write the image to a target disk (e.g., SD card for a Raspberry Pi).
+
+#### 1.2.2. Boot the target image to download OS-specific packages for GnuPG
+
+Boot into the Alpine Linux system, login as `root`, and connect to the Internet to download the required packages for this specific platform:
 
 ```shell
 # 1. Set date
 root@host:~$ date -s 'YYYY-MM-DD hh:mm:ss'
 
-# 2. Connect to Internet
-# See https://wiki.alpinelinux.org/wiki/Configure_Networking
+# 2. Connect to Internet (https://wiki.alpinelinux.org/wiki/Configure_Networking)
 
-# 3. Download packages for offline installation
+# 3a. Download packages for offline installation
 root@host:~$ apk update
 root@host:~$ apk upgrade
 root@host:~$ apk fetch --recursive gpg gnupg-scdaemon pcsc-lite
 
-# NOTE: Internet is no longer required beyond this point
+# 3b. Use the same apk fetch --recursive command to download any additional packages you require for additional work in the air-gapped enviroment.
+
+# Note. Internet is no longer required beyond this point.
 
 # 4. Review downloaded packages
 root@host:~$ ls -lha *.apk
 
-# 5. Bundle packages for offline use
-root@host:~$ tar -czvf gpg-bundle.tar.gz *.apk
+# 5. Bundle for offline use and take SHA256 checksum
+root@host:~$ tar -czvf airgap-bundle.tar.gz *.apk
+root@host:~$ sha256sum airgap-bundle.tar.gz > airgap-bundle.tar.gz.sha256
 
-# 6. Optional. Take SHA256 checksum
-root@host:~$ sha256sum gpg-bundle.tar.gz > gpg-bundle.tar.gz.sha256
+# 6. Visually inspect and note SHA256 checksum for verification
+root@root:~$ cat airgap-bundle.tar.gz.sha256
 
-# 6. Mount removable storage and copy over (replace /dev/sda1 with your actual device file handle)
-root@host:~$ mount -t exfat /dev/sda1 /mnt
-root@host:~$ cp gpg-bundle.* /mnt/
+# 6. Mount removable storage and transfer (replace $SD_PARTITION_DEV with your actual device file handle, as in /dev/sda1, etc.)
+root@host:~$ mount -t exfat "${SD_PARTITION_DEV}" /mnt
+root@host:~$ cp airgap-bundle.* /mnt/
 root@host:~$ umount /mnt
 ```
 
-**Important.** With offline packages in hand, you may consider repeating the prior section (*1.2.1. Acquiring the target image*) to provide yourself with another "clean plate" (one that's never been connected to the Internet) before continuing.
+**Note.** With offline packages now in hand, you might consider repeating the prior section (*1.2.1. Acquiring the target image*) to provide yourself with another "clean plate" (one that's never been connected to the Internet) before continuing. Pragmatically speaking, you can also just "wash the plate" by re-imaging Alpine Linux over the selfsame SD card used in this step to download packages.
 
-**CI/CD Considerations.** It is curate a clean, custom bootable image of Alpine Linux with these same offline packages using a CI/CD pipeline if carefully designed to also demonstrate software provenance and image signing before release.
+## 2. Boot the Secure Environment
 
-## Stage 2. Using the Secure Environment
+The newly provisioned Alpine Linux environment should now be booted, free of any extraneous peripheral attachments, with networking completely disabled.
 
-At this point, the newly provisioned secure environment should be booted, free of any extraneous peripheral attachments, with networking completely disabled.
+Additional setup tasks may include:
 
-Post-installation packages should be readily available (e.g., written to its boot partition for the preceding in intermediate environment) and cryptographically re-verified cryptographically before continuing with offline installation.
-
-Additional setup requirements within the secure environment may include:
-
-- Manually setting the system date
+- Manually setting the system date (`date -s "$CURRENT_UTC_TIMESTAMP"`)
 - Setting the keyboard language and layout
-- Configuring the local GPG system
-- Adding entropy sources
-- Importing keys
 
 ### 2.1 Install Offline Packages for GnuPG
 After booting into the secure environment, the user proceeds to verify the SHA256 checksums of the previously GPG-verified APK packages download to removable storage:
 
 ```shell
-root@host:~$ date -s 'YYYY-MM-DD hh:mm:ss'
-root@host:~$ mount -t exfat /dev/sda1 /mnt
-root@host:~$ cp /mnt/gpg-bundle.* .
-root@host:~$ umount /mnt
-root@host:~$ sha256sum -c gpg-bundle.tar.gz.sha256 && tar -xzvf gpg-bundle-tar-gz
+root@host:~$ mkdir work && cd work
+root@host:~/work$ mount -t exfat "${SD_PARTITION_DEV}" /mnt
+root@host:~/work$ cp /mnt/airgap-bundle.* .
+root@host:~/work$ umount /mnt
 ```
 
-Once verified and extracted from the tarball, the user issues the following command within the package subdirectory to install them:
+The following command provides strict coupling (`&&`) between the cryptographic verification of the bundle created earlier, and its subsequent extraction. If the checksum is invalid, the tarball will not be extracted and the `apk` command that follows is expected to fail.
 ```shell
-root@host:~$ apk --allow-untrusted --force-non-repository add *.apk
+# Require sha256sum to pass before extracting and installing with `apk`
+root@host:~/work$ sha256sum -c airgap-bundle.tar.gz.sha256 \
+                  && tar -xzvf airgap-bundle-tar-gz \
+                  && apk --allow-untrusted --force-non-repository add *.apk
 ```
+
+**CI/CD Considerations.** For DevOps teams, this concludes the essential requirements for provisioning an Alpine Linux image with an offline copy of packages for GPG key management. In the interest of transparency, be sure to include any relevant steps and artifacts in your software provenance and image signing before releasing.
 
 ### 2.2 Verify the Environment
-At this point, the user can now begin [working with GPG](https://github.com/drduh/YubiKey-Guide?tab=readme-ov-file#prepare-gnupg) and smart cards in their new environment:
+Assuming package installation is successfully, begin verifying the environment for GPG use:
+
+**Note.** If you have a YubiKey, go ahead and insert it now.
 
 ```shell
-root@host:~$ gpg --import yubikey.pub
+# Verify GPG installation
+root@host:~$ gpg --version
+
+# Verify smartcard connection
 root@host:~$ gpg --card-status
-root@host:~$ gpg --list-secret-keys
+
+# Import corresponding public key to view all details
+root@host:~$ gpg --import yubikey.pub
+root@host:~$ gpg --list-sigs "$YUBIKEY_FINGERPRINT"
+root@host:~$ gpg --list-secret-keys "$YUBIKEY_FINGERPRINT"
 ```
 
-**Important.** If you run into issues detecting your YubiKey switching between `$GNUPGHOME` directories (common during heavy key management operations such as ring transfers, etc.), try restarting the `gpg-agent` as follows:
+**Note.** If you run into issues detecting your YubiKey switching between `$GNUPGHOME` directories (common during heavy key management operations such as ring transfers, etc.), try restarting the `gpg-agent` as follows:
 
 ```shell
 root@host:~$ pkill gpg-agent
 root@host:~$ gpg --card-status
 ```
 
+**All done!** You can now begin [working with GPG](https://github.com/drduh/YubiKey-Guide?tab=readme-ov-file#prepare-gnupg) and smart cards in your new air-gapped environment!
+
 ## Stage 3. Takedown
-When finished performing tasks, the secure environment should either be a) promptly destroyed or b) properly secured away; to close the window on unknown threats to a dormant system (e.g., physical, technological, theoretical, unknown).
+When finished performing key management tasks, the secure environment should either be a) promptly destroyed or b) properly secured away; to close the window on unknown threats to a dormant system (e.g., physical, technological, theoretical, unknown).
