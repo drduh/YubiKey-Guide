@@ -2,13 +2,13 @@
 
 by Matt Borja
 
-**Purpose.** This document describes a process for creating a secure environment using Alpine Linux: a lightweight and secure distribution of Linux capable of supporting newer versions of GPG with smart card support on very modest hardware such as the ARM-based Raspberry Pi 1 Model B (32-bit). This document also demonstrates the highly portable characteristics of Alpine Package Keeper (APK) to provide for ease of package installation and use in air-gapped environments.
+**Abstract.** This document describes a process for creating a secure environment for GPG key management using Alpine Linux: a lightweight and secure Linux distribution capable of supporting newer versions of GPG with smart card support on very modest hardware such as the ARM-based Raspberry Pi 1 Model B (32-bit). This document also demonstrates the highly portable nature of Alpine Package Keeper (APK) for ease of dependency installation in air-gapped environments.
 
 **Tags.** Tails OS, Alpine Linux, GnuPG, Raspberry Pi.
 
 **Disclaimer.** The procedures outlined in this document are provided as best effort measures for creating a safer working environment for managing GPG keys; and are not intended to eliminate every possible threat scenario including, but not limited to those arising from the presence of: advanced persistent threats, viruses, infected firmware, or other similarly compromised peripherals or protocols used by these procedures. Caution must still be exercised when considering the use, proximity, and direct connection of any “active” or unshielded electronic device.
 
-## Stage 1: Establishing a Secure Imaging Host
+## Stage 1: Establish a Secure Imaging Host
 
 Preparing a secure environment for GPG normally involves the initial use of a host system (e.g., Windows, Mac OS) to create a bootable disk. While this might be satisfactory to many, it is worth considering the risk of contamination through daily use. Think of it as grabbing a clean plate before putting food on it!
 
