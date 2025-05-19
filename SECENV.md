@@ -2,7 +2,7 @@
 
 by Matt Borja
 
-**Purpose.** This document describes a process for creating a secure environment using Alpine Linux: a lightweight and secure distribution of Linux capable of supporting newer versions of GPG with smart card support on even *older versions* of architecturally diverse platforms such as the ARM-based Raspberry Pi 1 Model B (32-bit). This document  also demonstrates the highly portable characteristics of the Alpine Package Keeper (APK) to provide for ease of installation and use in air-gapped environments.
+**Purpose.** This document describes a process for creating a secure environment using Alpine Linux: a lightweight and secure distribution of Linux capable of supporting newer versions of GPG with smart card support on very modest hardware such as the ARM-based Raspberry Pi 1 Model B (32-bit). This document also demonstrates the highly portable characteristics of Alpine Package Keeper (APK) to provide for ease of package installation and use in air-gapped environments.
 
 **Tags.** Tails OS, Alpine Linux, GnuPG, Raspberry Pi.
 
@@ -10,30 +10,57 @@ by Matt Borja
 
 ## Stage 1: Establishing a Secure Imaging Host
 
-Preparing a secure environment for GPG normally involves the initial use of a host system (e.g., Windows, Mac OS) to create a bootable image (e.g. Raspbian, Alpine Linux). While potentially sufficient for sensitive tasks as-is, this scenario could also be easily presumed contaminated by unknown threats in original imaging host environment, especially if the host is used regularly for day-to-day tasks, etc.
+Preparing a secure environment for GPG normally involves the initial use of a host system (e.g., Windows, Mac OS) to create a bootable disk. While this might be satisfactory to many, it is worth considering the risk of contamination through daily use. Think of it as grabbing a clean plate before putting food on it!
 
-Therefore, to mitigate the potential of host contamination, an *intermediary imaging environment* should first be established, isolated, hardened and *booted* as the current working environment (abstraction) prior to creating and the actual final, secure working environment. This process of creating and booting into an abstracted working environment may optionally be repeated (and also varied) as often as deemed necessary to evade any threats, potential or realized, in the preceding environment.
+Therefore, to mitigate the potential of host contamination, we will establish an *intermediary environment* (abstraction) prior to creating the actual secure working environment. We will also consider a tightly coupled process for verifying the target image before writing it to disk.
+ 
+### 1.1. Use Tails OS as an Intermediary (Recommended)
+[Tails OS](https://tails.net/install/expert/index.en.html) provides for a convenient, isolated ephemeral environment, placing special emphasis on proper verification of its USB images before use. Consider booting into a system like this before starting in on these procedures.
 
-**Note.** It will be necessary for this first working environment to either be: a) Internet-connected, or b) connected to a USB storage medium containing images for the final environment; for the purpose building and deploying the final secure image.
+### 1.2. Use the target OS to download packages
 
-### 1.1 Obtaining Alpine Linux
-**Smartphone Device Example.** The user connects a USB storage medium to their fully updated iPhone (cannot be jail broken) using an Apple-certified USB camera adapter. The iPhone in this scenario can serve as an initial intermediary environment reserved solely for the purpose of downloading an [official Alpine Linux ISO image](https://alpinelinux.org/downloads/) for the Raspberry Pi along with its corresponding signatures and public keys to the connected USB storage medium via the Files app.
+#### 1.2.1. Acquire the target image
+Let's assume you've gone through the steps of downloading, verifying, and booting into **Tails**. You'll now need to import a copy of the target OS image ([Alpine Linux](https://alpinelinux.org/downloads/)) by either:
+- Connecting Tails to the Internet and using its Tor Browser to download the image
+- Leaving Tails disconnected from the Internet and instead using another device (e.g., smartphone) to bring over the downloaded image using a removable storage device
 
-Note: This same acquisition method can be applied to any desired OS supported by the target device.
+**Important.** You must verify this image using its GPG signature and corresponding signing key just as you should have done to verify Tails prior to using as an intermediary. These steps may seem repetitive, but are critical to building a clean path into a highly secure environment.
 
-**Post-Environment Example.** The user creates an intermediary environment using the [Raspberry Pi Imager](https://www.raspberrypi.com/software/) and boots the 32-bit Alpine Linux image on their Raspberry Pi 1 Model B with networking enabled.
+#### 1.2.2. Boot the target image and download OS packages
+In the same way you installed Tails onto a USB stick using the `dd` command, you will want to do this *within Tails* for the Alpine Linux image you've just acquired. Clearly, this will require its own separate USB stick, but what you've now accomplished will be an Alpine Linux image written to a USB stick from the intermediary environment as a preferred alternative to a contaminated host environment.
 
-Note: While this is the same OS that will ultimately be used for GPG, we are merely borrowing it as a "post-environment" at this stage in the process, solely for the purpose of prefetching an offline copy of the selfsame OS-specific APK packages that will be required for GPG (and smart card use) later on.
+Next, you will want to boot into the Alpine Linux system you've just created, login as `root`, and connect to the Internet to download the required packages for this specific platform:
 
-### 1.2 Downloading APK packages for offline use
-While still booted in the "post-environment," you can run the following commands to update APK and download the relevant packages:
 ```shell
-$ apk update && apk upgrade && apk fetch --recursive gpg gnupg-scdaemon pcsc-lite
+# 1. Set date
+root@host:~$ date -s 'YYYY-MM-DD hh:mm:ss'
+
+# 2. Connect to Internet
+# See https://wiki.alpinelinux.org/wiki/Configure_Networking
+
+# 3. Download packages for offline installation
+root@host:~$ apk update
+root@host:~$ apk upgrade
+root@host:~$ apk fetch --recursive gpg gnupg-scdaemon pcsc-lite
+
+# NOTE: Internet is no longer required beyond this point
+
+# 4. Review downloaded packages
+root@host:~$ ls -lha *.apk
+
+# 5. Bundle packages for offline use
+root@host:~$ tar -czvf gpg-bundle.tar.gz *.apk
+
+# 6. Optional. Take SHA256 checksum
+root@host:~$ sha256sum gpg-bundle.tar.gz > gpg-bundle.tar.gz.sha256
+
+# 6. Mount removable storage and copy over (replace /dev/sda1 with your actual device file handle)
+root@host:~$ mount -t exfat /dev/sda1 /mnt
+root@host:~$ cp gpg-bundle.* /mnt/
+root@host:~$ umount /mnt
 ```
 
-**Tip.** The `--recursive` option is key to ensuring all dependencies are also downloaded.
-
-After running the above command, the downloaded packages will be found downloaded locally in the current working directory and should then be transferred to a USB storage medium.
+**Important.** With offline packages in hand, you may consider repeating the prior section (*1.2.1. Acquiring the target image*) to provide yourself with another "clean plate" (one that's never been connected to the Internet) before continuing.
 
 **CI/CD Considerations.** It is possible to bypass this entire user story if a CI/CD pipeline were to be carefully designed to demonstrate software provenance in the curation and signing of a custom Alpine Linux image with these requirements.
 
