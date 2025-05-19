@@ -64,7 +64,7 @@ root@host:~$ umount /mnt
 
 **CI/CD Considerations.** It is curate a clean, custom bootable image of Alpine Linux with these same offline packages using a CI/CD pipeline if carefully designed to also demonstrate software provenance and image signing before release.
 
-## Stage 2. Secure Environment
+## Stage 2. Using the Secure Environment
 
 At this point, the newly provisioned secure environment should be booted, free of any extraneous peripheral attachments, with networking completely disabled.
 
@@ -78,7 +78,7 @@ Additional setup requirements within the secure environment may include:
 - Adding entropy sources
 - Importing keys
 
-### 2.1 Installing Offline Packages
+### 2.1 Install Offline Packages for GnuPG
 After booting into the secure environment, the user proceeds to verify the SHA256 checksums of the previously GPG-verified APK packages download to removable storage:
 
 ```shell
@@ -94,15 +94,21 @@ Once verified and extracted from the tarball, the user issues the following comm
 root@host:~$ apk --allow-untrusted --force-non-repository add *.apk
 ```
 
-### 2.2 GPG Environment
+### 2.2 Verify the Environment
 At this point, the user can now begin [working with GPG](https://github.com/drduh/YubiKey-Guide?tab=readme-ov-file#prepare-gnupg) and smart cards in their new environment:
 
 ```shell
-$ gpg --import yubikey.pub
-$ gpg --card-status
-$ gpg --list-secret-keys
+root@host:~$ gpg --import yubikey.pub
+root@host:~$ gpg --card-status
+root@host:~$ gpg --list-secret-keys
+```
+
+**Important.** If you run into issues detecting your YubiKey switching between `$GNUPGHOME` directories (common during heavy key management operations such as ring transfers, etc.), try restarting the `gpg-agent` as follows:
+
+```shell
+root@host:~$ pkill gpg-agent
+root@host:~$ gpg --card-status
 ```
 
 ## Stage 3. Takedown
-
 When finished performing tasks, the secure environment should either be a) promptly destroyed or b) properly secured away; to close the window on unknown threats to a dormant system (e.g., physical, technological, theoretical, unknown).
