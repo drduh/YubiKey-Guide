@@ -62,12 +62,7 @@ root@host:~$ umount /mnt
 
 **Important.** With offline packages in hand, you may consider repeating the prior section (*1.2.1. Acquiring the target image*) to provide yourself with another "clean plate" (one that's never been connected to the Internet) before continuing.
 
-**CI/CD Considerations.** It is possible to bypass this entire user story if a CI/CD pipeline were to be carefully designed to demonstrate software provenance in the curation and signing of a custom Alpine Linux image with these requirements.
-
-### 1.3 Building the Secure Environment
-Once an intermediary environment has been finalized and selected to become the new imaging host environment, the user may begin to build out their final working environment, including but not limited to the base OS, and any post-installation scripts, packages, tools, etc. needed for work.
-
-**Example.** The user elects to use Tails OS as the last intermediate environment (the new imaging host environment) following a series of abstracted pre-environments. During its creation (prior to booting), an encrypted persistent storage is configured (e.g., LUKS) and used to store an offline, verified copy of Alpine Linux (32-bit) for their Raspberry Pi, along with all prefetched APK packages required for use in the final working environment. With permanent storage detached and networking completely disabled, the user proceeds to boot into Tails OS with Persistent Storage unlocked. Once booted, they use the disk utility program (Disks) to "Restore Disk Image" to an SD card using the Alpine Linux image residing in Persistent Storage. Once imaged, the use proceeds to mount its writable 80 MB boot partition to copy relevant prefetched APK packages into a subfolder for post-installation. The SD card should now have everything needed to boot a securely created environment without the need to be connected to the Internet or other extraneous storage medium or peripherals.
+**CI/CD Considerations.** It is curate a clean, custom bootable image of Alpine Linux with these same offline packages using a CI/CD pipeline if carefully designed to also demonstrate software provenance and image signing before release.
 
 ## Stage 2. Secure Environment
 
