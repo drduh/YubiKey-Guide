@@ -10,9 +10,9 @@ by Matt Borja
 
 ## Stage 1: Establish a Secure Imaging Host
 
-Preparing a secure environment for GPG normally involves the initial use of a host system (e.g., Windows, Mac OS) to create a bootable disk. While this might be satisfactory to many, it is worth considering the risk of contamination through daily use. Think of it as grabbing a clean plate before putting food on it!
+Preparing a secure environment for GPG normally involves the initial use of an external host system (e.g., Windows, Mac OS) to create its bootable disk. While this might be satisfactory to many, it is worth considering the risk of host contamination through daily use. Therefore, we will establish an *intermediary environment* from which we will then create the bootable disk. One might think of this seemingly superfluous step as merely grabbing a clean plate before putting food on it to eat!
 
-Therefore, to mitigate the potential of host contamination, we will establish an *intermediary environment* (abstraction) prior to creating the actual secure working environment. We will also consider a tightly coupled process for verifying the target image before writing it to disk.
+We will also consider a tightly coupled process for verifying the target image before writing it to disk.
  
 ### 1.1. Use Tails OS as an Intermediary (Recommended)
 [Tails OS](https://tails.net/install/expert/index.en.html) provides for a convenient, isolated ephemeral environment, placing special emphasis on proper verification of its USB images before use. Consider booting into a system like this before starting in on these procedures.
