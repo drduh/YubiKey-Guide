@@ -107,7 +107,7 @@ root@host:~/work$ sha256sum -c airgap-bundle.tar.gz.sha256 \
                   && apk --allow-untrusted --force-non-repository add *.apk
 ```
 
-**Don't forget!** If you obtained a copy of [gpg.conf](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf), be sure to import it into your `$GNUPGHOME` before continuing.
+**Don't forget!** If you obtained a copy of [gpg.conf](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf) in advance, be sure to import it into your `$GNUPGHOME` before continuing.
 
 **CI/CD Considerations.** For DevOps teams, this concludes the essential requirements for provisioning an Alpine Linux image with an offline copy of packages for GPG key management. In the interest of transparency, be sure to include any relevant steps and artifacts in your software provenance and image signing before releasing.
 
