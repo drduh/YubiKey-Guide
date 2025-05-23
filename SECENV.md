@@ -23,11 +23,12 @@ Preparing a secure environment for GPG normally involves the initial use of an e
 
 As mentioned before, this environment alone may arguably be considered satisfactory for GPG purposes, but it is out of an abundance of caution we are limiting our use of it for verification and imaging purposes only.
 
-### 1.2. Use the target OS to download packages
-
-If you haven't already, follow the [Tails installation guide](https://tails.net/install/expert/index.en.html) *carefully* to ensure you have [verified](https://tails.net/install/expert/index.en.html#verify-key) and booted into a valid Tails environment before continuing.
+### 1.2. Use the target OS to download packages and gpg.conf
+The goal of this section is to have all the necessary assets in hand to avert the need for an Internet connection post-installation towards the end of this guide.
 
 #### 1.2.1. Acquire the target image
+If you haven't already, follow the [Tails installation guide](https://tails.net/install/expert/index.en.html) *carefully* to ensure you have [verified](https://tails.net/install/expert/index.en.html#verify-key) and booted into a valid Tails environment before continuing.
+
 Next, import a copy of [Alpine Linux](https://alpinelinux.org/downloads/) by either:
 - Connecting Tails to the Internet and using the Tor Browser to download the image
 - Leaving Tails disconnected from the Internet and instead using another device (e.g., smartphone) to bring over the downloaded image using a removable storage device
@@ -38,7 +39,11 @@ Next, import a copy of [Alpine Linux](https://alpinelinux.org/downloads/) by eit
 
 Once you've verified the image download, you can use the **Restore Disk Image...** in the *Disks* utility from within Tails to write the image to a target disk (e.g., SD card for a Raspberry Pi).
 
-#### 1.2.2. Boot the target image to download OS-specific packages for GnuPG
+#### 1.2.2. Download a copy of gpg.conf (hardened)
+
+While still connected to the Internet, consider downloading a copy of a hardened version of gpg.conf ([example](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf) to add to your `$GNUPGHOME` on initial boot into the secure environment.
+
+#### 1.2.3. Boot the target image to download OS-specific packages for GnuPG
 
 Boot into the Alpine Linux system, login as `root`, and connect to the Internet to download the required packages for this specific platform:
 
@@ -102,6 +107,8 @@ root@host:~/work$ sha256sum -c airgap-bundle.tar.gz.sha256 \
                   && apk --allow-untrusted --force-non-repository add *.apk
 ```
 
+**Don't forget!** If you obtained a copy of [gpg.conf](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf), be sure to import it into your `$GNUPGHOME` before continuing.
+
 **CI/CD Considerations.** For DevOps teams, this concludes the essential requirements for provisioning an Alpine Linux image with an offline copy of packages for GPG key management. In the interest of transparency, be sure to include any relevant steps and artifacts in your software provenance and image signing before releasing.
 
 ### 2.2 Verify the Environment
@@ -129,7 +136,7 @@ root@host:~$ pkill gpg-agent
 root@host:~$ gpg --card-status
 ```
 
-**All done!** You can now begin [working with GPG](https://github.com/drduh/YubiKey-Guide?tab=readme-ov-file#prepare-gnupg) and smart cards in your new air-gapped environment!
+**All done!** You can now begin [working with GPG](https://github.com/drduh/YubiKey-Guide?tab=readme-ov-file#identity) and smart cards in your new air-gapped environment!
 
 ## Stage 3. Takedown
 When finished performing key management tasks, the secure environment should either be a) promptly destroyed or b) properly secured away; to close the window on unknown threats to a dormant system (e.g., physical, technological, theoretical, unknown).
