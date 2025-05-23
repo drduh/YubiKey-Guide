@@ -41,7 +41,7 @@ Once you've verified the image download, you can use the **Restore Disk Image...
 
 #### 1.2.2. Download a copy of gpg.conf (hardened)
 
-While still connected to the Internet, consider downloading a copy of a hardened version of gpg.conf ([example](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf) to add to your `$GNUPGHOME` on initial boot into the secure environment.
+While still connected to the Internet, consider downloading a copy of a hardened version of gpg.conf ([example](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf)) to add to your `$GNUPGHOME` on initial boot into the secure environment.
 
 #### 1.2.3. Boot the target image to download OS-specific packages for GnuPG
 
