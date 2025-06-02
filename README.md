@@ -2258,7 +2258,7 @@ Now connect networking.
 
 - If it still fails, it may be useful to stop the background `sshd` daemon process service on the server (e.g. using `sudo systemctl stop sshd`) and instead start it in the foreground with extensive debugging output, using `/usr/sbin/sshd -eddd`. Note that the server will not fork and will only process one connection, therefore has to be re-started after every `ssh` test.
 
-- If you receive the error, `Please insert the card with serial number` see [Using Multiple Keys](#using-multiple-keys).
+- If you receive the error, `Please insert the card with serial number` see [Using Multiple Keys](#using-multiple-yubikeys).
 
 - If you receive the error, `There is no assurance this key belongs to the named user` or `encryption failed: Unusable public key` or `No public key` use `gpg --edit-key` to set `trust` to `5 = I trust ultimately`
 
