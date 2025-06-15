@@ -1806,7 +1806,7 @@ gpg-connect-agent "scd serialno" "learn --force" /bye
 Alternatively, use a script to delete the GnuPG shadowed key, where the serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)):
 
 ```console
-cat >> ~/scripts/remove-keygrips.sh <<EOF
+mkdir -p ~/scripts && cat >> ~/scripts/remove-keygrips.sh <<EOF
 #!/usr/bin/env bash
 (( $# )) || { echo "Specify a key." >&2; exit 1; }
 KEYGRIPS=$(gpg --with-keygrip --list-secret-keys "$@" | awk '/Keygrip/ { print $3 }')
