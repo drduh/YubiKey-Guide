@@ -32,10 +32,23 @@ get_id_label () {
     printf "YubiKey User <yubikey@example.domain>"
 }
 
-get_key_type () {
-    # Returns key type and size.
+get_key_type_sign () {
+    # Returns key type for signature subkey.
     #printf "default"
     printf "rsa4096"
+}
+
+get_key_type_enc () {
+    # Returns key type for encryption subkey.
+    #printf "default"
+    printf "rsa4096"
+}
+
+get_key_type_auth () {
+    # Returns key type for authentication subkey.
+    #printf "default"
+    #printf "rsa4096"
+    printf "ed25519"
 }
 
 get_key_expiration () {
@@ -58,10 +71,12 @@ set_temp_dir () {
 set_attrs () {
     # Sets identity and key attributes.
     export IDENTITY="$(get_id_label)"
-    export KEY_TYPE="$(get_key_type)"
+    export KEY_TYPE_SIGN="$(get_key_type_sign)"
+    export KEY_TYPE_ENC="$(get_key_type_enc)"
+    export KEY_TYPE_AUTH="$(get_key_type_auth)"
     export KEY_EXPIRATION="$(get_key_expiration)"
-    printf "set attributes (label='%s', type='%s', expire='%s')\n" \
-        "$IDENTITY" "$KEY_TYPE" "$KEY_EXPIRATION"
+    printf "set attributes (label='%s', sign='%s', enc='%s', auth='%s', expire='%s')\n" \
+        "$IDENTITY" "$KEY_TYPE_SIGN" "$KEY_TYPE_ENC" "$KEY_TYPE_AUTH" "$KEY_EXPIRATION"
 }
 
 get_pass () {
@@ -85,8 +100,7 @@ gen_key_certify () {
     # Generates Certify key with no expiration.
     echo "$CERTIFY_PASS" | \
         gpg --batch --passphrase-fd 0 \
-            --quick-generate-key "$IDENTITY" \
-            "$KEY_TYPE" "cert" "never"
+            --quick-generate-key "$IDENTITY" "$KEY_TYPE_SIGN" "cert" "never"
 }
 
 set_fingerprint () {
@@ -102,13 +116,15 @@ set_fingerprint () {
 
 gen_key_subs () {
     # Generates Subkeys with specified expiration.
-    for SUBKEY in sign encrypt auth ; do \
-        echo "$CERTIFY_PASS" | \
-            gpg --batch --passphrase-fd 0 \
-                --pinentry-mode=loopback \
-                --quick-add-key "$KEY_FP" \
-                "$KEY_TYPE" "$SUBKEY" "$KEY_EXPIRATION"
-    done
+    echo "$CERTIFY_PASS" | \
+        gpg --batch --passphrase-fd 0 --pinentry-mode=loopback \
+            --quick-add-key "$KEY_FP" "$KEY_TYPE_SIGN" sign "$KEY_EXPIRATION"
+    echo "$CERTIFY_PASS" | \
+        gpg --batch --passphrase-fd 0 --pinentry-mode=loopback \
+            --quick-add-key "$KEY_FP" "$KEY_TYPE_ENC" encrypt "$KEY_EXPIRATION"
+    echo "$CERTIFY_PASS" | \
+        gpg --batch --passphrase-fd 0  --pinentry-mode=loopback \
+            --quick-add-key "$KEY_FP" "$KEY_TYPE_AUTH" auth "$KEY_EXPIRATION"
 }
 
 save_secrets () {

@@ -367,7 +367,7 @@ Subkeys must be renewed or rotated using the Certify key - see [Updating keys](#
 Set Subkeys to expire on a planned date:
 
 ```console
-export EXPIRATION=2027-05-01
+export EXPIRATION=2027-07-01
 ```
 
 The expiration date may also be relative, for example set to two years from today:
