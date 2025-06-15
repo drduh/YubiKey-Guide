@@ -438,7 +438,7 @@ export KEYID=$(gpg -k --with-colons "$IDENTITY" | \
 export KEYFP=$(gpg -k --with-colons "$IDENTITY" | \
     awk -F: '/^fpr:/ { print $10; exit }')
 
-printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
+printf "\nKey ID/Fingerprint: %20s\n%s\n\n" "$KEYID" "$KEYFP"
 ```
 
 <details>
@@ -487,7 +487,7 @@ EOF
 
 # Create Subkeys
 
-Generate Signature, Encryption and Authentication Subkeys using the previously configured key type, passphrase and expiration:
+Generate Signature and Encryption Subkeys using the previously configured key type, passphrase and expiration:
 
 ```console
 echo "$CERTIFY_PASS" | \
@@ -497,14 +497,18 @@ echo "$CERTIFY_PASS" | \
 echo "$CERTIFY_PASS" | \
     gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
         --quick-add-key "$KEYFP" "$KEY_TYPE" encrypt "$EXPIRATION"
+```
 
+Followed by the Authentication Subkey:
+
+> [!NOTE]
+> Some systems no longer accept RSA for SSH authentication; set the `KEY_TYPE` variable to `ed25519` before generating Authentication Subkey.
+
+```
 echo "$CERTIFY_PASS" | \
     gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
         --quick-add-key "$KEYFP" "$KEY_TYPE" auth "$EXPIRATION"
 ```
-
-> [!NOTE]
-> Some systems no longer accept RSA keys for SSH authentication; set the `KEY_TYPE` variable to `ed25519` before generating the last `auth` subkey.
 
 # Verify keys
 
