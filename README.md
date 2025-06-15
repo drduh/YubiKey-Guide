@@ -367,7 +367,7 @@ Subkeys must be renewed or rotated using the Certify key - see [Updating keys](#
 Set Subkeys to expire on a planned date:
 
 ```console
-export EXPIRATION=2027-05-01
+export EXPIRATION=2027-07-01
 ```
 
 The expiration date may also be relative, for example set to two years from today:
@@ -438,7 +438,7 @@ export KEYID=$(gpg -k --with-colons "$IDENTITY" | \
 export KEYFP=$(gpg -k --with-colons "$IDENTITY" | \
     awk -F: '/^fpr:/ { print $10; exit }')
 
-printf "\nKey ID: %40s\nKey FP: %40s\n\n" "$KEYID" "$KEYFP"
+printf "\nKey ID/Fingerprint: %20s\n%s\n\n" "$KEYID" "$KEYFP"
 ```
 
 <details>
@@ -487,14 +487,27 @@ EOF
 
 # Create Subkeys
 
-Generate Signature, Encryption and Authentication Subkeys using the previously configured key type, passphrase and expiration:
+Generate Signature and Encryption Subkeys using the previously configured key type, passphrase and expiration:
 
 ```console
-for SUBKEY in sign encrypt auth ; do \
-    echo "$CERTIFY_PASS" | \
+echo "$CERTIFY_PASS" | \
     gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
-        --quick-add-key "$KEYFP" "$KEY_TYPE" "$SUBKEY" "$EXPIRATION"
-done
+        --quick-add-key "$KEYFP" "$KEY_TYPE" sign "$EXPIRATION"
+
+echo "$CERTIFY_PASS" | \
+    gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+        --quick-add-key "$KEYFP" "$KEY_TYPE" encrypt "$EXPIRATION"
+```
+
+Followed by the Authentication Subkey:
+
+> [!NOTE]
+> Some systems no longer accept RSA for SSH authentication; set the `KEY_TYPE` variable to `ed25519` before generating Authentication Subkey.
+
+```
+echo "$CERTIFY_PASS" | \
+    gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+        --quick-add-key "$KEYFP" "$KEY_TYPE" auth "$EXPIRATION"
 ```
 
 # Verify keys
@@ -1793,7 +1806,7 @@ gpg-connect-agent "scd serialno" "learn --force" /bye
 Alternatively, use a script to delete the GnuPG shadowed key, where the serial number is stored (see [GnuPG #T2291](https://dev.gnupg.org/T2291)):
 
 ```console
-cat >> ~/scripts/remove-keygrips.sh <<EOF
+mkdir -p ~/scripts && cat >> ~/scripts/remove-keygrips.sh <<EOF
 #!/usr/bin/env bash
 (( $# )) || { echo "Specify a key." >&2; exit 1; }
 KEYGRIPS=$(gpg --with-keygrip --list-secret-keys "$@" | awk '/Keygrip/ { print $3 }')
