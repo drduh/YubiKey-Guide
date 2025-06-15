@@ -11,14 +11,20 @@ umask 077
 
 export LC_ALL="C"
 
+fail() {
+    # Print an error string in red and exit.
+    tput setaf 1 ; printf "%s\n" "${1}" ; tput sgr0
+    exit 1
+}
+
 print_cred () {
-  # Print a credential string in red.
-  tput setaf 1 ; printf "%s\n" "${1}" ; tput sgr0
+    # Print a credential string in red.
+    tput setaf 1 ; printf "%s\n" "${1}" ; tput sgr0
 }
 
 print_id () {
-  # Print an identity string in yellow.
-  tput setaf 3 ; printf "%s\n" "${1}" ; tput sgr0
+    # Print an identity string in yellow.
+    tput setaf 3 ; printf "%s\n" "${1}" ; tput sgr0
 }
 
 get_id_label () {
@@ -28,12 +34,13 @@ get_id_label () {
 
 get_key_type () {
     # Returns key type and size.
+    #printf "default"
     printf "rsa4096"
 }
 
 get_key_expiration () {
     # Returns key expiration date.
-    printf "2027-05-01"
+    printf "2027-07-01"
 }
 
 get_temp_dir () {
@@ -87,6 +94,9 @@ set_fingerprint () {
     key_list=$(gpg --list-secret-keys --with-colons)
     export KEY_ID=$(printf "$key_list" | awk -F: '/^sec/ { print  $5; exit }')
     export KEY_FP=$(printf "$key_list" | awk -F: '/^fpr/ { print $10; exit }')
+    if [[ -z "$KEY_FP" || -z "$KEY_ID" ]]; then
+        fail "could not set key fingerprint"
+    fi
     printf "got identity (fp='%s', id='%s')\n" "$KEY_FP" "$KEY_ID"
 }
 
