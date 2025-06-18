@@ -502,7 +502,7 @@ echo "$CERTIFY_PASS" | \
 Followed by the Authentication Subkey:
 
 > [!NOTE]
-> Some systems no longer accept RSA for SSH authentication; set the `KEY_TYPE` variable to `ed25519` before generating Authentication Subkey.
+> Some systems no longer accept RSA for SSH authentication; to use [Ed25519](https://ed25519.cr.yp.to/), set the `KEY_TYPE` variable to `ed25519` before generating Authentication Subkey.
 
 ```
 echo "$CERTIFY_PASS" | \
@@ -521,12 +521,12 @@ gpg -K
 The output will display **[C]ertify, [S]ignature, [E]ncryption and [A]uthentication** keys:
 
 ```console
-sec   rsa4096/0xF0F2CFEB04341FB5 2025-01-01 [C]
+sec   rsa4096/0xF0F2CFEB04341FB5 2025-07-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 uid                   [ultimate] YubiKey User <yubikey@example>
-ssb   rsa4096/0xB3CD10E502E19637 2025-01-01 [S] [expires: 2027-05-01]
-ssb   rsa4096/0x30CBE8C4B085B9F7 2025-01-01 [E] [expires: 2027-05-01]
-ssb   rsa4096/0xAD9E24E1B8CB9600 2025-01-01 [A] [expires: 2027-05-01]
+ssb   rsa4096/0xB3CD10E502E19637 2025-07-01 [S] [expires: 2027-07-01]
+ssb   rsa4096/0x30CBE8C4B085B9F7 2025-07-01 [E] [expires: 2027-07-01]
+ssb   rsa4096/0xAD9E24E1B8CB9600 2025-07-01 [A] [expires: 2027-07-01]
 ```
 
 # Backup keys
@@ -960,12 +960,12 @@ EOF
 Verify Subkeys are on YubiKey with `gpg -K` - indicated by `ssb>`:
 
 ```console
-sec   rsa4096/0xF0F2CFEB04341FB5 2025-01-01 [C]
+sec   rsa4096/0xF0F2CFEB04341FB5 2025-07-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 uid                   [ultimate] YubiKey User <yubikey@example>
-ssb>  rsa4096/0xB3CD10E502E19637 2025-01-01 [S] [expires: 2027-05-01]
-ssb>  rsa4096/0x30CBE8C4B085B9F7 2025-01-01 [E] [expires: 2027-05-01]
-ssb>  rsa4096/0xAD9E24E1B8CB9600 2025-01-01 [A] [expires: 2027-05-01]
+ssb>  rsa4096/0xB3CD10E502E19637 2025-07-01 [S] [expires: 2027-07-01]
+ssb>  rsa4096/0x30CBE8C4B085B9F7 2025-07-01 [E] [expires: 2027-07-01]
+ssb>  rsa4096/0xAD9E24E1B8CB9600 2025-07-01 [A] [expires: 2027-07-01]
 ```
 
 The `>` after a tag indicates the key is stored on a smart card.
@@ -1129,18 +1129,18 @@ PIN retry counter : 3 3 3
 Signature counter : 0
 KDF setting ......: on
 Signature key ....: CF5A 305B 808B 7A0F 230D  A064 B3CD 10E5 02E1 9637
-      created ....: 2025-01-01 12:00:00
+      created ....: 2025-07-01 12:00:00
 Encryption key....: A5FA A005 5BED 4DC9 889D  38BC 30CB E8C4 B085 B9F7
-      created ....: 2025-01-01 12:00:00
+      created ....: 2025-07-01 12:00:00
 Authentication key: 570E 1355 6D01 4C04 8B6D  E2A3 AD9E 24E1 B8CB 9600
-      created ....: 2025-01-01 12:00:00
-General key info..: sub  rsa4096/0xB3CD10E502E19637 2025-01-01 YubiKey User <yubikey@example>
-sec#  rsa4096/0xF0F2CFEB04341FB5  created: 2025-01-01  expires: never
-ssb>  rsa4096/0xB3CD10E502E19637  created: 2025-01-01  expires: 2027-05-01
+      created ....: 2025-07-01 12:00:00
+General key info..: sub  rsa4096/0xB3CD10E502E19637 2025-07-01 YubiKey User <yubikey@example>
+sec#  rsa4096/0xF0F2CFEB04341FB5  created: 2025-07-01  expires: never
+ssb>  rsa4096/0xB3CD10E502E19637  created: 2025-07-01  expires: 2027-07-01
                                   card-no: 0006 05553211
-ssb>  rsa4096/0x30CBE8C4B085B9F7  created: 2025-01-01  expires: 2027-05-01
+ssb>  rsa4096/0x30CBE8C4B085B9F7  created: 2025-07-01  expires: 2027-07-01
                                   card-no: 0006 05553211
-ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2025-01-01  expires: 2027-05-01
+ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2025-07-01  expires: 2027-07-01
                                   card-no: 0006 05553211
 ```
 
