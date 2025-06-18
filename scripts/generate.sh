@@ -11,14 +11,20 @@ umask 077
 
 export LC_ALL="C"
 
+fail() {
+    # Print an error string in red and exit.
+    tput setaf 1 ; printf "%s\n" "${1}" ; tput sgr0
+    exit 1
+}
+
 print_cred () {
-  # Print a credential string in red.
-  tput setaf 1 ; printf "%s\n" "${1}" ; tput sgr0
+    # Print a credential string in red.
+    tput setaf 1 ; printf "%s\n" "${1}" ; tput sgr0
 }
 
 print_id () {
-  # Print an identity string in yellow.
-  tput setaf 3 ; printf "%s\n" "${1}" ; tput sgr0
+    # Print an identity string in yellow.
+    tput setaf 3 ; printf "%s\n" "${1}" ; tput sgr0
 }
 
 get_id_label () {
@@ -26,14 +32,28 @@ get_id_label () {
     printf "YubiKey User <yubikey@example.domain>"
 }
 
-get_key_type () {
-    # Returns key type and size.
+get_key_type_sign () {
+    # Returns key type for signature subkey.
+    #printf "default"
     printf "rsa4096"
+}
+
+get_key_type_enc () {
+    # Returns key type for encryption subkey.
+    #printf "default"
+    printf "rsa4096"
+}
+
+get_key_type_auth () {
+    # Returns key type for authentication subkey.
+    #printf "default"
+    #printf "rsa4096"
+    printf "ed25519"
 }
 
 get_key_expiration () {
     # Returns key expiration date.
-    printf "2027-05-01"
+    printf "2027-07-01"
 }
 
 get_temp_dir () {
@@ -51,10 +71,12 @@ set_temp_dir () {
 set_attrs () {
     # Sets identity and key attributes.
     export IDENTITY="$(get_id_label)"
-    export KEY_TYPE="$(get_key_type)"
+    export KEY_TYPE_SIGN="$(get_key_type_sign)"
+    export KEY_TYPE_ENC="$(get_key_type_enc)"
+    export KEY_TYPE_AUTH="$(get_key_type_auth)"
     export KEY_EXPIRATION="$(get_key_expiration)"
-    printf "set attributes (label='%s', type='%s', expire='%s')\n" \
-        "$IDENTITY" "$KEY_TYPE" "$KEY_EXPIRATION"
+    printf "set attributes (label='%s', sign='%s', enc='%s', auth='%s', expire='%s')\n" \
+        "$IDENTITY" "$KEY_TYPE_SIGN" "$KEY_TYPE_ENC" "$KEY_TYPE_AUTH" "$KEY_EXPIRATION"
 }
 
 get_pass () {
@@ -78,8 +100,7 @@ gen_key_certify () {
     # Generates Certify key with no expiration.
     echo "$CERTIFY_PASS" | \
         gpg --batch --passphrase-fd 0 \
-            --quick-generate-key "$IDENTITY" \
-            "$KEY_TYPE" "cert" "never"
+            --quick-generate-key "$IDENTITY" "$KEY_TYPE_SIGN" "cert" "never"
 }
 
 set_fingerprint () {
@@ -87,18 +108,23 @@ set_fingerprint () {
     key_list=$(gpg --list-secret-keys --with-colons)
     export KEY_ID=$(printf "$key_list" | awk -F: '/^sec/ { print  $5; exit }')
     export KEY_FP=$(printf "$key_list" | awk -F: '/^fpr/ { print $10; exit }')
+    if [[ -z "$KEY_FP" || -z "$KEY_ID" ]]; then
+        fail "could not set key fingerprint"
+    fi
     printf "got identity (fp='%s', id='%s')\n" "$KEY_FP" "$KEY_ID"
 }
 
 gen_key_subs () {
     # Generates Subkeys with specified expiration.
-    for SUBKEY in sign encrypt auth ; do \
-        echo "$CERTIFY_PASS" | \
-            gpg --batch --passphrase-fd 0 \
-                --pinentry-mode=loopback \
-                --quick-add-key "$KEY_FP" \
-                "$KEY_TYPE" "$SUBKEY" "$KEY_EXPIRATION"
-    done
+    echo "$CERTIFY_PASS" | \
+        gpg --batch --passphrase-fd 0 --pinentry-mode=loopback \
+            --quick-add-key "$KEY_FP" "$KEY_TYPE_SIGN" sign "$KEY_EXPIRATION"
+    echo "$CERTIFY_PASS" | \
+        gpg --batch --passphrase-fd 0 --pinentry-mode=loopback \
+            --quick-add-key "$KEY_FP" "$KEY_TYPE_ENC" encrypt "$KEY_EXPIRATION"
+    echo "$CERTIFY_PASS" | \
+        gpg --batch --passphrase-fd 0  --pinentry-mode=loopback \
+            --quick-add-key "$KEY_FP" "$KEY_TYPE_AUTH" auth "$KEY_EXPIRATION"
 }
 
 save_secrets () {
