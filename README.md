@@ -1034,6 +1034,12 @@ sudo systemctl enable --now pcscd.service
 **macOS**
 
 ```console
+brew install gnupg
+```
+
+Or using MacPorts
+
+```console
 sudo port install gnupg2 pcsc-tools
 ```
 
