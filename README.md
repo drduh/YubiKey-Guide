@@ -1083,9 +1083,7 @@ Or download the public key from a keyserver:
 gpg --recv $KEYID
 ```
 
-Or with the URL on YubiKey, retrieve the public key:
-
-using the command `gpg-card`
+Or with the URL on YubiKey, retrieve the public key using the command `gpg --edit-card`.
 
 ```console
 gpg/card> fetch
