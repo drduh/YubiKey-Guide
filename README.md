@@ -268,16 +268,10 @@ sudo yum install -y gnupg2 pinentry-curses pcsc-lite pcsc-lite-libs gnupg2-smime
 **Fedora**
 
 ```console
-sudo dnf install wget
-
-wget https://github.com/rpmsphere/noarch/raw/master/r/rpmsphere-release-38-1.noarch.rpm
-
-sudo rpm -Uvh rpmsphere-release*rpm
-
 sudo dnf install \
-    gnupg2 dirmngr cryptsetup gnupg2-smime \
-    pcsc-tools opensc pcsc-lite secure-delete \
-    pgp-tools yubikey-personalization-gui
+    wget gnupg2 \
+    cryptsetup pcsc-lite \
+    yubikey-personalization-gui yubikey-manager
 ```
 
 # Prepare GnuPG
