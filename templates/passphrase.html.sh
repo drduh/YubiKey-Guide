@@ -65,7 +65,7 @@ cat <<EOF
 EOF
 
 DATE_HEADER=$(cat <<EOF
-<tr><td></td><td>2</td><td>0</td><td>2</td><td>5</td><td>-</td><td>_</td><td>_</td><td>-</td><td>_</td><td>_</td><td></td><td></td><td></td>
+<tr><td></td><td>2</td><td>0</td><td>2</td><td>_</td><td>-</td><td>_</td><td>_</td><td>-</td><td>_</td><td>_</td><td></td><td></td><td></td>
 <tr>$(for((i=0;i<14;i++)); do printf "<td></td>"; done)
 <tr><td></td><td class="alt" colspan="10">key id</td><td></td><td></td><td></td>
 <tr><td></td><td class="alt" colspan="2" rowspan="2">0x</td> $(for((i=0;i<8;i++)); do printf "<td>_</td>"; done)<td></td><td></td><td></td>

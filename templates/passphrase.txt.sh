@@ -14,7 +14,7 @@ PASSPHRASE_LENGTH="${2:-30}"
 DATE_HEADER=$(cat <<EOF
     DATE (YYYY-MM-DD)      
                            
-       2025-__-__          
+       202_-__-__          
                            
          KEY ID            
    0x________________      
