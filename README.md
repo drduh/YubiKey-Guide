@@ -1301,22 +1301,27 @@ Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent.plist` with the following con
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-    <dict>
-        <key>Label</key>
-        <string>gnupg.gpg-agent</string>
-        <key>RunAtLoad</key>
-        <true/>
-        <key>KeepAlive</key>
-        <false/>
-        <key>ProgramArguments</key>
-        <array>
-            <string>/usr/local/MacGPG2/bin/gpg-connect-agent</string>
-            <string>/bye</string>
-        </array>
-    </dict>
+	<dict>
+		<key>Label</key>
+		<string>gnupg.gpg-agent</string>
+		<key>RunAtLoad</key>
+		<true/>
+		<key>KeepAlive</key>
+		<false/>
+		<key>EnvironmentVariables</key>
+		<dict>
+			<key>PATH</key>
+			<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/usr/local/MacGPG2/bin:/bin</string>
+		</dict>
+		<key>ProgramArguments</key>
+		<array>
+			<string>/usr/bin/env</string>
+			<string>gpg-connect-agent</string>
+			<string>/bye</string>
+		</array>
+	</dict>
 </plist>
 ```
 
