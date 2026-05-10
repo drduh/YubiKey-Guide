@@ -132,7 +132,8 @@ See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for
 
 Connect a portable storage device and identify the disk label - this guide uses `/dev/sdc` throughout, but this value may differ on your system:
 
-**Linux**
+<details>
+<summary>Linux</summary>
 
 ```console
 $ sudo dmesg | tail
@@ -146,7 +147,10 @@ Copy the Debian image to the device:
 sudo dd if=debian-live-*-amd64-xfce.iso of=/dev/sdc bs=4M status=progress ; sync
 ```
 
-**OpenBSD**
+</details>
+
+<details>
+<summary>OpenBSD</summary>
 
 ```console
 $ dmesg | tail -n2
@@ -159,6 +163,8 @@ $ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
+</details>
+
 Power off, remove internal hard drives and all unnecessary devices, such as the wireless card.
 
 # Install software
@@ -170,7 +176,8 @@ Load the operating system and configure networking. Optional hardening steps rel
 
 Open terminal and install required software packages.
 
-**Debian/Ubuntu**
+<details>
+<summary>Debian/Ubuntu</summary>
 
 ```console
 sudo apt update
@@ -183,13 +190,19 @@ sudo apt -y install \
     yubikey-personalization yubikey-manager
 ```
 
-**OpenBSD**
+</details>
+
+<details>
+<summary>OpenBSD</summary>
 
 ```console
 doas pkg_add gnupg pcsc-tools
 ```
 
-**macOS**
+</details>
+
+<details>
+<summary>macOS</summary>
 
 Download and install [Homebrew](https://brew.sh/) and the following packages:
 
@@ -207,7 +220,10 @@ Or using [MacPorts](https://www.macports.org/install.php), install the following
 sudo port install gnupg2 yubikey-manager pinentry wget
 ```
 
-**NixOS**
+</details>
+
+<details>
+<summary>NixOS</summary>
 
 Build an air-gapped NixOS LiveCD image:
 
@@ -253,19 +269,28 @@ qemu-system-x86_64 \
     -drive readonly=on,media=cdrom,format=raw,file=result/iso/yubikeyLive.iso
 ```
 
-**Arch**
+</details>
+
+<details>
+<summary>Arch</summary>
 
 ```console
 sudo pacman -Syu --needed gnupg pcsclite ccid yubikey-personalization
 ```
 
-**RHEL7**
+</details>
+
+<details>
+<summary>RHEL7</summary>
 
 ```console
 sudo yum install -y gnupg2 pinentry-curses pcsc-lite pcsc-lite-libs gnupg2-smime
 ```
 
-**Fedora**
+</details>
+
+<details>
+<summary>Fedora</summary>
 
 ```console
 sudo dnf install --skip-unavailable \
@@ -273,6 +298,8 @@ sudo dnf install --skip-unavailable \
     cryptsetup gnupg2-scdaemon pcsc-lite \
     yubikey-personalization-gui yubikey-manager
 ```
+
+</details>
 
 # Prepare GnuPG
 
@@ -550,7 +577,8 @@ The following process is recommended to be repeated several times on multiple po
 > [ext2](https://en.wikipedia.org/wiki/Ext2) volumes (without encryption) can be mounted on Linux and OpenBSD.
 > Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) volumes for macOS and Windows compatibility instead.
 
-**Linux**
+<details>
+<summary>Linux</summary>
 
 Attach a portable storage device and check its label, in this case `/dev/sdc`:
 
@@ -652,7 +680,10 @@ sudo cryptsetup luksClose gnupg-secrets
 
 Repeat the process for any additional storage devices (at least two are recommended).
 
-**OpenBSD**
+</details>
+
+<details>
+<summary>OpenBSD</summary>
 
 Attach a USB disk and determine its label:
 
@@ -734,6 +765,8 @@ doas bioctl -d sd3
 
 See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for more information.
 
+</details>
+
 # Export public key
 
 > [!IMPORTANT]
@@ -741,7 +774,8 @@ See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for 
 
 Connect another portable storage device or create a new partition on the existing one.
 
-**Linux**
+<details>
+<summary>Linux</summary>
 
 Using the same `/dev/sdc` device as in the previous step, create a small (at least 20 Mb is recommended) partition for storing materials:
 
@@ -775,7 +809,10 @@ Unmount and remove the storage device:
 sudo umount /mnt/public
 ```
 
-**OpenBSD**
+</details>
+
+<details>
+<summary>OpenBSD</summary>
 
 ```console
 $ doas disklabel -E sd2
@@ -806,6 +843,8 @@ Unmount and remove the storage device:
 ```console
 doas umount /mnt/public
 ```
+
+</details>
 
 # Configure YubiKey
 
@@ -1009,7 +1048,8 @@ echo "disable-ccid" >>scdaemon.conf
 
 Install the required packages:
 
-**Debian/Ubuntu**
+<details>
+<summary>Debian/Ubuntu</summary>
 
 ```console
 sudo apt update
@@ -1017,7 +1057,10 @@ sudo apt update
 sudo apt install -y gnupg gnupg-agent scdaemon pcscd
 ```
 
-**Arch**
+</details>
+
+<details>
+<summary>Arch</summary>
 
 ```console
 sudo pacman -S --needed gnupg pcsc-tools
@@ -1025,7 +1068,10 @@ sudo pacman -S --needed gnupg pcsc-tools
 sudo systemctl enable --now pcscd.service
 ```
 
-**macOS**
+</details>
+
+<details>
+<summary>macOS</summary>
 
 ```console
 brew install gnupg
@@ -1037,7 +1083,10 @@ Or using MacPorts
 sudo port install gnupg2 pcsc-tools
 ```
 
-**OpenBSD**
+</details>
+
+<details>
+<summary>OpenBSD</summary>
 
 ```console
 doas pkg_add gnupg pcsc-tools
@@ -1047,9 +1096,12 @@ doas rcctl enable pcscd
 doas reboot
 ```
 
+</details>
+
 Mount the non-encrypted volume with the public key:
 
-**Debian/Ubuntu**
+<details>
+<summary>Debian/Ubuntu</summary>
 
 ```console
 sudo mkdir -p /mnt/public
@@ -1057,13 +1109,18 @@ sudo mkdir -p /mnt/public
 sudo mount /dev/sdc2 /mnt/public
 ```
 
-**OpenBSD**
+</details>
+
+<details>
+<summary>OpenBSD</summary>
 
 ```console
 doas mkdir -p /mnt/public
 
 doas mount /dev/sd3i /mnt/public
 ```
+
+</details>
 
 Import the public key:
 
@@ -1285,7 +1342,8 @@ wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg-age
 > [!TIP]
 > Set `pinentry-program` to `/usr/bin/pinentry-gnome3` for a GUI-based prompt.
 
-**macOS**
+<details>
+<summary>macOS</summary>
 
 Install pinentry with `brew install pinentry-mac` or `sudo port install pinentry` then edit `gpg-agent.conf` to set the `pinentry-program` path to:
 
@@ -1360,7 +1418,10 @@ launchctl load $HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist
 
 Reboot to activate changes.
 
-**Windows**
+</details>
+
+<details>
+<summary>Windows</summary>
 
 Windows can already have some virtual smart card readers installed, like the one provided for Windows Hello. To verify YubiKey is the correct one used by scdaemon, add it to its configuration.
 
@@ -1424,7 +1485,10 @@ Create a shortcut that points to `gpg-connect-agent /bye` and place it in the st
 
 PuTTY can now be used for public-key SSH authentication. When the server asks for public-key verification, PuTTY will forward the request to GnuPG, which will prompt for a PIN to authorize the operation.
 
-**WSL**
+</details>
+
+<details>
+<summary>WSL</summary>
 
 The goal is to configure SSH client inside WSL work together with the Windows agent, such as gpg-agent.exe.
 
@@ -1493,6 +1557,8 @@ polkit.addRule(function(action, subject) {
     }
 });
 ```
+
+</details>
 
 ### Replace agents
 
@@ -1706,7 +1772,8 @@ git config --global commit.gpgsign true
 git config --global tag.gpgSign true
 ```
 
-**Windows**
+<details>
+<summary>Windows</summary>
 
 Configure authentication:
 
@@ -1717,6 +1784,8 @@ git config --global gpg.program 'C:\Program Files (x86)\GnuPG\bin\gpg.exe'
 ```
 
 Then update the repository URL to `git@github.com:USERNAME/repository`
+
+</details>
 
 ## GnuPG agent forwarding
 
