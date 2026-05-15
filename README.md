@@ -893,7 +893,7 @@ quit
 EOF
 ```
 
-[Smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) can also be set with `gpg --edit-card` and `admin` mode. Use `help` to see available options. The `login` attribute is [required](https://github.com/drduh/YubiKey-Guide/issues/461).
+[Smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) can also be set with `gpg --edit-card` and `admin` mode. Use `help` to see available options. The [login](https://www.gnupg.org/documentation/manuals/gnupg/gpg_002dcard.html) attribute is [required](https://github.com/drduh/YubiKey-Guide/issues/461).
 
 Run `gpg --card-status` to verify results (*Login data* field).
 
