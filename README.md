@@ -877,20 +877,22 @@ ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
 
 ## Set attributes
 
-Set a public identifier for the gpg subsystem:
-```console
-export GPG_LOGIN_ATTR="My Cool YubiKey - 2025"
-```
 > [!IMPORTANT]
-> Anyone with access to the yubikey can see this attribute, even without authentication. It is recommended not to include personally identifiable information in this field to prevent a bad actor from associating a lost yubikey with its owner.
+> OpenPGP card metadata is readable without authentication by anyone with physical access to the YubiKey. This includes Login data and may include the card serial number, key fingerprints, public-key data, and other card attributes. Do not store a name, email address, account name, or other personal identifier in Login data, except for deliberate lost-and-found or asset-management purposes.
 
-Update the login attribute:
+Set the card Login attribute to a random, non-sensitive label:
+
+```console
+export CARD_ATTR_LOGIN="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 12)"
+```
+
+Set the login attribute:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-card <<EOF
 admin
 login
-$GPG_LOGIN_ATTR
+$CARD_ATTR_LOGIN
 $ADMIN_PIN
 quit
 EOF
