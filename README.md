@@ -877,19 +877,26 @@ ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
 
 ## Set attributes
 
-Use previously set values:
+Set a public identifier for the gpg subsystem:
+```console
+export GPG_LOGIN_ATTR="My Cool YubiKey - 2025"
+```
+> [!IMPORTANT]
+> Anyone with access to the yubikey can see this attribute, even without authentication. It is recommended not to include personally identifiable information in this field to prevent a bad actor from associating a lost yubikey with its owner.
+
+Update the login attribute:
 
 ```console
 gpg --command-fd=0 --pinentry-mode=loopback --edit-card <<EOF
 admin
 login
-$IDENTITY
+$GPG_LOGIN_ATTR
 $ADMIN_PIN
 quit
 EOF
 ```
 
-[Smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) can also be set with `gpg --edit-card` and `admin` mode. Use `help` to see available options. The `login` attribute is [required](https://github.com/drduh/YubiKey-Guide/issues/461).
+[Smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) can also be set with `gpg --edit-card` and `admin` mode. Use `help` to see available options. The [login](https://www.gnupg.org/documentation/manuals/gnupg/gpg_002dcard.html) attribute is [required](https://github.com/drduh/YubiKey-Guide/issues/461).
 
 Run `gpg --card-status` to verify results (*Login data* field).
 
