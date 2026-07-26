@@ -275,7 +275,7 @@ sudo dnf install --skip-unavailable \
 Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs) and set it as the GnuPG directory:
 
 ```bash
-export GNUPGHOME=$(mktemp -d -t $(date +%Y.%m.%d)-XXXX)
+export GNUPGHOME=$(mktemp -d "${TMPDIR:-/tmp}/$(date +%Y.%m.%d)-XXXXXXXX")
 ```
 
 ## Configuration
@@ -283,9 +283,7 @@ export GNUPGHOME=$(mktemp -d -t $(date +%Y.%m.%d)-XXXX)
 Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
 
 ```bash
-cd $GNUPGHOME
-
-wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf -P $GNUPGHOME
 ```
 
 The options will look similar to:
@@ -357,7 +355,7 @@ Subkeys must be renewed or rotated using the Certify key - see [Updating keys](#
 Set Subkeys to expire on a planned date:
 
 ```bash
-export KEY_EXPIRATION=2028-07-01
+export KEY_EXPIRATION=2028-08-01
 ```
 
 The expiration date may also be relative, for example set to two years from today:
@@ -509,12 +507,12 @@ gpg -K
 The output should display **[C]ertify, [S]ignature, [E]ncryption and [A]uthentication** keys:
 
 ```console
-sec   rsa4096/0xF0F2CFEB04341FB5 2026-07-01 [C]
+sec   rsa4096/0xF0F2CFEB04341FB5 2026-08-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 uid                   [ultimate] YubiKey User <yubikey@example>
-ssb   rsa4096/0xB3CD10E502E19637 2026-07-01 [S] [expires: 2028-07-01]
-ssb   rsa4096/0x30CBE8C4B085B9F7 2026-07-01 [E] [expires: 2028-07-01]
-ssb   rsa4096/0xAD9E24E1B8CB9600 2026-07-01 [A] [expires: 2028-07-01]
+ssb   rsa4096/0xB3CD10E502E19637 2026-08-01 [S] [expires: 2028-08-01]
+ssb   rsa4096/0x30CBE8C4B085B9F7 2026-08-01 [E] [expires: 2028-08-01]
+ssb   rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
 ```
 
 # Backup keys
@@ -958,12 +956,12 @@ EOF
 Verify Subkeys are on YubiKey with `gpg -K` - indicated by `ssb>`:
 
 ```console
-sec   rsa4096/0xF0F2CFEB04341FB5 2026-07-01 [C]
+sec   rsa4096/0xF0F2CFEB04341FB5 2026-08-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 uid                   [ultimate] YubiKey User <yubikey@example>
-ssb>  rsa4096/0xB3CD10E502E19637 2026-07-01 [S] [expires: 2028-07-01]
-ssb>  rsa4096/0x30CBE8C4B085B9F7 2026-07-01 [E] [expires: 2028-07-01]
-ssb>  rsa4096/0xAD9E24E1B8CB9600 2026-07-01 [A] [expires: 2028-07-01]
+ssb>  rsa4096/0xB3CD10E502E19637 2026-08-01 [S] [expires: 2028-08-01]
+ssb>  rsa4096/0x30CBE8C4B085B9F7 2026-08-01 [E] [expires: 2028-08-01]
+ssb>  rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
 ```
 
 The `>` after a tag indicates the key is stored on a smart card.
@@ -1122,18 +1120,18 @@ Signature counter : 0
 KDF setting ......: off
 UIF setting ......: Sign=off Decrypt=off Auth=off
 Signature key ....: CF5A 305B 808B 7A0F 230D  A064 B3CD 10E5 02E1 9637
-      created ....: 2026-07-01 12:00:00
+      created ....: 2026-08-01 12:00:00
 Encryption key....: A5FA A005 5BED 4DC9 889D  38BC 30CB E8C4 B085 B9F7
-      created ....: 2026-07-01 12:00:00
+      created ....: 2026-08-01 12:00:00
 Authentication key: 570E 1355 6D01 4C04 8B6D  E2A3 AD9E 24E1 B8CB 9600
-      created ....: 2026-07-01 12:00:00
-General key info..: sub  rsa4096/0xB3CD10E502E19637 2026-07-01 YubiKey User <yubikey@example>
-sec#  rsa4096/0xF0F2CFEB04341FB5  created: 2026-07-01  expires: never
-ssb>  rsa4096/0xB3CD10E502E19637  created: 2026-07-01  expires: 2028-07-01
+      created ....: 2026-08-01 12:00:00
+General key info..: sub  rsa4096/0xB3CD10E502E19637 2026-08-01 YubiKey User <yubikey@example>
+sec#  rsa4096/0xF0F2CFEB04341FB5  created: 2026-08-01  expires: never
+ssb>  rsa4096/0xB3CD10E502E19637  created: 2026-08-01  expires: 2028-08-01
                                   card-no: 0006 05553211
-ssb>  rsa4096/0x30CBE8C4B085B9F7  created: 2026-07-01  expires: 2028-07-01
+ssb>  rsa4096/0x30CBE8C4B085B9F7  created: 2026-08-01  expires: 2028-08-01
                                   card-no: 0006 05553211
-ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2026-07-01  expires: 2028-07-01
+ssb>  rsa4096/0xAD9E24E1B8CB9600  created: 2026-08-01  expires: 2028-08-01
                                   card-no: 0006 05553211
 ```
 
@@ -1188,13 +1186,13 @@ Example output:
 
 ```console
 $ secret document.pdf
-document.pdf -> document.pdf.1580000000.enc
+document.pdf -> document.pdf.1780000000.enc
 
-$ reveal document.pdf.1580000000.enc
+$ reveal document.pdf.1780000000.enc
 gpg: anonymous recipient; trying secret key 0xF0F2CFEB04341FB5 ...
 gpg: okay, we are the anonymous recipient.
 gpg: encrypted with RSA key, ID 0x0000000000000000
-document.pdf.1580000000.enc -> document.pdf
+document.pdf.1780000000.enc -> document.pdf
 ```
 
 [drduh/Purse](https://github.com/drduh/Purse) is a secrets manager implemented with GnuPG and YubiKey.
@@ -1216,7 +1214,7 @@ gpg --verify signed.txt
 The output will be similar to:
 
 ```console
-gpg: Signature made Wed 01 Jul 2026 12:00:00 PM UTC
+gpg: Signature made Sat 01 Aug 2026 12:00:00 PM UTC
 gpg:                using RSA key CF5A305B808B7A0F230DA064B3CD10E502E19637
 gpg: Good signature from "YubiKey User <yubikey@example>" [ultimate]
 Primary key fingerprint: 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
@@ -1225,9 +1223,9 @@ Primary key fingerprint: 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
 
 ## Configure touch
 
-By default, YubiKey will perform cryptographic operations without requiring any action from the user after the key is unlocked once with the PIN.
+By default, cryptographic operations do not require any action from the user after YubiKey is unlocked with the User PIN.
 
-To require a touch for each key operation, use [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and the Admin PIN to set key policy.
+To require a touch for each operation, use [YubiKey Manager](https://developers.yubico.com/yubikey-manager/) and the Admin PIN to set key policy.
 
 Encryption:
 
@@ -1597,7 +1595,7 @@ $ ssh-add -l
 2048 SHA256:... /Users/username/.ssh/id_rsa (RSA)
 ```
 
-To show the keys with MD5 fingerprints, as used by `gpg-connect-agent`'s `KEYINFO` and `DELETE_KEY` commands:
+To show MD5 fingerprints, as used by `gpg-connect-agent`'s `KEYINFO` and `DELETE_KEY` commands:
 
 ```console
 $ ssh-add -E md5 -l
@@ -1789,11 +1787,11 @@ Host third
 
 You should change the path according to `gpgconf --list-dirs agent-socket` on *remote* and *third*.
 
-On *local* you have `S.gpg-agent.extra` whereas on *remote* and *third*, you only have `S.gpg-agent`
+On *local* you have `S.gpg-agent.extra` whereas on *remote* and *third*, you only have `S.gpg-agent`.
 
 ## Using multiple YubiKeys
 
-When a GnuPG key is added to YubiKey using `keytocard`, the key is deleted from the keyring and a **stub** is added, pointing to the YubiKey. The stub identifies the GnuPG key ID and YubiKey serial number.
+When a GnuPG key is added to YubiKey using `keytocard`, the credential is deleted from the keyring and a **stub** pointing to the YubiKey is added. The stub identifies the GnuPG key ID and YubiKey serial number.
 
 When a Subkey is added to an additional YubiKey, the stub is overwritten and will now point to the latest YubiKey. GnuPG will request a specific YubiKey by serial number, as referenced by the stub, and will not recognize another YubiKey with a different serial number.
 
@@ -1890,9 +1888,7 @@ Public keys can be uploaded to a public server for discoverability:
 
 ```bash
 gpg --send-key $KEY_ID
-
 gpg --keyserver keys.gnupg.net --send-key $KEY_ID
-
 gpg --keyserver hkps://keyserver.ubuntu.com:443 --send-key $KEY_ID
 ```
 
@@ -1939,9 +1935,7 @@ Decrypt and mount the encrypted volume:
 
 ```bash
 sudo cryptsetup luksOpen /dev/sdc1 gnupg-secrets
-
 sudo mkdir -p /mnt/encrypted-storage
-
 sudo mount /dev/mapper/gnupg-secrets /mnt/encrypted-storage
 ```
 
@@ -1949,19 +1943,17 @@ Mount the non-encrypted public partition:
 
 ```bash
 sudo mkdir -p /mnt/public
-
 sudo mount /dev/sdc2 /mnt/public
 ```
 
 Copy the original private key materials (after updating the encrypted storage directory name) to a temporary working directory:
 
 ```bash
-export GNUPGHOME=$(mktemp -d -t $(date +%Y.%m.%d)-XXXX)
-
-cp -avi /mnt/encrypted-storage/2026.07.01-AbCd/* $GNUPGHOME/
+export GNUPGHOME=$(mktemp -d "${TMPDIR:-/tmp}/$(date +%Y.%m.%d)-XXXXXXXX")
+cp -avi /mnt/encrypted-storage/2026.*/* $GNUPGHOME/
 ```
 
-Confirm the identity is available, set the key id and fingerprint:
+Confirm the identity is available, set the key ID and fingerprint values:
 
 ```bash
 gpg -K
@@ -2234,7 +2226,7 @@ Now connect networking.
 
 1. To use YubiKey on multiple computers, import the corresponding public keys, then confirm YubiKey is visible with `gpg --card-status`. Trust the imported public keys ultimately with `trust` and `5`, then `gpg --list-secret-keys` will show the correct and trusted key.
 
-1. When your Certify key is offline, *caveat emptor*: If you wish to [participate in keysigning parties](https://www.gnupg.org/gph/en/manual/x334.html), you'll find [signing others' imported public keys](https://gist.github.com/F21/b0e8c62c49dfab267ff1d0c6af39ab84) requires first setting up a secure enclave such as the ephemeral environment described above and importing your Certify key into that enclave. [A signing subkey cannot be used to sign others' imported public keys](https://security.stackexchange.com/questions/153057/possible-to-sign-an-imported-key-with-a-subkey-using-gpg).
+1. When the Certify key is offline, *caveat emptor*: If you wish to [participate in keysigning parties](https://www.gnupg.org/gph/en/manual/x334.html), you'll find [signing others' imported public keys](https://gist.github.com/F21/b0e8c62c49dfab267ff1d0c6af39ab84) requires first setting up a secure enclave such as the ephemeral environment described above and importing your Certify key into that enclave. [A signing subkey cannot be used to sign others' imported public keys](https://security.stackexchange.com/questions/153057/possible-to-sign-an-imported-key-with-a-subkey-using-gpg).
 
 # Troubleshooting
 
@@ -2278,9 +2270,9 @@ Now connect networking.
 
 - If you receive the error, `There is no assurance this key belongs to the named user` or `encryption failed: Unusable public key` or `No public key` use `gpg --edit-key` to set `trust` to `5 = I trust ultimately`
 
-- If, when you try the above command, you get the error `Need the secret key to do this` - specify trust for the key in `~/.gnupg/gpg.conf` by using the `trust-key [key ID]` directive.
+- If, when you try the above command, you get the error `Need the secret key to do this` - specify trust for the identity by using the `trust-key [key ID]` directive.
 
-- If, when using a previously provisioned YubiKey on a new computer with `pass`, you see the following error on `pass insert`, you need to adjust the trust associated with the key. See the note above.
+- If, when using a previously provisioned YubiKey on a new computer with `pass`, you see the following error on `pass insert`, you need to adjust the trust associated with the identity. See the previous note.
 
 ```
 gpg: 0x0000000000000000: There is no assurance this key belongs to the named user
