@@ -1,6 +1,6 @@
 This is a guide to using [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/) as a [smart card](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for secure encryption, signature and authentication operations.
 
-Cryptographic keys on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for regular use. YubiKey can be configured to require a physical touch for cryptographic operations, reducing the risk of unauthorized access.
+Cryptographic keys on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for regular use. YubiKey can be configured to require a physical touch for each operation, reducing the risk of unauthorized access.
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Prepare environment](#prepare-environment)
@@ -62,7 +62,7 @@ Cryptographic keys on YubiKey are [non-exportable](https://web.archive.org/web/2
 
 # Purchase YubiKey
 
-[All YubiKeys](https://www.yubico.com/store/compare/) *except* FIDO-only Security Key Series and Bio Series YubiKeys are compatible with this guide.
+All [YubiKeys](https://www.yubico.com/store/compare/) *except* FIDO-only Security Key Series and Bio Series YubiKeys are compatible with this guide.
 
 [Verify YubiKey](https://support.yubico.com/hc/en-us/articles/360013723419-How-to-Confirm-Your-Yubico-Device-is-Genuine) by visiting [yubico.com/genuine](https://www.yubico.com/genuine/). Select *Verify Device* to begin the process. Touch the YubiKey when prompted and allow the site to see the make and model of the device when prompted. This device attestation may help mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
@@ -87,11 +87,9 @@ Debian Live is used in this guide to balance usability and security, with additi
 Download the latest Debian Live image and signature files:
 
 ```bash
-export IMAGE_URL="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
-
-curl -fLO "$IMAGE_URL/SHA512SUMS" -O "$IMAGE_URL/SHA512SUMS.sign"
-
-curl -fLO "$IMAGE_URL/$(awk '/xfce.iso$/ {print $2}' SHA512SUMS)"
+export imageUrl="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
+curl -sfL -O "$imageUrl/SHA512SUMS" -O "$imageUrl/SHA512SUMS.sign"
+curl -sfLO "$imageUrl/$(awk '/xfce\.iso$/ {print $NF}' SHA512SUMS)"
 ```
 
 Download the Debian signing public key:
@@ -174,13 +172,11 @@ Open terminal and install required software packages.
 
 ```bash
 sudo apt update
-
 sudo apt -y upgrade
-
 sudo apt -y install \
-    wget gnupg2 gnupg-agent dirmngr \
-    cryptsetup scdaemon pcscd \
-    yubikey-personalization yubikey-manager
+  wget gnupg2 gnupg-agent dirmngr \
+  cryptsetup scdaemon pcscd \
+  yubikey-personalization yubikey-manager
 ```
 
 **OpenBSD**
@@ -211,7 +207,7 @@ Build an air-gapped NixOS LiveCD image:
 ref=$(git ls-remote https://github.com/drduh/Yubikey-Guide refs/heads/master | awk '{print $1}')
 
 nix build --experimental-features "nix-command flakes" \
-    github:drduh/YubiKey-Guide/$ref?dir=nix#nixosConfigurations.yubikeyLive.x86_64-linux.config.system.build.isoImage
+  github:drduh/YubiKey-Guide/$ref?dir=nix#nixosConfigurations.yubikeyLive.x86_64-linux.config.system.build.isoImage
 ```
 
 If you have this repository checked out:
@@ -238,14 +234,10 @@ Skip steps to create a temporary working directory and a hardened configuration,
 
 Test builds using virtualization tools like QEMU. Keep in mind a virtualized environment does not provide the same amount of security as an ephemeral system (see *Prepare environment* above).
 
-Here is an example QEMU invocation after placing `yubikeyLive` in `result/iso` using the above `nix build` command:
+Here is an example QEMU invocation after placing `yubikeyLive` in `result/iso` using the above `nix build` command, with 4G memory, 2 CPUs and KVM enabled:
 
 ```bash
-# Launch with 4G memory, 2 CPUs and KVM enabled
-qemu-system-x86_64 \
-    -enable-kvm \
-    -m 4G \
-    -smp 2 \
+qemu-system-x86_64 -enable-kvm -m 4G -smp 2 \
     -drive readonly=on,media=cdrom,format=raw,file=result/iso/yubikeyLive.iso
 ```
 
@@ -265,14 +257,14 @@ sudo yum install -y gnupg2 pinentry-curses pcsc-lite pcsc-lite-libs gnupg2-smime
 
 ```bash
 sudo dnf install --skip-unavailable \
-    wget gnupg2 \
-    cryptsetup gnupg2-scdaemon pcsc-lite \
-    yubikey-personalization-gui yubikey-manager
+  wget gnupg2 \
+  cryptsetup gnupg2-scdaemon pcsc-lite \
+  yubikey-personalization-gui yubikey-manager
 ```
 
 # Prepare GnuPG
 
-Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs) and set it as the GnuPG directory:
+Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs) and set it as the [GnuPG directory](https://www.gnupg.org/documentation/manuals/gnupg/Configuration-Options.html):
 
 ```bash
 export GNUPGHOME=$(mktemp -d "${TMPDIR:-/tmp}/$(date +%Y.%m.%d)-XXXXXXXX")
@@ -374,10 +366,10 @@ The following commands will generate a strong[^3] passphrase while avoiding cert
 
 ```bash
 export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
-    tr -d "IOUS5" |
-    fold  -w  ${PASS_GROUPSIZE:-4} |
-    paste -sd ${PASS_DELIMITER:--} - |
-    head  -c  ${PASS_LENGTH:-29})
+  tr -d "IOUS5" |
+  fold  -w  ${PASS_GROUPSIZE:-4} |
+  paste -sd ${PASS_DELIMITER:--} - |
+  head  -c  ${PASS_LENGTH:-29})
 printf "\n\t%s\n\n" "$CERTIFY_PASS"
 ```
 
@@ -393,7 +385,7 @@ Write the passphrase in a secure location - separate from the portable storage d
 
 This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) template to help with credential transcription. Save the [raw file](https://github.com/drduh/YubiKey-Guide/raw/refs/heads/master/templates/passphrase.html), open in a browser to render and print.
 
-Mark the corresponding character on sequential rows for each character in the passphrase. [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) can also be printed without a browser:
+Mark the corresponding character on sequential rows for each passphrase character. [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) can also be printed without a browser:
 
 ```bash
 lp -d Printer-Name passphrase.txt
@@ -405,7 +397,7 @@ lp -d Printer-Name passphrase.txt
 
 The primary key to generate is the Certify key, which is responsible for issuing Subkeys for encryption, signature and authentication operations.
 
-The Certify key should be kept offline at all times and only accessed from a dedicated and secure environment to issue or revoke Subkeys.
+The Certify key should be kept offline and only accessed from a dedicated and secure environment to issue or revoke Subkeys.
 
 Do not set an expiration date on the Certify key.
 
@@ -413,17 +405,17 @@ Generate the Certify key:
 
 ```bash
 printf "$CERTIFY_PASS" |
-    gpg --batch --passphrase-fd 0 \
-        --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
+  gpg --batch --passphrase-fd 0 \
+      --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
 ```
 
 Set and view the Certify key identifier and fingerprint for use later:
 
 ```bash
 export KEY_ID=$(gpg -k --with-colons "$IDENTITY" |
-    awk -F: '/^pub:/ { print $5; exit }')
+  awk -F: '/^pub:/ { print $5; exit }')
 export KEY_FP=$(gpg -k --with-colons "$IDENTITY" |
-    awk -F: '/^fpr:/ { print $10; exit }')
+  awk -F: '/^fpr:/ { print $10; exit }')
 printf "\nKey ID/Fingerprint: %20s\n%s\n\n" "$KEY_ID" "$KEY_FP"
 ```
 
@@ -452,9 +444,9 @@ Add the additional user IDs to the Certify key:
 
 ```bash
 for uid in "${additional_uids[@]}" ; do \
-    echo "$CERTIFY_PASS" |
-    gpg --batch --passphrase-fd 0 \
-        --pinentry-mode=loopback --quick-add-uid "$KEY_FP" "$uid"
+  echo "$CERTIFY_PASS" |
+  gpg --batch --passphrase-fd 0 \
+      --pinentry-mode=loopback --quick-add-uid "$KEY_FP" "$uid"
 done
 ```
 
@@ -477,23 +469,23 @@ Generate Signature and Encryption Subkeys using the previously configured key ty
 
 ```bash
 printf "$CERTIFY_PASS" |
-    gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
-        --quick-add-key "$KEY_FP" "$KEY_TYPE" sign "$KEY_EXPIRATION"
+  gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+      --quick-add-key "$KEY_FP" "$KEY_TYPE" sign "$KEY_EXPIRATION"
 
 printf "$CERTIFY_PASS" |
-    gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
-        --quick-add-key "$KEY_FP" "$KEY_TYPE" encrypt "$KEY_EXPIRATION"
+  gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+      --quick-add-key "$KEY_FP" "$KEY_TYPE" encrypt "$KEY_EXPIRATION"
 ```
 
 Then generate the Authentication Subkey:
 
 > [!NOTE]
-> Some systems no longer accept RSA for SSH authentication; to use [Ed25519](https://ed25519.cr.yp.to/), set the `KEY_TYPE` variable to `ed25519` before generating Authentication Subkey.
+> Some systems no longer accept RSA for SSH authentication; to use [Ed25519](https://ed25519.cr.yp.to/), set the `KEY_TYPE` variable to `ed25519` before generating the Authentication Subkey.
 
 ```bash
 printf "$CERTIFY_PASS" |
-    gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
-        --quick-add-key "$KEY_FP" "$KEY_TYPE" auth "$KEY_EXPIRATION"
+  gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+      --quick-add-key "$KEY_FP" "$KEY_TYPE" auth "$KEY_EXPIRATION"
 ```
 
 # Verify keys
@@ -521,14 +513,14 @@ Save a copy of the Certify key, Subkeys and public key:
 
 ```bash
 echo "$CERTIFY_PASS" |
-    gpg --output $GNUPGHOME/$KEY_ID-Certify.key \
-        --batch --pinentry-mode=loopback --passphrase-fd 0 \
-        --armor --export-secret-keys $KEY_ID
+  gpg --output $GNUPGHOME/$KEY_ID-Certify.key \
+      --batch --pinentry-mode=loopback --passphrase-fd 0 \
+      --armor --export-secret-keys $KEY_ID
 
 echo "$CERTIFY_PASS" |
-    gpg --output $GNUPGHOME/$KEY_ID-Subkeys.key \
-        --batch --pinentry-mode=loopback --passphrase-fd 0 \
-        --armor --export-secret-subkeys $KEY_ID
+  gpg --output $GNUPGHOME/$KEY_ID-Subkeys.key \
+      --batch --pinentry-mode=loopback --passphrase-fd 0 \
+      --armor --export-secret-subkeys $KEY_ID
 
 gpg --output $GNUPGHOME/$KEY_ID-$(date +%F).asc \
     --armor --export $KEY_ID
@@ -539,8 +531,8 @@ Create a backup on encrypted storage to be kept offline in a secure and durable 
 The following process is recommended to be repeated several times on multiple portable storage devices, as they may fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can create a physical copy of key materials for improved durability.
 
 > [!TIP]
-> [ext2](https://en.wikipedia.org/wiki/Ext2) volumes (without encryption) can be mounted on Linux and OpenBSD.
-> Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) volumes for macOS and Windows compatibility instead.
+> [ext2](https://en.wikipedia.org/wiki/Ext2) file systems (without encryption) can be mounted on Linux and OpenBSD.
+> Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) file systems for macOS and Windows compatibility instead.
 
 > [!CAUTION]
 > Confirm the destination (`of`) before issuing `dd` commands as they are destructive! This guide uses `/dev/sdc` - this value may be different on your system.
@@ -575,7 +567,7 @@ w
 EOF
 ```
 
-Create a small (at least 20 MB is recommended to account for the LUKS header size) partition for storing secret materials:
+Create a small partition (at least 20 MB, to account for the LUKS header) for storing secret materials:
 
 ```bash
 sudo fdisk /dev/sdc <<EOF
@@ -589,14 +581,14 @@ EOF
 
 Use [LUKS](https://dys2p.com/en/2023-05-luks-security.html) to encrypt the new partition.
 
-Generate another unique [Passphrase](#passphrase) (ideally different from the one used for the Certify key) to protect the encrypted volume:
+Generate another unique [Passphrase](#passphrase) (different from credential used for the Certify key) to protect the encrypted volume:
 
 ```bash
 export LUKS_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
-    tr -d "IOUS5" |
-    fold  -w  ${PASS_GROUPSIZE:-4} |
-    paste -sd ${PASS_DELIMITER:--} - |
-    head  -c  ${PASS_LENGTH:-29})
+  tr -d "IOUS5" |
+  fold  -w  ${PASS_GROUPSIZE:-4} |
+  paste -sd ${PASS_DELIMITER:--} - |
+  head  -c  ${PASS_LENGTH:-29})
 printf "\n\t%s\n\n" "$LUKS_PASS"
 ```
 
@@ -607,15 +599,13 @@ Write the passphrase down or memorize it.
 Format the partition:
 
 ```bash
-printf $LUKS_PASS |
-    sudo cryptsetup -q luksFormat /dev/sdc1
+printf $LUKS_PASS | sudo cryptsetup -q luksFormat /dev/sdc1
 ```
 
 Mount the partition:
 
 ```bash
-printf $LUKS_PASS |
-    sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
+printf $LUKS_PASS | sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
 ```
 
 Create an ext2 filesystem:
@@ -628,9 +618,7 @@ Mount the filesystem and copy the temporary GnuPG working directory with key mat
 
 ```bash
 sudo mkdir -p /mnt/encrypted-storage
-
 sudo mount /dev/mapper/gnupg-secrets /mnt/encrypted-storage
-
 sudo cp -av $GNUPGHOME /mnt/encrypted-storage/
 ```
 
@@ -638,7 +626,6 @@ Unmount and close the encrypted volume:
 
 ```bash
 sudo umount /mnt/encrypted-storage
-
 sudo cryptsetup luksClose gnupg-secrets
 ```
 
@@ -710,9 +697,7 @@ Mount the filesystem and copy the temporary directory with the keyring:
 
 ```bash
 doas mkdir -p /mnt/encrypted-storage
-
 doas mount /dev/sd3i /mnt/encrypted-storage
-
 doas cp -av $GNUPGHOME /mnt/encrypted-storage
 ```
 
@@ -720,7 +705,6 @@ Unmount and remove the encrypted volume:
 
 ```bash
 doas umount /mnt/encrypted-storage
-
 doas bioctl -d sd3
 ```
 
@@ -751,13 +735,9 @@ Create a filesystem and export the public key:
 
 ```bash
 sudo mkfs.ext2 /dev/sdc2
-
 sudo mkdir -p /mnt/public
-
 sudo mount /dev/sdc2 /mnt/public
-
 gpg --armor --export $KEY_ID | sudo tee /mnt/public/$KEY_ID-$(date +%F).asc
-
 sudo chmod 0444 /mnt/public/*.asc
 ```
 
@@ -785,11 +765,8 @@ Create a filesystem and export the public key to it:
 
 ```bash
 doas newfs sd2b
-
 doas mkdir -p /mnt/public
-
 doas mount /dev/sd2b /mnt/public
-
 gpg --armor --export $KEY_ID | doas tee /mnt/public/$KEY_ID-$(date +%F).asc
 ```
 
@@ -823,13 +800,12 @@ Determine the desired PIN values. They can be shorter than the Certify key passp
 
 The *User PIN* must be at least 6 characters and the *Admin PIN* must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
 
-Set PIN values, for example a 6 digit User PIN and 8 digit Admin PIN:
+Generate PIN values - 6 digits for the User and 8 digits for the Admin:
 
 ```bash
 export ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 8)
 export USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 6)
-printf "\nAdmin PIN: %12s\nUser  PIN: %12s\n\n" \
-    "$ADMIN_PIN" "$USER_PIN"
+printf "\nAdmin PIN: %12s\nUser  PIN: %12s\n\n" "$ADMIN_PIN" "$USER_PIN"
 ```
 
 Change the Admin PIN:
@@ -1145,8 +1121,8 @@ Encrypt a message to yourself (useful for storing credentials or protecting back
 
 ```bash
 echo -e "\ntest message string" |
-    gpg --encrypt --armor \
-        --recipient $KEY_ID --output encrypted.txt
+  gpg --encrypt --armor \
+      --recipient $KEY_ID --output encrypted.txt
 ```
 
 Decrypt the message - a prompt for the User PIN will appear:
@@ -1262,7 +1238,7 @@ ykman openpgp keys set-touch -h
 
 `Cached` or `Cached-Fixed` may be desirable for YubiKey use with email clients.
 
-YubiKey will blink when it is waiting for a touch. On Linux, [maximbaz/yubikey-touch-detector](https://github.com/maximbaz/yubikey-touch-detector) can be used to indicate YubiKey is waiting for a touch.
+YubiKey blinks when waiting for a touch. On Linux, [maximbaz/yubikey-touch-detector](https://github.com/maximbaz/yubikey-touch-detector) can also be used for indication.
 
 ## SSH
 
@@ -1982,9 +1958,9 @@ Renew the Subkeys:
 
 ```bash
 printf "$CERTIFY_PASS" |
-    gpg --batch --pinentry-mode=loopback \
-        --passphrase-fd 0 --quick-set-expire "$KEY_FP" "$KEY_EXPIRATION" \
-    $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
+  gpg --batch --pinentry-mode=loopback \
+      --passphrase-fd 0 --quick-set-expire "$KEY_FP" "$KEY_EXPIRATION" \
+  $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
 ```
 
 Export the updated public key:
