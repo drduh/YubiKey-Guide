@@ -609,14 +609,14 @@ Write the passphrase down or memorize it.
 Format the partition:
 
 ```bash
-echo $LUKS_PASS | \
+printf $LUKS_PASS |
     sudo cryptsetup -q luksFormat /dev/sdc1
 ```
 
 Mount the partition:
 
 ```bash
-echo $LUKS_PASS | \
+printf $LUKS_PASS |
     sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
 ```
 
@@ -828,13 +828,9 @@ The *User PIN* must be at least 6 characters and the *Admin PIN* must be at leas
 Set PIN values, for example a 6 digit User PIN and 8 digit Admin PIN:
 
 ```bash
-export ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
-    fold -w8 | head -1)
-
-export USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | \
-    fold -w6 | head -1)
-
-printf "\nAdmin PIN: %12s\nUser PIN: %13s\n\n" \
+export ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 8)
+export USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 6)
+printf "\nAdmin PIN: %12s\nUser  PIN: %12s\n\n" \
     "$ADMIN_PIN" "$USER_PIN"
 ```
 
@@ -896,9 +892,14 @@ quit
 EOF
 ```
 
-[Smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) can also be set with `gpg --edit-card` and `admin` mode. Use `help` to see available options. The [login](https://www.gnupg.org/documentation/manuals/gnupg/gpg_002dcard.html) attribute is [required](https://github.com/drduh/YubiKey-Guide/issues/461).
+Verify the attribute:
 
-Run `gpg --card-status` to verify results (*Login data* field).
+```console
+$ gpg --card-status | grep Login
+Login data .......: yk-3i568zcrib5f
+```
+
+[Smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) can also be set with `gpg --edit-card` and `admin` mode. Use `help` to see available options. The [login](https://www.gnupg.org/documentation/manuals/gnupg/gpg_002dcard.html) attribute is [required](https://github.com/drduh/YubiKey-Guide/issues/461) to transfer keys.
 
 # Transfer Subkeys
 
@@ -998,7 +999,6 @@ Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Gui
 
 ```bash
 cd ~/.gnupg
-
 wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf
 ```
 
@@ -1006,7 +1006,6 @@ Set the following option. This avoids the problem where GnuPG will repeatedly pr
 
 ```bash
 touch scdaemon.conf
-
 echo "disable-ccid" >>scdaemon.conf
 ```
 
@@ -1016,7 +1015,6 @@ Install the required packages:
 
 ```bash
 sudo apt update
-
 sudo apt install -y gnupg gnupg-agent scdaemon pcscd
 ```
 
@@ -1024,7 +1022,6 @@ sudo apt install -y gnupg gnupg-agent scdaemon pcscd
 
 ```bash
 sudo pacman -S --needed gnupg pcsc-tools
-
 sudo systemctl enable --now pcscd.service
 ```
 
@@ -1044,9 +1041,7 @@ sudo port install gnupg2 pcsc-tools
 
 ```bash
 doas pkg_add gnupg pcsc-tools
-
 doas rcctl enable pcscd
-
 doas reboot
 ```
 
@@ -1056,7 +1051,6 @@ Mount the non-encrypted volume with the public key:
 
 ```bash
 sudo mkdir -p /mnt/public
-
 sudo mount /dev/sdc2 /mnt/public
 ```
 
@@ -1064,7 +1058,6 @@ sudo mount /dev/sdc2 /mnt/public
 
 ```bash
 doas mkdir -p /mnt/public
-
 doas mount /dev/sd3i /mnt/public
 ```
 
@@ -1082,9 +1075,8 @@ gpg --recv $KEY_ID
 
 Or with the URL on YubiKey, retrieve the public key using the command `gpg --edit-card`.
 
-```bash
+```console
 gpg/card> fetch
-
 gpg/card> quit
 ```
 
@@ -1092,7 +1084,6 @@ Determine the key ID:
 
 ```bash
 gpg -k
-
 export KEY_ID=0xF0F2CFEB04341FB5
 ```
 
@@ -1112,14 +1103,14 @@ Remove and re-insert YubiKey.
 Verify the status with `gpg --card-status` which will list the available Subkeys:
 
 ```console
-Reader ...........: Yubico YubiKey OTP FIDO CCID 00 00
+Reader ...........: Yubico YubiKey FIDO CCID
 Application ID ...: D2760001240102010006055532110000
 Application type .: OpenPGP
 Version ..........: 3.4
 Manufacturer .....: Yubico
 Serial number ....: 05553211
-Name of cardholder: YubiKey User
-Language prefs ...: en
+Name of cardholder: [not set]
+Language prefs ...: [not set]
 Salutation .......:
 URL of public key : [not set]
 Login data .......: yubikey@example
@@ -1128,7 +1119,8 @@ Key attributes ...: rsa4096 rsa4096 rsa4096
 Max. PIN lengths .: 127 127 127
 PIN retry counter : 3 3 3
 Signature counter : 0
-KDF setting ......: on
+KDF setting ......: off
+UIF setting ......: Sign=off Decrypt=off Auth=off
 Signature key ....: CF5A 305B 808B 7A0F 230D  A064 B3CD 10E5 02E1 9637
       created ....: 2026-07-01 12:00:00
 Encryption key....: A5FA A005 5BED 4DC9 889D  38BC 30CB E8C4 B085 B9F7
@@ -1154,7 +1146,7 @@ YubiKey is now ready for use!
 Encrypt a message to yourself (useful for storing credentials or protecting backups):
 
 ```bash
-echo -e "\ntest message string" | \
+echo -e "\ntest message string" |
     gpg --encrypt --armor \
         --recipient $KEY_ID --output encrypted.txt
 ```
@@ -1205,7 +1197,7 @@ gpg: encrypted with RSA key, ID 0x0000000000000000
 document.pdf.1580000000.enc -> document.pdf
 ```
 
-[drduh/Purse](https://github.com/drduh/Purse) is a password manager based on GnuPG and YubiKey to securely store and use credentials.
+[drduh/Purse](https://github.com/drduh/Purse) is a secrets manager implemented with GnuPG and YubiKey.
 
 ## Signature
 
@@ -1973,13 +1965,10 @@ Confirm the identity is available, set the key id and fingerprint:
 
 ```bash
 gpg -K
-
-export KEY_ID=$(gpg -k --with-colons "$IDENTITY" | \
+export KEY_ID=$(gpg -k --with-colons "$IDENTITY" |
     awk -F: '/^pub:/ { print $5; exit }')
-
-export KEY_FP=$(gpg -k --with-colons "$IDENTITY" | \
+export KEY_FP=$(gpg -k --with-colons "$IDENTITY" |
     awk -F: '/^fpr:/ { print $10; exit }')
-
 echo $KEY_ID $KEY_FP
 ```
 
@@ -2000,7 +1989,7 @@ export KEY_EXPIRATION=2028-09-01
 Renew the Subkeys:
 
 ```bash
-echo "$CERTIFY_PASS" |
+printf "$CERTIFY_PASS" |
     gpg --batch --pinentry-mode=loopback \
         --passphrase-fd 0 --quick-set-expire "$KEY_FP" "$KEY_EXPIRATION" \
     $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
@@ -2022,7 +2011,6 @@ Alternatively, publish to a public key server and download it:
 
 ```bash
 gpg --send-key $KEY_ID
-
 gpg --recv $KEY_ID
 ```
 
@@ -2048,7 +2036,6 @@ Unmount and close the encrypted volume:
 
 ```bash
 sudo umount /mnt/encrypted-storage
-
 sudo cryptsetup luksClose gnupg-secrets
 ```
 
@@ -2056,11 +2043,8 @@ Export the updated public key:
 
 ```bash
 sudo mkdir -p /mnt/public
-
 sudo mount /dev/sdc2 /mnt/public
-
 gpg --armor --export $KEY_ID | sudo tee /mnt/public/$KEY_ID-$(date +%F).asc
-
 sudo umount /mnt/public
 ```
 
@@ -2167,9 +2151,9 @@ EOF
 
 ## Network considerations
 
-This section is primarily focused on Debian / Ubuntu based systems, but the same concept applies to any system connected to a network.
+This section is primarily focused on Debian/Ubuntu systems, but the concepts apply to any system connected to a network.
 
-Whether you're using a VM, installing on dedicated hardware, or running a Live OS temporarily, start *without* a network connection and disable any unnecessary services listening on all interfaces before connecting to the network.
+Whether using a VM, installing on dedicated hardware, or running a Live OS temporarily, start *without* a network connection and disable any unnecessary services listening on all interfaces before connecting to the network.
 
 This is because services like `cups` or `avahi` can be listening by default. While this isn't an immediate problem it simply broadens the attack surface. Not everyone will have a dedicated subnet or trusted network equipment they can control, and for the purposes of this guide, these steps treat *any* network as untrusted / hostile.
 
@@ -2307,7 +2291,7 @@ gpg: [stdin]: encryption failed: Unusable public key
 
 - If the _pinentry_ graphical dialog does not show and this error appears: `sign_and_send_pubkey: signing failed: agent refused operation`, install the `dbus-user-session` package and restart for the `dbus` user session to be fully inherited. This is because `pinentry` complains about `No $DBUS_SESSION_BUS_ADDRESS found`, falls back to `curses` but doesn't find the expected `tty`
 
-- If, when you try the above `--card-status` command, you receive the error, `gpg: selecting card failed: No such device` or `gpg: OpenPGP card not available: No such device`, it's possible that the latest release of pcscd now requires polkit rules to operate properly. Create the following file to allow users in the `wheel` group to use the card. Be sure to restart pcscd when you're done to allow the new rules to take effect.
+- If, when you try the above `--card-status` command, you receive the error, `gpg: selecting card failed: No such device` or `gpg: OpenPGP card not available: No such device`, it's possible that the latest release of pcscd now requires polkit rules to operate properly. Create the following file to allow users in the `wheel` group to use the card. Restart `pcscd` to apply the new rules.
 
 ```bash
 cat << EOF >  /etc/polkit-1/rules.d/99-pcscd.rules
