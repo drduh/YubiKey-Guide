@@ -367,9 +367,9 @@ The following commands will generate a strong[^3] passphrase while avoiding cert
 ```bash
 export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
   tr -d "IOUS5" |
-  fold  -w  ${PASS_GROUPSIZE:-4} |
+  fold -w ${PASS_GROUPSIZE:-4} |
   paste -sd ${PASS_DELIMITER:--} - |
-  head  -c  ${PASS_LENGTH:-29})
+  head -c ${PASS_LENGTH:-29})
 printf "\n\t%s\n\n" "$CERTIFY_PASS"
 ```
 
@@ -581,14 +581,14 @@ EOF
 
 Use [LUKS](https://dys2p.com/en/2023-05-luks-security.html) to encrypt the new partition.
 
-Generate another unique [Passphrase](#passphrase) (different from credential used for the Certify key) to protect the encrypted volume:
+Generate another unique [Passphrase](#passphrase) (different from the Certify key passphrase) to protect the encrypted volume:
 
 ```bash
 export LUKS_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
   tr -d "IOUS5" |
-  fold  -w  ${PASS_GROUPSIZE:-4} |
+  fold -w ${PASS_GROUPSIZE:-4} |
   paste -sd ${PASS_DELIMITER:--} - |
-  head  -c  ${PASS_LENGTH:-29})
+  head -c ${PASS_LENGTH:-29})
 printf "\n\t%s\n\n" "$LUKS_PASS"
 ```
 
@@ -947,17 +947,21 @@ The `>` after a tag indicates the key is stored on a smart card.
 Verify the following steps were performed correctly:
 
 - [ ] Memorized or wrote down the Certify key (identity) passphrase to a secure and durable location
-  * `echo $CERTIFY_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe it
+  - `echo $CERTIFY_PASS` to see it again
+  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe it
 - [ ] Memorized or wrote down passphrase to encrypted volume on portable storage
-  * `echo $LUKS_PASS` to see it again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe it
+  - `echo $LUKS_PASS` to see it again
+  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe it
 - [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
-  * At least two backups are recommended, stored at separate locations
+  - At least two backups are recommended
+  - Backups stored at separate locations
 - [ ] Exported a copy of the public key where it can be easily accessed later
-  * Separate device or non-encrypted partition was used
+  - Separate device or non-encrypted partition was used
 - [ ] Memorized or wrote down the User PIN and Admin PIN, which are unique and changed from default values
-  * `echo $USER_PIN $ADMIN_PIN` to see them again; [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe them
+  - `echo $USER_PIN $ADMIN_PIN` to see them again
+  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe them
 - [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey
-  * `gpg -K` shows `ssb>` for each of the 3 Subkeys
+  - `gpg -K` shows `ssb>` for all 3 Subkeys
 
 Reboot, clearing the ephemeral environment, to complete setup.
 

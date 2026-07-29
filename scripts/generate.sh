@@ -3,7 +3,6 @@
 # Generates GnuPG keys and corresponding passphrases.
 
 #set -x  # uncomment to debug
-set -o errexit
 set -o errtrace
 set -o nounset
 set -o pipefail
