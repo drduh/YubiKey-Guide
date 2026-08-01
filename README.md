@@ -937,7 +937,13 @@ EOF
 
 # Verify transfer
 
-Verify Subkeys are on YubiKey with `gpg -K` - indicated by `ssb>`:
+Verify Subkeys are on YubiKey:
+
+```bash
+gpg -K
+```
+
+All three Subkeys should appear as `ssb>` - the `>` indicates the private key is on the smart card:
 
 ```console
 sec   rsa4096/0xF0F2CFEB04341FB5 2026-08-01 [C]
@@ -948,11 +954,9 @@ ssb>  rsa4096/0x30CBE8C4B085B9F7 2026-08-01 [E] [expires: 2028-08-01]
 ssb>  rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
 ```
 
-The `>` after a tag indicates the key is stored on a smart card.
-
 # Finish setup
 
-Verify the following steps were performed correctly:
+Confirm the following steps were successfully completed to finish setup:
 
 - [ ] Memorized or wrote down the Certify key (identity) passphrase to a secure and durable location
   - `echo $CERTIFY_PASS` to see it again
@@ -970,18 +974,17 @@ Verify the following steps were performed correctly:
   - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe them
 - [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey
   - `gpg -K` shows `ssb>` for all 3 Subkeys
-
-Reboot, clearing the ephemeral environment, to complete setup.
+- [ ] Cleared temporary working directory/environment with reboot or explicit command
 
 # Using YubiKey
 
-Initialize GnuPG:
+Create or inspect the local GnuPG keyring. This command lists public keys and initializes `~/.gnupg` if needed:
 
 ```bash
 gpg -k
 ```
 
-Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
+Import the [recommended configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
 
 ```bash
 cd ~/.gnupg
@@ -1059,9 +1062,10 @@ Or download the public key from a keyserver:
 gpg --recv $KEY_ID
 ```
 
-Or with the URL on YubiKey, retrieve the public key using the command `gpg --edit-card`.
+Or with the URL on YubiKey, retrieve the public key:
 
 ```console
+$ gpg --edit-card
 gpg/card> fetch
 gpg/card> quit
 ```
