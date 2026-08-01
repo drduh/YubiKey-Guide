@@ -1,4 +1,4 @@
-This is a guide to using [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/) as a [smart card](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for secure encryption, signature and authentication operations.
+This guide demonstrates how to store credentials on a [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/). The private keys cannot be copied back out of the device; a separate offline "Certify" key is retained only to replace or renew them.
 
 Cryptographic keys on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for regular use. YubiKey can be configured to require a physical touch for each operation, reducing the risk of unauthorized access.
 
@@ -62,11 +62,11 @@ Cryptographic keys on YubiKey are [non-exportable](https://web.archive.org/web/2
 
 # Purchase YubiKey
 
-All [YubiKeys](https://www.yubico.com/store/compare/) *except* FIDO-only Security Key Series and Bio Series YubiKeys are compatible with this guide.
+Choose a [YubiKey](https://www.yubico.com/store/compare/) with the OpenPGP application - Security Key and Bio models are not compatible.
 
 [Verify YubiKey](https://support.yubico.com/hc/en-us/articles/360013723419-How-to-Confirm-Your-Yubico-Device-is-Genuine) by visiting [yubico.com/genuine](https://www.yubico.com/genuine/). Select *Verify Device* to begin the process. Touch the YubiKey when prompted and allow the site to see the make and model of the device when prompted. This device attestation may help mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
-Several portable storage devices (such as microSD cards) for storing encrypted backups are also recommended.
+Have at least two USB drives or microSD cards for storing encrypted offline backups in different physical locations.
 
 # Prepare environment
 
@@ -82,9 +82,9 @@ The following is a ranked list of least to most defensible environments to consi
 1. Hardened hardware and firmware (e.g., [Coreboot](https://www.coreboot.org/), [Intel ME removed](https://github.com/corna/me_cleaner))
 1. Air-gapped system without network capabilities, preferably ARM-based Raspberry Pi or other architecturally diverse equivalent
 
-Debian Live is used in this guide to balance usability and security, with additional instructions for OpenBSD.
+For most people, booting Debian Live from USB on a personal computer is a practical baseline.
 
-Download the latest Debian Live image and signature files:
+Download the latest Debian Live image and signature files. These commands download the checksum file, its signature, and the current 64-bit XFCE Live ISO:
 
 ```bash
 export imageUrl="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
@@ -118,9 +118,13 @@ Verify the signature:
 gpg --verify SHA512SUMS.sign SHA512SUMS
 ```
 
-`gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>"` must appear in the output.
+Confirm the fingerprint matches Debian's published fingerprint:
 
-Verify the cryptographic hash of the image file matches the one in the signed file:
+```console
+gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>"
+```
+
+Verify the image hash matches the signed sums file:
 
 ```bash
 grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
@@ -128,7 +132,10 @@ grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
 
-Connect a portable storage device and identify the disk label - this guide uses `/dev/sdc` throughout, but this value may differ on your system:
+Connect a portable storage device and identify the device path - this guide uses `/dev/sdc` throughout, but this value may differ on your system.
+
+> [!WARNING]
+> The following `dd` commands overwrite every partition and file on the selected device. Re-check the device path before continuing.
 
 **Linux**
 
@@ -157,7 +164,7 @@ $ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
-Power off, remove internal hard drives and all unnecessary devices, such as the wireless card.
+Power off. Disconnect internal hard drives and all unnecessary devices, such as the wireless card.
 
 # Install software
 
@@ -166,7 +173,7 @@ Load the operating system and configure networking. Optional hardening steps rel
 > [!TIP]
 > If the screen locks on Debian Live, unlock with `user` / `live`
 
-Open terminal and install required software packages.
+Open a terminal and install the required software.
 
 **Debian/Ubuntu**
 
@@ -201,11 +208,10 @@ sudo port install gnupg2 yubikey-manager pinentry wget
 
 **NixOS**
 
-Build an air-gapped NixOS LiveCD image:
+Build the image, then copy it to removable media and boot offline. The booted environment can be air-gapped.
 
 ```bash
 ref=$(git ls-remote https://github.com/drduh/Yubikey-Guide refs/heads/master | awk '{print $1}')
-
 nix build --experimental-features "nix-command flakes" \
   github:drduh/YubiKey-Guide/$ref?dir=nix#nixosConfigurations.yubikeyLive.x86_64-linux.config.system.build.isoImage
 ```
@@ -264,21 +270,25 @@ sudo dnf install --skip-unavailable \
 
 # Prepare GnuPG
 
-Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs) and set it as the [GnuPG directory](https://www.gnupg.org/documentation/manuals/gnupg/Configuration-Options.html):
+Create a temporary directory for [GnuPG configuration](https://www.gnupg.org/documentation/manuals/gnupg/Configuration-Options.html):
 
 ```bash
 export GNUPGHOME=$(mktemp -d "${TMPDIR:-/tmp}/$(date +%Y.%m.%d)-XXXXXXXX")
 ```
 
+> [!NOTE]
+> This temporary directory is only cleared on reboot only when /tmp is memory-backed. Verify the environment uses [tmpfs](https://en.wikipedia.org/wiki/Tmpfs), or securely remove the directory after use.
+
 ## Configuration
 
-Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
+Download the recommended [GnuPG configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf) into the temporary GnuPG directory.
 
 ```bash
 wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf -P $GNUPGHOME
+printf "Temporary directory: '%s'\n" "$GNUPGHOME"
 ```
 
-The options will look similar to:
+Review it before use; modern algorithms and privacy-related defaults are selected:
 
 ```console
 $ grep -v "^#" $GNUPGHOME/gpg.conf
@@ -318,15 +328,17 @@ Depending on how you plan to use GnuPG, set these values respectively[^1]:
 export IDENTITY="YubiKey User <yubikey@example.domain>"
 ```
 
+Use a real email address if you intend to use email encryption or Git hosting verification; a label-only identity may not work with every service.
+
 Or use any attribute which will uniquely identify the key (this may be incompatible with certain use cases):
 
 ```bash
-export IDENTITY="My Cool YubiKey - 2026"
+export IDENTITY="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 32)"
 ```
 
 ## Key
 
-Set the algorithm and key size - RSA/4096 is recommended:
+Set the algorithm and key size - RSA 4096 is recommended:
 
 ```bash
 export KEY_TYPE=rsa4096
@@ -334,15 +346,13 @@ export KEY_TYPE=rsa4096
 
 ## Expiration
 
-Determine the desired Subkey validity duration.
+Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable. However, setting an expiry on the Certify key is pointless, because it can be used to extend itself[^2].
 
-Setting a Subkey expiration forces identity and credential lifecycle management. However, setting an expiry on the Certify key is pointless, because it can just be used to extend itself[^2].
+A two-year expiration for Subkeys is recommended, balancing security and usability. Longer expiration durations reduce maintenance frequency.
 
-This guide recommends a two-year expiration for Subkeys to balance security and usability, however longer durations are possible to reduce maintenance frequency.
+When Subkeys expire, they can still be used to decrypt with GnuPG and authenticate with SSH, however they can **not** be used to encrypt nor sign new messages.
 
-When Subkeys expire, they may still be used to decrypt with GnuPG and authenticate with SSH, however they can **not** be used to encrypt nor sign new messages.
-
-Subkeys must be renewed or rotated using the Certify key - see [Updating keys](#updating-keys).
+Subkeys are renewed or rotated using the Certify key - see [Updating keys](#updating-keys).
 
 Set Subkeys to expire on a planned date:
 
@@ -358,11 +368,11 @@ export KEY_EXPIRATION=2y
 
 ## Passphrase
 
-Generate a passphrase for the Certify key. This credential will be used to manage identity Subkeys.
+Generate a passphrase for the Certify key, which will be used to manage the identity and Subkeys.
 
-To improve readability, a passphrase consisting only of uppercase letters and numbers is recommended.
+A passphrase consisting only of uppercase letters and numbers is recommended: the limited character set makes handwritten storage easier to write and read.
 
-The following commands will generate a strong[^3] passphrase while avoiding certain similar-looking characters:
+The following commands will generate and print a strong[^3] passphrase:
 
 ```bash
 export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
@@ -395,7 +405,7 @@ lp -d Printer-Name passphrase.txt
 
 # Create Certify key
 
-The primary key to generate is the Certify key, which is responsible for issuing Subkeys for encryption, signature and authentication operations.
+The primary key to generate is the Certify key, which is used to issue Subkeys for signing (sign commits/messages), encryption (decrypt data), and authentication (SSH login).
 
 The Certify key should be kept offline and only accessed from a dedicated and secure environment to issue or revoke Subkeys.
 
@@ -516,12 +526,10 @@ echo "$CERTIFY_PASS" |
   gpg --output $GNUPGHOME/$KEY_ID-Certify.key \
       --batch --pinentry-mode=loopback --passphrase-fd 0 \
       --armor --export-secret-keys $KEY_ID
-
 echo "$CERTIFY_PASS" |
   gpg --output $GNUPGHOME/$KEY_ID-Subkeys.key \
       --batch --pinentry-mode=loopback --passphrase-fd 0 \
       --armor --export-secret-subkeys $KEY_ID
-
 gpg --output $GNUPGHOME/$KEY_ID-$(date +%F).asc \
     --armor --export $KEY_ID
 ```
@@ -534,7 +542,7 @@ The following process is recommended to be repeated several times on multiple po
 > [ext2](https://en.wikipedia.org/wiki/Ext2) file systems (without encryption) can be mounted on Linux and OpenBSD.
 > Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) file systems for macOS and Windows compatibility instead.
 
-> [!CAUTION]
+> [!WARNING]
 > Confirm the destination (`of`) before issuing `dd` commands as they are destructive! This guide uses `/dev/sdc` - this value may be different on your system.
 
 **Linux**
@@ -1237,7 +1245,7 @@ ykman openpgp keys set-touch aut on
 To view and adjust policy options:
 
 ```bash
-ykman openpgp keys set-touch -h
+ykman openpgp keys set-touch --help
 ```
 
 `Cached` or `Cached-Fixed` may be desirable for YubiKey use with email clients.
@@ -1909,7 +1917,7 @@ Neither rotation method is superior and it is up to personal philosophy on ident
 
 To renew or rotate Subkeys, follow the same process as generating keys: boot to a secure environment, install required software and disable networking.
 
-Connect the portable storage device with the Certify key and identify the disk label.
+Connect the portable storage device with the Certify key and identify the device path.
 
 Decrypt and mount the encrypted volume:
 
