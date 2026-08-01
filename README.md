@@ -320,20 +320,20 @@ throw-keyids
 
 ## Identity
 
-Set or generate an attribute which will identify the key:
+Generate an attribute to use as the Identity label:
 
 ```bash
-export IDENTITY="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 32)"
+export IDENTITY="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 12)"
 ```
 
-Or use a real name/email address if you intend to use email encryption or Git hosting verification; a label-only identity may not work with every service.
-
-> [!TIP]
-> Use single quotes to wrap double quote character(s) (`"`) - `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
+Or set a real name/email address if you intend to use email encryption or Git verification; a label-only identity may not work with every service.
 
 ```bash
 export IDENTITY="YubiKey User <yubikey@example.domain>"
 ```
+
+> [!TIP]
+> Use single quotes to wrap double quote character(s) (`"`) - `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
 
 ## Key
 
@@ -379,7 +379,7 @@ export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
   fold -w ${PASS_GROUPSIZE:-4} |
   paste -sd ${PASS_DELIMITER:--} - |
   head -c ${PASS_LENGTH:-29})
-printf "\n\t%s\n\n" "$CERTIFY_PASS"
+printf "\nCertify passphrase:\t%s\n\n" "$CERTIFY_PASS"
 ```
 
 To change the passphrase length, delimiting character or group sizes, export the respective variable(s) prior to running the passphrase generation command, for example:
@@ -474,7 +474,7 @@ EOF
 
 # Create Subkeys
 
-Generate Signature and Encryption Subkeys using the previously configured key type, passphrase and expiration:
+Generate Signature and Encryption Subkeys:
 
 ```bash
 printf "$CERTIFY_PASS" |
@@ -489,7 +489,7 @@ printf "$CERTIFY_PASS" |
 Then generate the Authentication Subkey:
 
 > [!NOTE]
-> Some systems no longer accept RSA for SSH authentication; to use [Ed25519](https://ed25519.cr.yp.to/), set the `KEY_TYPE` variable to `ed25519` before generating the Authentication Subkey.
+> Some systems do not accept RSA for SSH authentication. To use [Ed25519](https://ed25519.cr.yp.to/) instead, run `export KEY_TYPE=ed25519` before generating the Authentication Subkey with the following command.
 
 ```bash
 printf "$CERTIFY_PASS" |
@@ -532,6 +532,9 @@ echo "$CERTIFY_PASS" |
 gpg --output $GNUPGHOME/$KEY_ID-$(date +%F).asc \
     --armor --export $KEY_ID
 ```
+
+> [!IMPORTANT]
+> The exported `.key` files contain private key material. Anyone with access to them and the Certify passphrase has full control of the identity.
 
 Create a backup on encrypted storage to be kept offline in a secure and durable location.
 
@@ -1993,7 +1996,7 @@ gpg --send-key $KEY_ID
 gpg --recv $KEY_ID
 ```
 
-The validity of the GnuPG identity will be extended, allowing it to be used again for encryption and signature operations.
+The validity of the GnuPG identity will be extended, enabling encryption and signature operations.
 
 The SSH public key does **not** need to be updated on remote hosts.
 
