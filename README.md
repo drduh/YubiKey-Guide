@@ -320,20 +320,19 @@ throw-keyids
 
 ## Identity
 
-When creating an identity with GnuPG, the default options ask for a "Real name", "Email address" and optional "Comment".
-
-Depending on how you plan to use GnuPG, set these values respectively[^1]:
-
-```bash
-export IDENTITY="YubiKey User <yubikey@example.domain>"
-```
-
-Use a real email address if you intend to use email encryption or Git hosting verification; a label-only identity may not work with every service.
-
-Or use any attribute which will uniquely identify the key (this may be incompatible with certain use cases):
+Set or generate an attribute which will identify the key:
 
 ```bash
 export IDENTITY="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 32)"
+```
+
+Or use a real name/email address if you intend to use email encryption or Git hosting verification; a label-only identity may not work with every service.
+
+> [!TIP]
+> Use single quotes to wrap double quote character(s) (`"`) - `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
+
+```bash
+export IDENTITY="YubiKey User <yubikey@example.domain>"
 ```
 
 ## Key
@@ -346,7 +345,7 @@ export KEY_TYPE=rsa4096
 
 ## Expiration
 
-Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable. However, setting an expiry on the Certify key is pointless, because it can be used to extend itself[^2].
+Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable. However, setting an expiry on the Certify key is pointless, because it can be used to extend itself[^1].
 
 A two-year expiration for Subkeys is recommended, balancing security and usability. Longer expiration durations reduce maintenance frequency.
 
@@ -372,7 +371,7 @@ Generate a passphrase for the Certify key, which will be used to manage the iden
 
 A passphrase consisting only of uppercase letters and numbers is recommended: the limited character set makes handwritten storage easier to write and read.
 
-The following commands will generate and print a strong[^3] passphrase:
+The following commands will generate and print a strong passphrase[^2]:
 
 ```bash
 export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
@@ -432,13 +431,13 @@ printf "\nKey ID/Fingerprint: %20s\n%s\n\n" "$KEY_ID" "$KEY_FP"
 <details>
 <summary>Additional identities (optional)</summary>
 
-This is an optional step for use cases requiring [additional identities](https://github.com/drduh/YubiKey-Guide/issues/445), for example:
+Skip this section unless [multiple public identities](https://github.com/drduh/YubiKey-Guide/issues/445) on the same key are needed, for example:
 
 - different email addresses for different languages
 - different email addresses for professional versus personal but please see alternative reason below for not tying these addresses together
 - anonymized email addresses for different git providers
 
-An alternative would be to have distinct keys but you would then require multiple YubiKeys, as each can only hold a single key for each type (signing, encryption, authentication). Nevertheless, there can be good reasons to have multiple YubiKeys:
+An alternative would be to have distinct keys but you would then require multiple YubiKeys, as each can only hold a single Subkey for each type (Signing, Encryption, Authentication). Nevertheless, there can be good reasons to have multiple YubiKeys:
 
 - if you have different email addresses for professional versus personal use cases, having distinct keys allows you to disassociate identities
 - if you are also using YubiKey as a U2F or FIDO2 device, having multiple YubiKeys is generally recommended as a backup measure
@@ -450,7 +449,7 @@ declare -a additional_uids
 additional_uids=("Super Cool YubiKey 2026" "uid 1 <uid1@example.org>")
 ```
 
-Add the additional user IDs to the Certify key:
+Add the additional UIDs to the Identity.
 
 ```bash
 for uid in "${additional_uids[@]}" ; do \
@@ -460,7 +459,7 @@ for uid in "${additional_uids[@]}" ; do \
 done
 ```
 
-Adjust the trust of additional IDs to *ultimate*:
+Set UID trust levels to *ultimate*:
 
 ```bash
 gpg --command-fd=0 --pinentry-mode=loopback --edit-key "$KEY_ID" <<EOF
@@ -2315,6 +2314,5 @@ EOF
 * [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
 * [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
 
-[^1]: Use single quotes to wrap double quote character(s) (`"`) - `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
-[^2]: [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used to revoke an identity.
-[^3]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
+[^1]: [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used to revoke an identity.
+[^2]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
