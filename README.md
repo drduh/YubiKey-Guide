@@ -274,6 +274,7 @@ Create a temporary directory for [GnuPG configuration](https://www.gnupg.org/doc
 
 ```bash
 export GNUPGHOME=$(mktemp -d "${TMPDIR:-/tmp}/$(date +%Y.%m.%d)-XXXXXXXX")
+printf "Temp dir:\t%s\n" "$GNUPGHOME"
 ```
 
 > [!NOTE]
@@ -285,7 +286,6 @@ Download the recommended [GnuPG configuration](https://github.com/drduh/YubiKey-
 
 ```bash
 wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf -P $GNUPGHOME
-printf "Temporary directory: '%s'\n" "$GNUPGHOME"
 ```
 
 Review it before use; modern algorithms and privacy-related defaults are selected:
@@ -324,6 +324,7 @@ Generate an attribute to use as the Identity label:
 
 ```bash
 export IDENTITY="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 12)"
+printf "Identity:\t%s\n" "$IDENTITY"
 ```
 
 Or set a real name/email address if you intend to use email encryption or Git verification; a label-only identity may not work with every service.
@@ -333,7 +334,9 @@ export IDENTITY="YubiKey User <yubikey@example.domain>"
 ```
 
 > [!TIP]
-> Use single quotes to wrap double quote character(s) (`"`) - `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
+> Use single quotes to wrap double quote characters (`"`):
+>
+> `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
 
 ## Key
 
@@ -345,7 +348,7 @@ export KEY_TYPE=rsa4096
 
 ## Expiration
 
-Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable. However, setting an expiry on the Certify key is pointless, because it can be used to extend itself[^1].
+Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable. However, setting an expiry on the Certify key is pointless, because it can be used to extend itself.[^1]
 
 A two-year expiration for Subkeys is recommended, balancing security and usability. Longer expiration durations reduce maintenance frequency.
 
@@ -425,7 +428,7 @@ export KEY_ID=$(gpg -k --with-colons "$IDENTITY" |
   awk -F: '/^pub:/ { print $5; exit }')
 export KEY_FP=$(gpg -k --with-colons "$IDENTITY" |
   awk -F: '/^fpr:/ { print $10; exit }')
-printf "\nKey ID/Fingerprint: %20s\n%s\n\n" "$KEY_ID" "$KEY_FP"
+printf "\nKey ID/Fingerprint:\t%s\n%s\n\n" "$KEY_ID" "$KEY_FP"
 ```
 
 <details>
@@ -455,14 +458,14 @@ Add the additional UIDs to the Identity.
 for uid in "${additional_uids[@]}" ; do \
   echo "$CERTIFY_PASS" |
   gpg --batch --passphrase-fd 0 \
-      --pinentry-mode=loopback --quick-add-uid "$KEY_FP" "$uid"
+      --pinentry-mode loopback --quick-add-uid "$KEY_FP" "$uid"
 done
 ```
 
 Set UID trust levels to *ultimate*:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key "$KEY_ID" <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key "$KEY_ID" <<EOF
 uid *
 trust
 5
@@ -477,12 +480,11 @@ EOF
 Generate Signature and Encryption Subkeys:
 
 ```bash
-printf "$CERTIFY_PASS" |
-  gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
       --quick-add-key "$KEY_FP" "$KEY_TYPE" sign "$KEY_EXPIRATION"
-
-printf "$CERTIFY_PASS" |
-  gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
       --quick-add-key "$KEY_FP" "$KEY_TYPE" encrypt "$KEY_EXPIRATION"
 ```
 
@@ -492,8 +494,8 @@ Then generate the Authentication Subkey:
 > Some systems do not accept RSA for SSH authentication. To use [Ed25519](https://ed25519.cr.yp.to/) instead, run `export KEY_TYPE=ed25519` before generating the Authentication Subkey with the following command.
 
 ```bash
-printf "$CERTIFY_PASS" |
-  gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
       --quick-add-key "$KEY_FP" "$KEY_TYPE" auth "$KEY_EXPIRATION"
 ```
 
@@ -518,19 +520,29 @@ ssb   rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
 
 # Backup keys
 
-Save a copy of the Certify key, Subkeys and public key:
+Export the public key:
 
 ```bash
-echo "$CERTIFY_PASS" |
-  gpg --output $GNUPGHOME/$KEY_ID-Certify.key \
-      --batch --pinentry-mode=loopback --passphrase-fd 0 \
-      --armor --export-secret-keys $KEY_ID
-echo "$CERTIFY_PASS" |
-  gpg --output $GNUPGHOME/$KEY_ID-Subkeys.key \
-      --batch --pinentry-mode=loopback --passphrase-fd 0 \
-      --armor --export-secret-subkeys $KEY_ID
-gpg --output $GNUPGHOME/$KEY_ID-$(date +%F).asc \
+gpg --output $GNUPGHOME/public-$KEY_ID-$(date +%F).asc \
     --armor --export $KEY_ID
+```
+
+Export the Certify key:
+
+```bash
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
+      --output $GNUPGHOME/secret-$KEY_ID-Certify.key \
+      --armor --export-secret-keys $KEY_ID
+```
+
+Export the Subkeys:
+
+```bash
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
+      --output $GNUPGHOME/secret-$KEY_ID-Subkeys.key \
+      --armor --export-secret-subkeys $KEY_ID
 ```
 
 > [!IMPORTANT]
@@ -813,13 +825,13 @@ Generate PIN values - 6 digits for the User and 8 digits for the Admin:
 ```bash
 export ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 8)
 export USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 6)
-printf "\nAdmin PIN: %12s\nUser  PIN: %12s\n\n" "$ADMIN_PIN" "$USER_PIN"
+printf "\nAdmin PIN:\t%s\nUser  PIN:\t%s\n\n" "$ADMIN_PIN" "$USER_PIN"
 ```
 
 Change the Admin PIN:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --change-pin <<EOF
 3
 12345678
 $ADMIN_PIN
@@ -831,7 +843,7 @@ EOF
 Change the User PIN:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --change-pin <<EOF
 1
 123456
 $USER_PIN
@@ -865,7 +877,7 @@ export CARD_ATTR_LOGIN="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 1
 Apply the attribute:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-card <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-card <<EOF
 admin
 login
 $CARD_ATTR_LOGIN
@@ -895,7 +907,7 @@ The Certify key passphrase and Admin PIN are required to transfer keys.
 Transfer the Signature key:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
 key 1
 keytocard
 1
@@ -910,7 +922,7 @@ EOF
 Repeat the process for the Encryption key:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
 key 2
 keytocard
 2
@@ -925,7 +937,7 @@ EOF
 Repeat the process for the Authentication key:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
 key 3
 keytocard
 3
@@ -1080,7 +1092,7 @@ export KEY_ID=0xF0F2CFEB04341FB5
 Assign ultimate trust by typing `trust` and selecting option `5` then `quit`:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
 trust
 5
 y
@@ -1262,7 +1274,6 @@ Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Gui
 
 ```bash
 cd ~/.gnupg
-
 wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg-agent.conf
 ```
 
@@ -1276,9 +1287,9 @@ wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg-age
 
 Install pinentry with `brew install pinentry-mac` or `sudo port install pinentry` then edit `gpg-agent.conf` to set the `pinentry-program` path to:
 
-* Apple Silicon Macs: `/opt/homebrew/bin/pinentry-mac`
-* Intel Macs: `/usr/local/bin/pinentry-mac` or `/opt/local/bin/pinentry` (MacPorts)
-* MacGPG Suite: `/usr/local/MacGPG2/libexec/pinentry-mac.app/Contents/MacOS/pinentry-mac`
+- Apple Silicon Macs: `/opt/homebrew/bin/pinentry-mac`
+- Intel Macs: `/usr/local/bin/pinentry-mac` or `/opt/local/bin/pinentry` (MacPorts)
+- MacGPG Suite: `/usr/local/MacGPG2/libexec/pinentry-mac.app/Contents/MacOS/pinentry-mac`
 
 Then run `gpgconf --kill gpg-agent` for the change to take effect.
 
@@ -1286,29 +1297,29 @@ To use graphical applications on macOS, [additional setup is required](https://j
 
 Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent.plist` with the following contents:
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-	<dict>
-		<key>Label</key>
-		<string>gnupg.gpg-agent</string>
-		<key>RunAtLoad</key>
-		<true/>
-		<key>KeepAlive</key>
-		<false/>
-		<key>EnvironmentVariables</key>
-		<dict>
-			<key>PATH</key>
-			<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/usr/local/MacGPG2/bin:/bin</string>
-		</dict>
-		<key>ProgramArguments</key>
-		<array>
-			<string>/usr/bin/env</string>
-			<string>gpg-connect-agent</string>
-			<string>/bye</string>
-		</array>
-	</dict>
+    <dict>
+        <key>Label</key>
+        <string>gnupg.gpg-agent</string>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>KeepAlive</key>
+        <false/>
+        <key>EnvironmentVariables</key>
+        <dict>
+            <key>PATH</key>
+            <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/usr/local/MacGPG2/bin:/bin</string>
+        </dict>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/usr/bin/env</string>
+            <string>gpg-connect-agent</string>
+            <string>/bye</string>
+        </array>
+    </dict>
 </plist>
 ```
 
@@ -1320,7 +1331,7 @@ launchctl load $HOME/Library/LaunchAgents/gnupg.gpg-agent.plist
 
 Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist` with the following contents:
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0/dtd">
 <plist version="1.0">
@@ -1626,11 +1637,11 @@ Edit `.ssh/config` to add the remote host:
 
 ```console
 Host
-    Hostname remote-host.tld
-    StreamLocalBindUnlink yes
-    RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
-    #RemoteForward [remote socket] [local socket]
-    #Note that ForwardAgent is not wanted here!
+  Hostname remote-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
+  #RemoteForward [remote socket] [local socket]
+  #Note that ForwardAgent is not wanted here!
 ```
 
 After successfully ssh into the remote host, confirm `/run/user/1000/gnupg/S.gpg-agent.ssh` exists.
@@ -1653,11 +1664,11 @@ Meanwhile, if you use `S.gpg-agent.ssh`, assume you have gone through the steps 
 
 ```console
 Host third
-    Hostname third-host.tld
-    StreamLocalBindUnlink yes
-    RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
-    #RemoteForward [remote socket] [local socket]
-    #Note that ForwardAgent is not wanted here!
+  Hostname third-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
+  #RemoteForward [remote socket] [local socket]
+  #Note that ForwardAgent is not wanted here!
 ```
 
 The path must be set according to `gpgconf --list-dirs agent-ssh-socket` on *remote* and *third* hosts.
@@ -1974,7 +1985,7 @@ Renew the Subkeys:
 
 ```bash
 printf "$CERTIFY_PASS" |
-  gpg --batch --pinentry-mode=loopback \
+  gpg --batch --pinentry-mode loopback \
       --passphrase-fd 0 --quick-set-expire "$KEY_FP" "$KEY_EXPIRATION" \
   $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
 ```
@@ -2126,7 +2137,7 @@ Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing 
 Enable KDF using the default Admin PIN of `12345678`:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --card-edit <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --card-edit <<EOF
 admin
 kdf-setup
 12345678
@@ -2300,24 +2311,24 @@ EOF
 
 # Alternative solutions
 
-* [`vorburger/ed25519-sk.md`](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md) - use YubiKey for SSH without GnuPG
-* [`smlx/piv-agent`](https://github.com/smlx/piv-agent) - SSH and GnuPG agent which can be used with PIV devices
-* [`keytotpm`](https://www.gnupg.org/documentation/manuals/gnupg/OpenPGP-Key-Management.html) - use GnuPG with TPM systems
+- [`vorburger/ed25519-sk.md`](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md) - use YubiKey for SSH without GnuPG
+- [`smlx/piv-agent`](https://github.com/smlx/piv-agent) - SSH and GnuPG agent which can be used with PIV devices
+- [`keytotpm`](https://www.gnupg.org/documentation/manuals/gnupg/OpenPGP-Key-Management.html) - use GnuPG with TPM systems
 
 # Additional resources
 
-* [Yubico - PGP](https://developers.yubico.com/PGP/)
-* [Yubico - YubiKey Personalization](https://developers.yubico.com/yubikey-personalization/)
-* [A Visual Explanation of GPG Subkeys (2022)](https://rgoulter.com/blog/posts/programming/2022-06-10-a-visual-explanation-of-gpg-subkeys.html)
-* [dhess/nixos-yubikey](https://github.com/dhess/nixos-yubikey)
-* [lsasolutions/makegpg](https://gitlab.com/lsasolutions/makegpg)
-* [Trammell Hudson - Yubikey (2020)](https://trmm.net/Yubikey)
-* [Yubikey forwarding SSH keys (2019)](https://blog.onefellow.com/post/180065697833/yubikey-forwarding-ssh-keys)
-* [GPG Agent Forwarding (2018)](https://mlohr.com/gpg-agent-forwarding/)
-* [Stick with security: YubiKey, SSH, GnuPG, macOS (2018)](https://evilmartians.com/chronicles/stick-with-security-yubikey-ssh-gnupg-macos)
-* [PGP and SSH keys on a Yubikey NEO (2015)](https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/)
-* [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
-* [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
+- [Yubico - PGP](https://developers.yubico.com/PGP/)
+- [Yubico - YubiKey Personalization](https://developers.yubico.com/yubikey-personalization/)
+- [A Visual Explanation of GPG Subkeys (2022)](https://rgoulter.com/blog/posts/programming/2022-06-10-a-visual-explanation-of-gpg-subkeys.html)
+- [dhess/nixos-yubikey](https://github.com/dhess/nixos-yubikey)
+- [lsasolutions/makegpg](https://gitlab.com/lsasolutions/makegpg)
+- [Trammell Hudson - Yubikey (2020)](https://trmm.net/Yubikey)
+- [Yubikey forwarding SSH keys (2019)](https://blog.onefellow.com/post/180065697833/yubikey-forwarding-ssh-keys)
+- [GPG Agent Forwarding (2018)](https://mlohr.com/gpg-agent-forwarding/)
+- [Stick with security: YubiKey, SSH, GnuPG, macOS (2018)](https://evilmartians.com/chronicles/stick-with-security-yubikey-ssh-gnupg-macos)
+- [PGP and SSH keys on a Yubikey NEO (2015)](https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/)
+- [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
+- [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
 
 [^1]: [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used to revoke an identity.
 [^2]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
