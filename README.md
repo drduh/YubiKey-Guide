@@ -1,4 +1,4 @@
-This is a guide to using [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/) as a [smart card](https://security.stackexchange.com/questions/38924/how-does-storing-gpg-ssh-private-keys-on-smart-cards-compare-to-plain-usb-drives) for secure encryption, signature and authentication operations.
+This guide demonstrates how to store credentials on a [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/). The private keys cannot be copied back out of the device; a separate offline "Certify" key is retained only to replace or renew them.
 
 Cryptographic keys on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for regular use. YubiKey can be configured to require a physical touch for each operation, reducing the risk of unauthorized access.
 
@@ -62,11 +62,11 @@ Cryptographic keys on YubiKey are [non-exportable](https://web.archive.org/web/2
 
 # Purchase YubiKey
 
-All [YubiKeys](https://www.yubico.com/store/compare/) *except* FIDO-only Security Key Series and Bio Series YubiKeys are compatible with this guide.
+Choose a [YubiKey](https://www.yubico.com/store/compare/) with the OpenPGP application - Security Key and Bio models are not compatible.
 
 [Verify YubiKey](https://support.yubico.com/hc/en-us/articles/360013723419-How-to-Confirm-Your-Yubico-Device-is-Genuine) by visiting [yubico.com/genuine](https://www.yubico.com/genuine/). Select *Verify Device* to begin the process. Touch the YubiKey when prompted and allow the site to see the make and model of the device when prompted. This device attestation may help mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
-Several portable storage devices (such as microSD cards) for storing encrypted backups are also recommended.
+Have at least two USB drives or microSD cards for storing encrypted offline backups in different physical locations.
 
 # Prepare environment
 
@@ -82,9 +82,9 @@ The following is a ranked list of least to most defensible environments to consi
 1. Hardened hardware and firmware (e.g., [Coreboot](https://www.coreboot.org/), [Intel ME removed](https://github.com/corna/me_cleaner))
 1. Air-gapped system without network capabilities, preferably ARM-based Raspberry Pi or other architecturally diverse equivalent
 
-Debian Live is used in this guide to balance usability and security, with additional instructions for OpenBSD.
+For most people, booting Debian Live from USB on a personal computer is a practical baseline.
 
-Download the latest Debian Live image and signature files:
+Download the latest Debian Live image and signature files. These commands download the checksum file, its signature, and the current 64-bit XFCE Live ISO:
 
 ```bash
 export imageUrl="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
@@ -118,9 +118,13 @@ Verify the signature:
 gpg --verify SHA512SUMS.sign SHA512SUMS
 ```
 
-`gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>"` must appear in the output.
+Confirm the fingerprint matches Debian's published fingerprint:
 
-Verify the cryptographic hash of the image file matches the one in the signed file:
+```console
+gpg: Good signature from "Debian CD signing key <debian-cd@lists.debian.org>"
+```
+
+Verify the image hash matches the signed sums file:
 
 ```bash
 grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
@@ -128,7 +132,10 @@ grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
 
-Connect a portable storage device and identify the disk label - this guide uses `/dev/sdc` throughout, but this value may differ on your system:
+Connect a portable storage device and identify the device path - this guide uses `/dev/sdc` throughout, but this value may differ on your system.
+
+> [!WARNING]
+> The following `dd` commands overwrite every partition and file on the selected device. Check the device path before continuing.
 
 **Linux**
 
@@ -157,7 +164,7 @@ $ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
-Power off, remove internal hard drives and all unnecessary devices, such as the wireless card.
+Power off. Disconnect internal hard drives and all unnecessary devices, such as the wireless card.
 
 # Install software
 
@@ -166,7 +173,7 @@ Load the operating system and configure networking. Optional hardening steps rel
 > [!TIP]
 > If the screen locks on Debian Live, unlock with `user` / `live`
 
-Open terminal and install required software packages.
+Open a terminal and install the required software.
 
 **Debian/Ubuntu**
 
@@ -201,11 +208,10 @@ sudo port install gnupg2 yubikey-manager pinentry wget
 
 **NixOS**
 
-Build an air-gapped NixOS LiveCD image:
+Build the image, then copy it to removable media and boot offline. The booted environment can be air-gapped.
 
 ```bash
 ref=$(git ls-remote https://github.com/drduh/Yubikey-Guide refs/heads/master | awk '{print $1}')
-
 nix build --experimental-features "nix-command flakes" \
   github:drduh/YubiKey-Guide/$ref?dir=nix#nixosConfigurations.yubikeyLive.x86_64-linux.config.system.build.isoImage
 ```
@@ -264,21 +270,25 @@ sudo dnf install --skip-unavailable \
 
 # Prepare GnuPG
 
-Create a temporary directory which will be cleared on [reboot](https://en.wikipedia.org/wiki/Tmpfs) and set it as the [GnuPG directory](https://www.gnupg.org/documentation/manuals/gnupg/Configuration-Options.html):
+Create a temporary directory for [GnuPG configuration](https://www.gnupg.org/documentation/manuals/gnupg/Configuration-Options.html):
 
 ```bash
 export GNUPGHOME=$(mktemp -d "${TMPDIR:-/tmp}/$(date +%Y.%m.%d)-XXXXXXXX")
+printf "Temp dir:\t%s\n" "$GNUPGHOME"
 ```
+
+> [!NOTE]
+> This temporary directory is only cleared on reboot only when /tmp is memory-backed. Verify the environment uses [tmpfs](https://en.wikipedia.org/wiki/Tmpfs), or securely remove the directory after use.
 
 ## Configuration
 
-Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
+Download the recommended [GnuPG configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf) into the temporary GnuPG directory.
 
 ```bash
 wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf -P $GNUPGHOME
 ```
 
-The options will look similar to:
+Review it before use; modern algorithms and privacy-related defaults are selected:
 
 ```console
 $ grep -v "^#" $GNUPGHOME/gpg.conf
@@ -310,23 +320,27 @@ throw-keyids
 
 ## Identity
 
-When creating an identity with GnuPG, the default options ask for a "Real name", "Email address" and optional "Comment".
+Generate an attribute to use as the Identity label:
 
-Depending on how you plan to use GnuPG, set these values respectively[^1]:
+```bash
+export IDENTITY="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 12)"
+printf "Identity:\t%s\n" "$IDENTITY"
+```
+
+Or set a real name/email address if you intend to use email encryption or Git verification; a label-only identity may not work with every service.
 
 ```bash
 export IDENTITY="YubiKey User <yubikey@example.domain>"
 ```
 
-Or use any attribute which will uniquely identify the key (this may be incompatible with certain use cases):
-
-```bash
-export IDENTITY="My Cool YubiKey - 2026"
-```
+> [!TIP]
+> Use single quotes to wrap double quote characters (`"`):
+>
+> `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
 
 ## Key
 
-Set the algorithm and key size - RSA/4096 is recommended:
+Set the algorithm and key size - RSA 4096 is recommended:
 
 ```bash
 export KEY_TYPE=rsa4096
@@ -334,15 +348,13 @@ export KEY_TYPE=rsa4096
 
 ## Expiration
 
-Determine the desired Subkey validity duration.
+Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable. However, setting an expiry on the Certify key is pointless, because it can be used to extend itself.[^1]
 
-Setting a Subkey expiration forces identity and credential lifecycle management. However, setting an expiry on the Certify key is pointless, because it can just be used to extend itself[^2].
+A two-year expiration for Subkeys is recommended, balancing security and usability. Longer expiration durations reduce maintenance frequency.
 
-This guide recommends a two-year expiration for Subkeys to balance security and usability, however longer durations are possible to reduce maintenance frequency.
+When Subkeys expire, they can still be used to decrypt with GnuPG and authenticate with SSH, however they can **not** be used to encrypt nor sign new messages.
 
-When Subkeys expire, they may still be used to decrypt with GnuPG and authenticate with SSH, however they can **not** be used to encrypt nor sign new messages.
-
-Subkeys must be renewed or rotated using the Certify key - see [Updating keys](#updating-keys).
+Subkeys are renewed or rotated using the Certify key - see [Updating keys](#updating-keys).
 
 Set Subkeys to expire on a planned date:
 
@@ -358,11 +370,11 @@ export KEY_EXPIRATION=2y
 
 ## Passphrase
 
-Generate a passphrase for the Certify key. This credential will be used to manage identity Subkeys.
+Generate a passphrase for the Certify key, which will be used to manage the identity and Subkeys.
 
-To improve readability, a passphrase consisting only of uppercase letters and numbers is recommended.
+A passphrase consisting only of uppercase letters and numbers is recommended: the limited character set makes handwritten storage easier to write and read.
 
-The following commands will generate a strong[^3] passphrase while avoiding certain similar-looking characters:
+The following commands will generate and print a strong passphrase[^2]:
 
 ```bash
 export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
@@ -370,7 +382,7 @@ export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
   fold -w ${PASS_GROUPSIZE:-4} |
   paste -sd ${PASS_DELIMITER:--} - |
   head -c ${PASS_LENGTH:-29})
-printf "\n\t%s\n\n" "$CERTIFY_PASS"
+printf "\nCertify passphrase:\t%s\n\n" "$CERTIFY_PASS"
 ```
 
 To change the passphrase length, delimiting character or group sizes, export the respective variable(s) prior to running the passphrase generation command, for example:
@@ -395,7 +407,7 @@ lp -d Printer-Name passphrase.txt
 
 # Create Certify key
 
-The primary key to generate is the Certify key, which is responsible for issuing Subkeys for encryption, signature and authentication operations.
+The primary key to generate is the Certify key, which is used to issue Subkeys for signing (sign commits/messages), encryption (decrypt data), and authentication (SSH login).
 
 The Certify key should be kept offline and only accessed from a dedicated and secure environment to issue or revoke Subkeys.
 
@@ -416,19 +428,19 @@ export KEY_ID=$(gpg -k --with-colons "$IDENTITY" |
   awk -F: '/^pub:/ { print $5; exit }')
 export KEY_FP=$(gpg -k --with-colons "$IDENTITY" |
   awk -F: '/^fpr:/ { print $10; exit }')
-printf "\nKey ID/Fingerprint: %20s\n%s\n\n" "$KEY_ID" "$KEY_FP"
+printf "\nKey ID/Fingerprint:\t%s\n%s\n\n" "$KEY_ID" "$KEY_FP"
 ```
 
 <details>
 <summary>Additional identities (optional)</summary>
 
-This is an optional step for use cases requiring [additional identities](https://github.com/drduh/YubiKey-Guide/issues/445), for example:
+Skip this section unless [multiple public identities](https://github.com/drduh/YubiKey-Guide/issues/445) on the same key are needed, for example:
 
 - different email addresses for different languages
 - different email addresses for professional versus personal but please see alternative reason below for not tying these addresses together
 - anonymized email addresses for different git providers
 
-An alternative would be to have distinct keys but you would then require multiple YubiKeys, as each can only hold a single key for each type (signing, encryption, authentication). Nevertheless, there can be good reasons to have multiple YubiKeys:
+An alternative would be to have distinct keys but you would then require multiple YubiKeys, as each can only hold a single Subkey for each type (Signing, Encryption, Authentication). Nevertheless, there can be good reasons to have multiple YubiKeys:
 
 - if you have different email addresses for professional versus personal use cases, having distinct keys allows you to disassociate identities
 - if you are also using YubiKey as a U2F or FIDO2 device, having multiple YubiKeys is generally recommended as a backup measure
@@ -440,20 +452,20 @@ declare -a additional_uids
 additional_uids=("Super Cool YubiKey 2026" "uid 1 <uid1@example.org>")
 ```
 
-Add the additional user IDs to the Certify key:
+Add the additional UIDs to the Identity.
 
 ```bash
 for uid in "${additional_uids[@]}" ; do \
   echo "$CERTIFY_PASS" |
   gpg --batch --passphrase-fd 0 \
-      --pinentry-mode=loopback --quick-add-uid "$KEY_FP" "$uid"
+      --pinentry-mode loopback --quick-add-uid "$KEY_FP" "$uid"
 done
 ```
 
-Adjust the trust of additional IDs to *ultimate*:
+Set UID trust levels to *ultimate*:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key "$KEY_ID" <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key "$KEY_ID" <<EOF
 uid *
 trust
 5
@@ -465,26 +477,25 @@ EOF
 
 # Create Subkeys
 
-Generate Signature and Encryption Subkeys using the previously configured key type, passphrase and expiration:
+Generate Signature and Encryption Subkeys:
 
 ```bash
-printf "$CERTIFY_PASS" |
-  gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
       --quick-add-key "$KEY_FP" "$KEY_TYPE" sign "$KEY_EXPIRATION"
-
-printf "$CERTIFY_PASS" |
-  gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
       --quick-add-key "$KEY_FP" "$KEY_TYPE" encrypt "$KEY_EXPIRATION"
 ```
 
 Then generate the Authentication Subkey:
 
 > [!NOTE]
-> Some systems no longer accept RSA for SSH authentication; to use [Ed25519](https://ed25519.cr.yp.to/), set the `KEY_TYPE` variable to `ed25519` before generating the Authentication Subkey.
+> Some systems do not accept RSA for SSH authentication. To use [Ed25519](https://ed25519.cr.yp.to/) instead, run `export KEY_TYPE=ed25519` before generating the Authentication Subkey with the following command.
 
 ```bash
-printf "$CERTIFY_PASS" |
-  gpg --batch --pinentry-mode=loopback --passphrase-fd 0 \
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
       --quick-add-key "$KEY_FP" "$KEY_TYPE" auth "$KEY_EXPIRATION"
 ```
 
@@ -509,22 +520,33 @@ ssb   rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
 
 # Backup keys
 
-Save a copy of the Certify key, Subkeys and public key:
+Export the public key:
 
 ```bash
-echo "$CERTIFY_PASS" |
-  gpg --output $GNUPGHOME/$KEY_ID-Certify.key \
-      --batch --pinentry-mode=loopback --passphrase-fd 0 \
-      --armor --export-secret-keys $KEY_ID
-
-echo "$CERTIFY_PASS" |
-  gpg --output $GNUPGHOME/$KEY_ID-Subkeys.key \
-      --batch --pinentry-mode=loopback --passphrase-fd 0 \
-      --armor --export-secret-subkeys $KEY_ID
-
-gpg --output $GNUPGHOME/$KEY_ID-$(date +%F).asc \
+gpg --output $GNUPGHOME/public-$KEY_ID-$(date +%F).asc \
     --armor --export $KEY_ID
 ```
+
+Export the Certify key:
+
+```bash
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
+      --output $GNUPGHOME/secret-$KEY_ID-Certify.key \
+      --armor --export-secret-keys $KEY_ID
+```
+
+Export the Subkeys:
+
+```bash
+printf '%s' "$CERTIFY_PASS" |
+  gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
+      --output $GNUPGHOME/secret-$KEY_ID-Subkeys.key \
+      --armor --export-secret-subkeys $KEY_ID
+```
+
+> [!IMPORTANT]
+> The exported `.key` files contain private key material. Anyone with access to them and the Certify passphrase has full control of the identity.
 
 Create a backup on encrypted storage to be kept offline in a secure and durable location.
 
@@ -534,7 +556,7 @@ The following process is recommended to be repeated several times on multiple po
 > [ext2](https://en.wikipedia.org/wiki/Ext2) file systems (without encryption) can be mounted on Linux and OpenBSD.
 > Use [FAT32](https://en.wikipedia.org/wiki/Fat32) or [NTFS](https://en.wikipedia.org/wiki/Ntfs) file systems for macOS and Windows compatibility instead.
 
-> [!CAUTION]
+> [!WARNING]
 > Confirm the destination (`of`) before issuing `dd` commands as they are destructive! This guide uses `/dev/sdc` - this value may be different on your system.
 
 **Linux**
@@ -556,7 +578,7 @@ Zero the header to prepare for encryption:
 sudo dd if=/dev/zero of=/dev/sdc bs=4M count=1
 ```
 
-Remove and re-connect the storage device.
+Remove and reconnect the storage device so the operating system reads the cleared partition table before the next command.
 
 Erase and create a new partition table:
 
@@ -589,23 +611,21 @@ export LUKS_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
   fold -w ${PASS_GROUPSIZE:-4} |
   paste -sd ${PASS_DELIMITER:--} - |
   head -c ${PASS_LENGTH:-29})
-printf "\n\t%s\n\n" "$LUKS_PASS"
+printf "\nLUKS passphrase:\t%s\n\n" "$LUKS_PASS"
 ```
 
-This passphrase will also be used infrequently to access the Certify key and should be very strong.
-
-Write the passphrase down or memorize it.
+This passphrase unlocks the encrypted backup volume, which contains the Certify key. It is needed to renew, rotate, or recover Subkeys. Write the passphrase down or memorize it.
 
 Format the partition:
 
 ```bash
-printf $LUKS_PASS | sudo cryptsetup -q luksFormat /dev/sdc1
+printf '%s' "$LUKS_PASS" | sudo cryptsetup -q luksFormat /dev/sdc1
 ```
 
 Mount the partition:
 
 ```bash
-printf $LUKS_PASS | sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
+printf '%s' "$LUKS_PASS" | sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
 ```
 
 Create an ext2 filesystem:
@@ -713,7 +733,7 @@ See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for 
 # Export public key
 
 > [!IMPORTANT]
-> Without the public key, it will **not** be possible to use GnuPG to decrypt/sign messages. However, YubiKey can still be used for SSH authentication.
+> The YubiKey holds private keys, but each computer also needs the public key and metadata to identify Subkeys and use them with GnuPG. Without the public key, it will **not** be possible to use GnuPG to decrypt and sign. However, YubiKey can still be used for SSH authentication.
 
 Connect another portable storage device or create a new partition on the existing one.
 
@@ -788,7 +808,7 @@ If the YubiKey is locked, [Reset](#reset-yubikey) it.
 
 ## Change PIN
 
-YubiKey's [PGP](https://developers.yubico.com/PGP/) interface has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
+YubiKey's [OpenPGP application](https://developers.yubico.com/PGP/) has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
 
 Name | Default | Capability
 :---: | :---: | ---
@@ -796,22 +816,22 @@ User PIN | `123456` | cryptographic operations (decrypt, sign, authenticate)
 Admin PIN | `12345678` | reset PIN, change Reset Code, add keys and owner information
 Reset Code | None | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
-Determine the desired PIN values. They can be shorter than the Certify key passphrase due to limited brute-forcing opportunities; the User PIN should be convenient enough to remember for every-day use.
-
 The *User PIN* must be at least 6 characters and the *Admin PIN* must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
+
+YubiKey limits failed PIN attempts, which reduces guessing risk, allowing the User PIN to be short and convenient for regular use.
 
 Generate PIN values - 6 digits for the User and 8 digits for the Admin:
 
 ```bash
 export ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 8)
 export USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 6)
-printf "\nAdmin PIN: %12s\nUser  PIN: %12s\n\n" "$ADMIN_PIN" "$USER_PIN"
+printf "\nAdmin PIN:\t%s\nUser  PIN:\t%s\n\n" "$ADMIN_PIN" "$USER_PIN"
 ```
 
 Change the Admin PIN:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --change-pin <<EOF
 3
 12345678
 $ADMIN_PIN
@@ -823,7 +843,7 @@ EOF
 Change the User PIN:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --change-pin <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --change-pin <<EOF
 1
 123456
 $USER_PIN
@@ -832,7 +852,7 @@ q
 EOF
 ```
 
-Remove and re-insert YubiKey.
+Remove and reinsert YubiKey.
 
 > [!CAUTION]
 > Three incorrect *User PIN* entries will cause it to become blocked and must be unblocked with either the *Admin PIN* or *Reset Code*. Three incorrect *Admin PIN* or *Reset Code* entries will destroy data on YubiKey.
@@ -848,16 +868,16 @@ ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
 > [!IMPORTANT]
 > OpenPGP card metadata is readable without authentication by anyone with physical access to the YubiKey. This includes Login data and may include the card serial number, key fingerprints, public-key data, and other card attributes. Do not store a name, email address, account name, or other personal identifier in Login data, except for deliberate lost-and-found or asset-management purposes.
 
-Set the card Login attribute to a random, non-sensitive label:
+Set the card Login attribute. The random label generated by the following command is intentionally non-identifying:
 
 ```bash
 export CARD_ATTR_LOGIN="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 12)"
 ```
 
-Set the login attribute:
+Apply the attribute:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-card <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-card <<EOF
 admin
 login
 $CARD_ATTR_LOGIN
@@ -877,8 +897,8 @@ Login data .......: yk-3i568zcrib5f
 
 # Transfer Subkeys
 
-> [!IMPORTANT]
-> Transferring keys to YubiKey converts the on-disk key into a "stub" - making it no longer usable to transfer to subsequent YubiKeys. Ensure keys were backed up before proceeding.
+> [!NOTE]
+> After transfer, the system no longer holds a usable private copy of the Subkey - it holds only a reference to the YubiKey. A backup is required to provision another YubiKey.
 
 The Certify key passphrase and Admin PIN are required to transfer keys.
 
@@ -887,7 +907,7 @@ The Certify key passphrase and Admin PIN are required to transfer keys.
 Transfer the Signature key:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
 key 1
 keytocard
 1
@@ -902,7 +922,7 @@ EOF
 Repeat the process for the Encryption key:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
 key 2
 keytocard
 2
@@ -917,7 +937,7 @@ EOF
 Repeat the process for the Authentication key:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
 key 3
 keytocard
 3
@@ -929,7 +949,13 @@ EOF
 
 # Verify transfer
 
-Verify Subkeys are on YubiKey with `gpg -K` - indicated by `ssb>`:
+Verify Subkeys are on YubiKey:
+
+```bash
+gpg -K
+```
+
+All three Subkeys should appear as `ssb>` - the `>` indicates the private key is on the smart card:
 
 ```console
 sec   rsa4096/0xF0F2CFEB04341FB5 2026-08-01 [C]
@@ -940,11 +966,9 @@ ssb>  rsa4096/0x30CBE8C4B085B9F7 2026-08-01 [E] [expires: 2028-08-01]
 ssb>  rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
 ```
 
-The `>` after a tag indicates the key is stored on a smart card.
-
 # Finish setup
 
-Verify the following steps were performed correctly:
+Confirm the following steps were successfully completed to finish setup:
 
 - [ ] Memorized or wrote down the Certify key (identity) passphrase to a secure and durable location
   - `echo $CERTIFY_PASS` to see it again
@@ -962,18 +986,17 @@ Verify the following steps were performed correctly:
   - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe them
 - [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey
   - `gpg -K` shows `ssb>` for all 3 Subkeys
-
-Reboot, clearing the ephemeral environment, to complete setup.
+- [ ] Cleared temporary working directory/environment with reboot or explicit command
 
 # Using YubiKey
 
-Initialize GnuPG:
+Create or inspect the local GnuPG keyring. This command lists public keys and initializes `~/.gnupg` if needed:
 
 ```bash
 gpg -k
 ```
 
-Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
+Import the [recommended configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
 
 ```bash
 cd ~/.gnupg
@@ -1051,9 +1074,10 @@ Or download the public key from a keyserver:
 gpg --recv $KEY_ID
 ```
 
-Or with the URL on YubiKey, retrieve the public key using the command `gpg --edit-card`.
+Or with the URL on YubiKey, retrieve the public key:
 
 ```console
+$ gpg --edit-card
 gpg/card> fetch
 gpg/card> quit
 ```
@@ -1068,7 +1092,7 @@ export KEY_ID=0xF0F2CFEB04341FB5
 Assign ultimate trust by typing `trust` and selecting option `5` then `quit`:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
 trust
 5
 y
@@ -1076,7 +1100,7 @@ save
 EOF
 ```
 
-Remove and re-insert YubiKey.
+Remove and reinsert YubiKey.
 
 Verify the status with `gpg --card-status` which will list the available Subkeys:
 
@@ -1237,7 +1261,7 @@ ykman openpgp keys set-touch aut on
 To view and adjust policy options:
 
 ```bash
-ykman openpgp keys set-touch -h
+ykman openpgp keys set-touch --help
 ```
 
 `Cached` or `Cached-Fixed` may be desirable for YubiKey use with email clients.
@@ -1250,7 +1274,6 @@ Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Gui
 
 ```bash
 cd ~/.gnupg
-
 wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg-agent.conf
 ```
 
@@ -1264,9 +1287,9 @@ wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg-age
 
 Install pinentry with `brew install pinentry-mac` or `sudo port install pinentry` then edit `gpg-agent.conf` to set the `pinentry-program` path to:
 
-* Apple Silicon Macs: `/opt/homebrew/bin/pinentry-mac`
-* Intel Macs: `/usr/local/bin/pinentry-mac` or `/opt/local/bin/pinentry` (MacPorts)
-* MacGPG Suite: `/usr/local/MacGPG2/libexec/pinentry-mac.app/Contents/MacOS/pinentry-mac`
+- Apple Silicon Macs: `/opt/homebrew/bin/pinentry-mac`
+- Intel Macs: `/usr/local/bin/pinentry-mac` or `/opt/local/bin/pinentry` (MacPorts)
+- MacGPG Suite: `/usr/local/MacGPG2/libexec/pinentry-mac.app/Contents/MacOS/pinentry-mac`
 
 Then run `gpgconf --kill gpg-agent` for the change to take effect.
 
@@ -1274,29 +1297,29 @@ To use graphical applications on macOS, [additional setup is required](https://j
 
 Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent.plist` with the following contents:
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-	<dict>
-		<key>Label</key>
-		<string>gnupg.gpg-agent</string>
-		<key>RunAtLoad</key>
-		<true/>
-		<key>KeepAlive</key>
-		<false/>
-		<key>EnvironmentVariables</key>
-		<dict>
-			<key>PATH</key>
-			<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/usr/local/MacGPG2/bin:/bin</string>
-		</dict>
-		<key>ProgramArguments</key>
-		<array>
-			<string>/usr/bin/env</string>
-			<string>gpg-connect-agent</string>
-			<string>/bye</string>
-		</array>
-	</dict>
+    <dict>
+        <key>Label</key>
+        <string>gnupg.gpg-agent</string>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>KeepAlive</key>
+        <false/>
+        <key>EnvironmentVariables</key>
+        <dict>
+            <key>PATH</key>
+            <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/usr/local/MacGPG2/bin:/bin</string>
+        </dict>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/usr/bin/env</string>
+            <string>gpg-connect-agent</string>
+            <string>/bye</string>
+        </array>
+    </dict>
 </plist>
 ```
 
@@ -1308,7 +1331,7 @@ launchctl load $HOME/Library/LaunchAgents/gnupg.gpg-agent.plist
 
 Create `$HOME/Library/LaunchAgents/gnupg.gpg-agent-symlink.plist` with the following contents:
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0/dtd">
 <plist version="1.0">
@@ -1614,11 +1637,11 @@ Edit `.ssh/config` to add the remote host:
 
 ```console
 Host
-    Hostname remote-host.tld
-    StreamLocalBindUnlink yes
-    RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
-    #RemoteForward [remote socket] [local socket]
-    #Note that ForwardAgent is not wanted here!
+  Hostname remote-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
+  #RemoteForward [remote socket] [local socket]
+  #Note that ForwardAgent is not wanted here!
 ```
 
 After successfully ssh into the remote host, confirm `/run/user/1000/gnupg/S.gpg-agent.ssh` exists.
@@ -1641,11 +1664,11 @@ Meanwhile, if you use `S.gpg-agent.ssh`, assume you have gone through the steps 
 
 ```console
 Host third
-    Hostname third-host.tld
-    StreamLocalBindUnlink yes
-    RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
-    #RemoteForward [remote socket] [local socket]
-    #Note that ForwardAgent is not wanted here!
+  Hostname third-host.tld
+  StreamLocalBindUnlink yes
+  RemoteForward /run/user/1000/gnupg/S.gpg-agent.ssh /run/user/1000/gnupg/S.gpg-agent.ssh
+  #RemoteForward [remote socket] [local socket]
+  #Note that ForwardAgent is not wanted here!
 ```
 
 The path must be set according to `gpgconf --list-dirs agent-ssh-socket` on *remote* and *third* hosts.
@@ -1909,7 +1932,7 @@ Neither rotation method is superior and it is up to personal philosophy on ident
 
 To renew or rotate Subkeys, follow the same process as generating keys: boot to a secure environment, install required software and disable networking.
 
-Connect the portable storage device with the Certify key and identify the disk label.
+Connect the portable storage device with the Certify key and identify the device path.
 
 Decrypt and mount the encrypted volume:
 
@@ -1962,7 +1985,7 @@ Renew the Subkeys:
 
 ```bash
 printf "$CERTIFY_PASS" |
-  gpg --batch --pinentry-mode=loopback \
+  gpg --batch --pinentry-mode loopback \
       --passphrase-fd 0 --quick-set-expire "$KEY_FP" "$KEY_EXPIRATION" \
   $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
 ```
@@ -1986,7 +2009,7 @@ gpg --send-key $KEY_ID
 gpg --recv $KEY_ID
 ```
 
-The validity of the GnuPG identity will be extended, allowing it to be used again for encryption and signature operations.
+The validity of the GnuPG identity will be extended, enabling encryption and signature operations.
 
 The SSH public key does **not** need to be updated on remote hosts.
 
@@ -2028,7 +2051,7 @@ Reboot or securely erase the GnuPG temporary working directory.
 
 If PIN attempts are exceeded, the YubiKey is locked and must be [Reset](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html) and set up again using the encrypted backup.
 
-Copy the following to a file and run `gpg-connect-agent -r $file`, then re-insert the YubiKey to complete reset.
+Copy the following to a file and run `gpg-connect-agent -r $file`, then reinsert the YubiKey to complete reset.
 
 ```console
 /hex
@@ -2114,7 +2137,7 @@ Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing 
 Enable KDF using the default Admin PIN of `12345678`:
 
 ```bash
-gpg --command-fd=0 --pinentry-mode=loopback --card-edit <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --card-edit <<EOF
 admin
 kdf-setup
 12345678
@@ -2214,7 +2237,7 @@ Now connect networking.
 
 - To get more information on potential errors, restart the `gpg-agent` process with debug output to the console with `pkill gpg-agent; gpg-agent --daemon --no-detach -v -v --debug-level advanced --homedir ~/.gnupg`.
 
-- A lot of issues can be fixed by removing and re-inserting YubiKey, or restarting the `gpg-agent` process.
+- A lot of issues can be fixed by removing and reinserting YubiKey, or restarting the `gpg-agent` process.
 
 - If you receive the error, `Yubikey core error: no yubikey present` - make sure the YubiKey is inserted correctly. It should blink once when plugged in.
 
@@ -2288,25 +2311,24 @@ EOF
 
 # Alternative solutions
 
-* [`vorburger/ed25519-sk.md`](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md) - use YubiKey for SSH without GnuPG
-* [`smlx/piv-agent`](https://github.com/smlx/piv-agent) - SSH and GnuPG agent which can be used with PIV devices
-* [`keytotpm`](https://www.gnupg.org/documentation/manuals/gnupg/OpenPGP-Key-Management.html) - use GnuPG with TPM systems
+- [`vorburger/ed25519-sk.md`](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md) - use YubiKey for SSH without GnuPG
+- [`smlx/piv-agent`](https://github.com/smlx/piv-agent) - SSH and GnuPG agent which can be used with PIV devices
+- [`keytotpm`](https://www.gnupg.org/documentation/manuals/gnupg/OpenPGP-Key-Management.html) - use GnuPG with TPM systems
 
 # Additional resources
 
-* [Yubico - PGP](https://developers.yubico.com/PGP/)
-* [Yubico - YubiKey Personalization](https://developers.yubico.com/yubikey-personalization/)
-* [A Visual Explanation of GPG Subkeys (2022)](https://rgoulter.com/blog/posts/programming/2022-06-10-a-visual-explanation-of-gpg-subkeys.html)
-* [dhess/nixos-yubikey](https://github.com/dhess/nixos-yubikey)
-* [lsasolutions/makegpg](https://gitlab.com/lsasolutions/makegpg)
-* [Trammell Hudson - Yubikey (2020)](https://trmm.net/Yubikey)
-* [Yubikey forwarding SSH keys (2019)](https://blog.onefellow.com/post/180065697833/yubikey-forwarding-ssh-keys)
-* [GPG Agent Forwarding (2018)](https://mlohr.com/gpg-agent-forwarding/)
-* [Stick with security: YubiKey, SSH, GnuPG, macOS (2018)](https://evilmartians.com/chronicles/stick-with-security-yubikey-ssh-gnupg-macos)
-* [PGP and SSH keys on a Yubikey NEO (2015)](https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/)
-* [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
-* [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
+- [Yubico - PGP](https://developers.yubico.com/PGP/)
+- [Yubico - YubiKey Personalization](https://developers.yubico.com/yubikey-personalization/)
+- [A Visual Explanation of GPG Subkeys (2022)](https://rgoulter.com/blog/posts/programming/2022-06-10-a-visual-explanation-of-gpg-subkeys.html)
+- [dhess/nixos-yubikey](https://github.com/dhess/nixos-yubikey)
+- [lsasolutions/makegpg](https://gitlab.com/lsasolutions/makegpg)
+- [Trammell Hudson - Yubikey (2020)](https://trmm.net/Yubikey)
+- [Yubikey forwarding SSH keys (2019)](https://blog.onefellow.com/post/180065697833/yubikey-forwarding-ssh-keys)
+- [GPG Agent Forwarding (2018)](https://mlohr.com/gpg-agent-forwarding/)
+- [Stick with security: YubiKey, SSH, GnuPG, macOS (2018)](https://evilmartians.com/chronicles/stick-with-security-yubikey-ssh-gnupg-macos)
+- [PGP and SSH keys on a Yubikey NEO (2015)](https://www.esev.com/blog/post/2015-01-pgp-ssh-key-on-yubikey-neo/)
+- [Offline GnuPG Master Key and Subkeys on YubiKey NEO Smartcard (2014)](https://blog.josefsson.org/2014/06/23/offline-gnupg-master-key-and-subkeys-on-yubikey-neo-smartcard/)
+- [Creating the perfect GPG keypair (2013)](https://alexcabal.com/creating-the-perfect-gpg-keypair/)
 
-[^1]: Use single quotes to wrap double quote character(s) (`"`) - `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
-[^2]: [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used to revoke an identity.
-[^3]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
+[^1]: [Revocation certificates](https://security.stackexchange.com/questions/14718/does-openpgp-key-expiration-add-to-security/79386#79386) should be used to revoke an identity.
+[^2]: See [issue 477](https://github.com/drduh/YubiKey-Guide/issues/477) for NIST guideline discussion.
