@@ -272,7 +272,7 @@ Create a temporary directory for [GnuPG configuration](https://www.gnupg.org/doc
 
 ```bash
 export GNUPGHOME=$(mktemp -d "${TMPDIR:-/tmp}/$(date +%Y.%m.%d)-XXXXXXXX")
-printf "Temp dir:\t%s\n" "$GNUPGHOME"
+printf "\nTemporary directory:\t%s\n\n" "$GNUPGHOME"
 ```
 
 > [!NOTE]
@@ -318,23 +318,23 @@ throw-keyids
 
 ## Identity
 
-Generate an attribute to use as the Identity label:
+Generate a random attribute for the Identity label:
 
 ```bash
-export IDENTITY="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 12)"
-printf "Identity:\t%s\n" "$IDENTITY"
+export IDENTITY="yk.$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 16)"
+printf "\nIdentity:\t\t%s\n\n" "$IDENTITY"
 ```
 
-Or set a real name/email address if you intend to use email encryption or Git verification; a label-only identity may not work with every service.
+If you intend to use email encryption or Git verification, set the Identity label to a real name or email:
 
 ```bash
-export IDENTITY="YubiKey User <yubikey@example.domain>"
+export IDENTITY="YubiKey User <yubikey@example.com>"
 ```
 
 > [!TIP]
 > Use single quotes to wrap double quote characters (`"`):
 >
-> `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.domain>'`
+> `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.com>'`
 
 ## Key
 
@@ -375,11 +375,11 @@ A passphrase consisting only of uppercase letters and numbers is recommended: th
 The following commands will generate and print a strong passphrase[^2]:
 
 ```bash
-export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
+export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z3-9" < /dev/urandom |
   tr -d "IOUS5" |
+  head -c ${PASS_LENGTH:-24} |
   fold -w ${PASS_GROUPSIZE:-4} |
-  paste -sd ${PASS_DELIMITER:--} - |
-  head -c ${PASS_LENGTH:-29})
+  paste -sd ${PASS_DELIMITER:--} -)
 printf "\nCertify passphrase:\t%s\n\n" "$CERTIFY_PASS"
 ```
 
@@ -414,7 +414,7 @@ Do not set an expiration date on the Certify key.
 Generate the Certify key:
 
 ```bash
-printf "$CERTIFY_PASS" |
+printf '%s' "$CERTIFY_PASS" |
   gpg --batch --passphrase-fd 0 \
       --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
 ```
@@ -422,10 +422,8 @@ printf "$CERTIFY_PASS" |
 Set and view the Certify key identifier and fingerprint for use later:
 
 ```bash
-export KEY_ID=$(gpg -k --with-colons "$IDENTITY" |
-  awk -F: '/^pub:/ { print $5; exit }')
-export KEY_FP=$(gpg -k --with-colons "$IDENTITY" |
-  awk -F: '/^fpr:/ { print $10; exit }')
+export KEY_FP=$(gpg -k --with-colons $IDENTITY | awk -F: '/^fpr:/ { print $10; exit }')
+export KEY_ID="${KEY_FP: -16}"
 printf "\nKey ID/Fingerprint:\t%s\n%s\n\n" "$KEY_ID" "$KEY_FP"
 ```
 
@@ -454,7 +452,7 @@ Add the additional UIDs to the Identity.
 
 ```bash
 for uid in "${additional_uids[@]}" ; do \
-  echo "$CERTIFY_PASS" |
+  printf '%s' "$CERTIFY_PASS" |
   gpg --batch --passphrase-fd 0 \
       --pinentry-mode loopback --quick-add-uid "$KEY_FP" "$uid"
 done
@@ -510,7 +508,7 @@ The output should display **[C]ertify, [S]ignature, [E]ncryption and [A]uthentic
 ```console
 sec   rsa4096/0xF0F2CFEB04341FB5 2026-08-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
-uid                   [ultimate] YubiKey User <yubikey@example>
+uid                   [ultimate] yk.pn8wgfx67khlhext
 ssb   rsa4096/0xB3CD10E502E19637 2026-08-01 [S] [expires: 2028-08-01]
 ssb   rsa4096/0x30CBE8C4B085B9F7 2026-08-01 [E] [expires: 2028-08-01]
 ssb   rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
@@ -604,11 +602,11 @@ Use [LUKS](https://dys2p.com/en/2023-05-luks-security.html) to encrypt the new p
 Generate another unique [Passphrase](#passphrase) (different from the Certify key passphrase) to protect the encrypted volume:
 
 ```bash
-export LUKS_PASS=$(LC_ALL=C tr -dc "A-Z2-9" < /dev/urandom |
+export LUKS_PASS=$(LC_ALL=C tr -dc "A-Z3-9" < /dev/urandom |
   tr -d "IOUS5" |
+  head -c ${PASS_LENGTH:-24} |
   fold -w ${PASS_GROUPSIZE:-4} |
-  paste -sd ${PASS_DELIMITER:--} - |
-  head -c ${PASS_LENGTH:-29})
+  paste -sd ${PASS_DELIMITER:--} -)
 printf "\nLUKS passphrase:\t%s\n\n" "$LUKS_PASS"
 ```
 
@@ -809,7 +807,7 @@ If the YubiKey is locked, [Reset](#reset-yubikey) it.
 YubiKey's [OpenPGP application](https://developers.yubico.com/PGP/) has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
 
 Name | Default | Capability
-:---: | :---: | ---
+:-: | :-: | -
 User PIN | `123456` | cryptographic operations (decrypt, sign, authenticate)
 Admin PIN | `12345678` | reset PIN, change Reset Code, add keys and owner information
 Reset Code | None | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
@@ -821,9 +819,10 @@ YubiKey limits failed PIN attempts, which reduces guessing risk, allowing the Us
 Generate PIN values - 6 digits for the User and 8 digits for the Admin:
 
 ```bash
-export ADMIN_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 8)
-export USER_PIN=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 6)
-printf "\nAdmin PIN:\t%s\nUser  PIN:\t%s\n\n" "$ADMIN_PIN" "$USER_PIN"
+PINS=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 14)
+export ADMIN_PIN=${PINS:0:8}
+export USER_PIN=${PINS:8:6}
+printf "\nAdmin PIN:\t\t%s\nUser  PIN:\t\t%s\n\n" "$ADMIN_PIN" "$USER_PIN"
 ```
 
 Change the Admin PIN:
@@ -864,12 +863,13 @@ ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
 ## Set attributes
 
 > [!IMPORTANT]
-> OpenPGP card metadata is readable without authentication by anyone with physical access to the YubiKey. This includes Login data and may include the card serial number, key fingerprints, public-key data, and other card attributes. Do not store a name, email address, account name, or other personal identifier in Login data, except for deliberate lost-and-found or asset-management purposes.
+> OpenPGP card metadata is readable without authentication by anyone with physical access to the YubiKey. This includes the card serial number, key fingerprints, public-key data, and other card attributes. Do not store a name, email address, account name, or other personal identifier in Login data, except for deliberate lost-and-found or asset-management purposes.
 
 Set the card Login attribute. The random label generated by the following command is intentionally non-identifying:
 
 ```bash
-export CARD_ATTR_LOGIN="yk-$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 12)"
+export CARD_ATTR_LOGIN="yk.$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 16)"
+printf "\nLogin attribute:\t%s\n\n" "$CARD_ATTR_LOGIN"
 ```
 
 Apply the attribute:
@@ -905,7 +905,7 @@ The Certify key passphrase and Admin PIN are required to transfer keys.
 Transfer the Signature key:
 
 ```bash
-gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_FP <<EOF
 key 1
 keytocard
 1
@@ -920,7 +920,7 @@ EOF
 Repeat the process for the Encryption key:
 
 ```bash
-gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_FP <<EOF
 key 2
 keytocard
 2
@@ -935,7 +935,7 @@ EOF
 Repeat the process for the Authentication key:
 
 ```bash
-gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_ID <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key $KEY_FP <<EOF
 key 3
 keytocard
 3
@@ -958,7 +958,7 @@ All three Subkeys should appear as `ssb>` - the `>` indicates the private key is
 ```console
 sec   rsa4096/0xF0F2CFEB04341FB5 2026-08-01 [C]
       Key fingerprint = 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
-uid                   [ultimate] YubiKey User <yubikey@example>
+uid                   [ultimate] yk.pn8wgfx67khlhext
 ssb>  rsa4096/0xB3CD10E502E19637 2026-08-01 [S] [expires: 2028-08-01]
 ssb>  rsa4096/0x30CBE8C4B085B9F7 2026-08-01 [E] [expires: 2028-08-01]
 ssb>  rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
@@ -1111,7 +1111,7 @@ Name of cardholder: [not set]
 Language prefs ...: [not set]
 Salutation .......:
 URL of public key : [not set]
-Login data .......: yubikey@example
+Login data .......: yk-3i568zcrib5f
 Signature PIN ....: not forced
 Key attributes ...: rsa4096 rsa4096 rsa4096
 Max. PIN lengths .: 127 127 127
@@ -1125,7 +1125,7 @@ Encryption key....: A5FA A005 5BED 4DC9 889D  38BC 30CB E8C4 B085 B9F7
       created ....: 2026-08-01 12:00:00
 Authentication key: 570E 1355 6D01 4C04 8B6D  E2A3 AD9E 24E1 B8CB 9600
       created ....: 2026-08-01 12:00:00
-General key info..: sub  rsa4096/0xB3CD10E502E19637 2026-08-01 YubiKey User <yubikey@example>
+General key info..: sub  rsa4096/0xB3CD10E502E19637 2026-08-01 yk.pn8wgfx67khlhext
 sec#  rsa4096/0xF0F2CFEB04341FB5  created: 2026-08-01  expires: never
 ssb>  rsa4096/0xB3CD10E502E19637  created: 2026-08-01  expires: 2028-08-01
                                   card-no: 0006 05553211
@@ -1216,7 +1216,7 @@ The output will be similar to:
 ```console
 gpg: Signature made Sat 01 Aug 2026 12:00:00 PM UTC
 gpg:                using RSA key CF5A305B808B7A0F230DA064B3CD10E502E19637
-gpg: Good signature from "YubiKey User <yubikey@example>" [ultimate]
+gpg: Good signature from "yk.pn8wgfx67khlhext" [ultimate]
 Primary key fingerprint: 4E2C 1FA3 372C BA96 A06A  C34A F0F2 CFEB 0434 1FB5
      Subkey fingerprint: CF5A 305B 808B 7A0F 230D  A064 B3CD 10E5 02E1 9637
 ```
@@ -1685,11 +1685,11 @@ git config --global gpg.format ssh
 git config --global user.signingkey ~/.ssh/id_rsa_yubikey.pub
 ```
 
-Configure the `user.name` and `user.email` option to match the email address associated with the PGP identity:
+Configure the `user.name` and `user.email` option to match the email address associated with the identity:
 
 ```bash
 git config --global user.name 'YubiKey User'
-git config --global user.email yubikey@example
+git config --global user.email yubikey@example.com
 ```
 
 To sign commits or tags, use the `-S` option, or consider enabling commit and tag signing by default:
@@ -1705,7 +1705,6 @@ Configure authentication:
 
 ```bash
 git config --global core.sshcommand "plink -agent"
-
 git config --global gpg.program 'C:\Program Files (x86)\GnuPG\bin\gpg.exe'
 ```
 
@@ -1955,11 +1954,9 @@ Confirm the identity is available, set the key ID and fingerprint values:
 
 ```bash
 gpg -K
-export KEY_ID=$(gpg -k --with-colons "$IDENTITY" |
-    awk -F: '/^pub:/ { print $5; exit }')
-export KEY_FP=$(gpg -k --with-colons "$IDENTITY" |
-    awk -F: '/^fpr:/ { print $10; exit }')
-echo $KEY_ID $KEY_FP
+export KEY_FP=$(gpg -k --with-colons $IDENTITY | awk -F: '/^fpr:/ { print $10; exit }')
+export KEY_ID="${KEY_FP: -16}"
+printf "\nKey ID/Fingerprint:\t%s\n%s\n\n" "$KEY_ID" "$KEY_FP"
 ```
 
 Recall the Certify key passphrase and set it, for example:
@@ -1979,10 +1976,11 @@ export KEY_EXPIRATION=2028-09-01
 Renew the Subkeys:
 
 ```bash
-printf "$CERTIFY_PASS" |
+printf '%s' "$CERTIFY_PASS" |
   gpg --batch --pinentry-mode loopback \
       --passphrase-fd 0 --quick-set-expire "$KEY_FP" "$KEY_EXPIRATION" \
-  $(gpg -K --with-colons | awk -F: '/^fpr:/ { print $10 }' | tail -n "+2" | tr "\n" " ")
+    $(gpg -K --with-colons |
+      awk -F: '$1=="fpr" { if (++n > 1) printf "%s ", $10 } END { print "" }')
 ```
 
 Export the updated public key:
