@@ -1,7 +1,5 @@
 This guide demonstrates how to store credentials on a [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/). The private keys cannot be copied back out of the device; a separate offline "Certify" key is retained only to replace or renew them.
 
-Cryptographic keys on YubiKey are [non-exportable](https://web.archive.org/web/20201125172759/https://support.yubico.com/hc/en-us/articles/360016614880-Can-I-Duplicate-or-Back-Up-a-YubiKey-), unlike filesystem-based credentials, while remaining convenient for regular use. YubiKey can be configured to require a physical touch for each operation, reducing the risk of unauthorized access.
-
 - [Purchase YubiKey](#purchase-yubikey)
 - [Prepare environment](#prepare-environment)
 - [Install software](#install-software)
@@ -106,7 +104,7 @@ gpg --keyserver hkps://keyserver.ubuntu.com:443 \
     --recv DF9B9C49EAA9298432589D76DA87E80D6294BE9B
 ```
 
-The Debian Live signing public key is also available for import in [pubkeys](https://github.com/drduh/YubiKey-Guide/tree/master/pubkeys):
+The Debian Live signing public key is also available for import in [pubkeys](https://github.com/drduh/YubiKey-Guide/tree/main/pubkeys):
 
 ```bash
 gpg --import pubkeys/debian-DA87E80D6294BE9B.asc
@@ -211,7 +209,7 @@ sudo port install gnupg2 yubikey-manager pinentry wget
 Build the image, then copy it to removable media and boot offline. The booted environment can be air-gapped.
 
 ```bash
-ref=$(git ls-remote https://github.com/drduh/Yubikey-Guide refs/heads/master | awk '{print $1}')
+ref=$(git ls-remote https://github.com/drduh/Yubikey-Guide refs/heads/main | awk '{print $1}')
 nix build --experimental-features "nix-command flakes" \
   github:drduh/YubiKey-Guide/$ref?dir=nix#nixosConfigurations.yubikeyLive.x86_64-linux.config.system.build.isoImage
 ```
@@ -244,7 +242,7 @@ Here is an example QEMU invocation after placing `yubikeyLive` in `result/iso` u
 
 ```bash
 qemu-system-x86_64 -enable-kvm -m 4G -smp 2 \
-    -drive readonly=on,media=cdrom,format=raw,file=result/iso/yubikeyLive.iso
+  -drive readonly=on,media=cdrom,format=raw,file=result/iso/yubikeyLive.iso
 ```
 
 **Arch**
@@ -282,10 +280,10 @@ printf "Temp dir:\t%s\n" "$GNUPGHOME"
 
 ## Configuration
 
-Download the recommended [GnuPG configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf) into the temporary GnuPG directory.
+Download the recommended [GnuPG configuration](https://github.com/drduh/YubiKey-Guide/blob/main/config/gpg.conf) into the temporary GnuPG directory.
 
 ```bash
-wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf -P $GNUPGHOME
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/config/gpg.conf -P $GNUPGHOME
 ```
 
 Review it before use; modern algorithms and privacy-related defaults are selected:
@@ -395,9 +393,9 @@ export PASS_LENGTH=48
 
 Write the passphrase in a secure location - separate from the portable storage device used for key material, or memorize it.
 
-This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) template to help with credential transcription. Save the [raw file](https://github.com/drduh/YubiKey-Guide/raw/refs/heads/master/templates/passphrase.html), open in a browser to render and print.
+This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) template to help with credential transcription. Save the [raw file](https://github.com/drduh/YubiKey-Guide/raw/refs/heads/main/templates/passphrase.html), open in a browser to render and print.
 
-Mark the corresponding character on sequential rows for each passphrase character. [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) can also be printed without a browser:
+Mark the corresponding character on sequential rows for each passphrase character. [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) can also be printed without a browser:
 
 ```bash
 lp -d Printer-Name passphrase.txt
@@ -972,10 +970,10 @@ Confirm the following steps were successfully completed to finish setup:
 
 - [ ] Memorized or wrote down the Certify key (identity) passphrase to a secure and durable location
   - `echo $CERTIFY_PASS` to see it again
-  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe it
+  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe it
 - [ ] Memorized or wrote down passphrase to encrypted volume on portable storage
   - `echo $LUKS_PASS` to see it again
-  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe it
+  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe it
 - [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
   - At least two backups are recommended
   - Backups stored at separate locations
@@ -983,7 +981,7 @@ Confirm the following steps were successfully completed to finish setup:
   - Separate device or non-encrypted partition was used
 - [ ] Memorized or wrote down the User PIN and Admin PIN, which are unique and changed from default values
   - `echo $USER_PIN $ADMIN_PIN` to see them again
-  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/templates/passphrase.txt) to transcribe them
+  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe them
 - [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey
   - `gpg -K` shows `ssb>` for all 3 Subkeys
 - [ ] Cleared temporary working directory/environment with reboot or explicit command
@@ -996,11 +994,11 @@ Create or inspect the local GnuPG keyring. This command lists public keys and in
 gpg -k
 ```
 
-Import the [recommended configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg.conf):
+Import the [recommended configuration](https://github.com/drduh/YubiKey-Guide/blob/main/config/gpg.conf):
 
 ```bash
 cd ~/.gnupg
-wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg.conf
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/config/gpg.conf
 ```
 
 Set the following option. This avoids the problem where GnuPG will repeatedly prompt for the insertion of an already-inserted YubiKey:
@@ -1076,10 +1074,8 @@ gpg --recv $KEY_ID
 
 Or with the URL on YubiKey, retrieve the public key:
 
-```console
-$ gpg --edit-card
-gpg/card> fetch
-gpg/card> quit
+```bash
+printf "fetch" | gpg --command-fd 0 --pinentry-mode loopback --card-edit
 ```
 
 Determine the key ID:
@@ -1270,11 +1266,11 @@ YubiKey blinks when waiting for a touch. On Linux, [maximbaz/yubikey-touch-detec
 
 ## SSH
 
-Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/master/config/gpg-agent.conf):
+Create or import a [hardened configuration](https://github.com/drduh/YubiKey-Guide/blob/main/config/gpg-agent.conf):
 
 ```bash
 cd ~/.gnupg
-wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/master/config/gpg-agent.conf
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/config/gpg-agent.conf
 ```
 
 > [!NOTE]
@@ -1388,7 +1384,6 @@ Restart the agent:
 
 ```bash
 gpg-connect-agent killagent /bye
-
 gpg-connect-agent /bye
 ```
 
@@ -1494,7 +1489,7 @@ polkit.addRule(function(action, subject) {
 
 ### Replace agents
 
-To launch `gpg-agent` for use by SSH, use the `gpg-connect-agent /bye` or `gpgconf --launch gpg-agent` commands.
+To launch `gpg-agent` for SSH, use `gpg-connect-agent /bye` or `gpgconf --launch gpg-agent` commands.
 
 Add the following to the shell rc file:
 
@@ -1575,7 +1570,7 @@ debug1: Authentication succeeded (publickey).
 ```
 
 > [!TIP]
-> To enable multiple connections, use the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) SSH option.
+> To enable multiple SSH connections, use the [ControlMaster](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Multiplexing) option.
 
 ### Import SSH keys
 
@@ -1970,7 +1965,7 @@ echo $KEY_ID $KEY_FP
 Recall the Certify key passphrase and set it, for example:
 
 ```bash
-export CERTIFY_PASS=ABCD-0123-IJKL-4567-QRST-UVWX
+export CERTIFY_PASS="ABCD-0123-IJKL-4567-QRST-UVWX"
 ```
 
 ## Renew Subkeys
@@ -2307,13 +2302,11 @@ EOF
 
 - If the public key is lost, follow [this guide](https://www.nicksherlock.com/2021/08/recovering-lost-gpg-public-keys-from-your-yubikey/) to recover it from YubiKey.
 
-- Refer to Yubico article [Troubleshooting Issues with GPG](https://support.yubico.com/hc/en-us/articles/360013714479-Troubleshooting-Issues-with-GPG) for additional guidance.
-
 # Alternative solutions
 
-- [`vorburger/ed25519-sk.md`](https://github.com/vorburger/vorburger.ch-Notes/blob/develop/security/ed25519-sk.md) - use YubiKey for SSH without GnuPG
-- [`smlx/piv-agent`](https://github.com/smlx/piv-agent) - SSH and GnuPG agent which can be used with PIV devices
-- [`keytotpm`](https://www.gnupg.org/documentation/manuals/gnupg/OpenPGP-Key-Management.html) - use GnuPG with TPM systems
+- [vorburger/ed25519-sk.md](https://github.com/vorburger/blog/blob/main/security/ed25519-sk.md) - use YubiKey for SSH without GnuPG
+- [smlx/piv-agent](https://github.com/smlx/piv-agent) - SSH and GnuPG agent which can be used with PIV devices
+- [keytotpm](https://www.gnupg.org/documentation/manuals/gnupg/OpenPGP-Key-Management.html) - use GnuPG with TPM systems
 
 # Additional resources
 

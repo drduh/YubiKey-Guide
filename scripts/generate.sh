@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# https://github.com/drduh/YubiKey-Guide/blob/master/scripts/generate.sh
+# https://github.com/drduh/YubiKey-Guide/blob/main/scripts/generate.sh
 # Generates GnuPG keys and corresponding passphrases.
 
 #set -x  # uncomment to debug
