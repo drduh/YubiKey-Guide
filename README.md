@@ -62,15 +62,15 @@ This guide demonstrates how to store credentials on a [YubiKey](https://www.yubi
 
 Choose a [YubiKey](https://www.yubico.com/store/compare/) with the OpenPGP application - Security Key and Bio models are not compatible.
 
-[Verify YubiKey](https://support.yubico.com/hc/en-us/articles/360013723419-How-to-Confirm-Your-Yubico-Device-is-Genuine) by visiting [yubico.com/genuine](https://www.yubico.com/genuine/). Select *Verify Device* to begin the process. Touch the YubiKey when prompted and allow the site to see the make and model of the device when prompted. This device attestation may help mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
+Verify the YubiKey at [yubico.com/genuine](https://www.yubico.com/genuine/). Select Verify Device, touch the key when prompted, and allow the site to identify the device model. This can help detect some [supply chain tampering](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
 Have at least two USB drives or microSD cards for storing encrypted offline backups in different physical locations.
 
 # Prepare environment
 
-A dedicated and hardened operating environment should be used to generate materials.
+Use a dedicated, hardened environment to generate the keys and backups.
 
-The following is a ranked list of least to most defensible environments to consider:
+The following environments are ordered from least to most secure for this task:
 
 1. Public, shared or other computer owned by someone else
 1. Daily-use personal operating system with unrestricted network access
@@ -80,12 +80,12 @@ The following is a ranked list of least to most defensible environments to consi
 1. Hardened hardware and firmware (e.g., [Coreboot](https://www.coreboot.org/), [Intel ME removed](https://github.com/corna/me_cleaner))
 1. Air-gapped system without network capabilities, preferably ARM-based Raspberry Pi or other architecturally diverse equivalent
 
-For most people, booting Debian Live from USB on a personal computer is a practical baseline.
+Network isolation and dedicated hardware generally provide stronger protection than a daily-use online system. For most people, booting Debian Live from USB on a personal computer is a practical baseline.
 
 Download the latest Debian Live image and signature files. These commands download the checksum file, its signature, and the current 64-bit XFCE Live ISO:
 
 ```bash
-export imageUrl="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
+imageUrl="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
 curl -sfL -O "$imageUrl/SHA512SUMS" -O "$imageUrl/SHA512SUMS.sign"
 curl -sfLO "$imageUrl/$(awk '/xfce\.iso$/ {print $NF}' SHA512SUMS)"
 ```
@@ -133,7 +133,7 @@ See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for
 Connect a portable storage device and identify the device path - this guide uses `/dev/sdc` throughout, but this value may differ on your system.
 
 > [!WARNING]
-> The following `dd` commands overwrite every partition and file on the selected device. Check the device path before continuing.
+> The following `dd` commands erase and overwrite the selected device. Check the device path before continuing!
 
 **Linux**
 
@@ -236,25 +236,23 @@ sudo cp -v result/iso/yubikeyLive.iso /dev/sdc ; sync
 
 Skip steps to create a temporary working directory and a hardened configuration, as they are already part of the image.
 
-Test builds using virtualization tools like QEMU. Keep in mind a virtualized environment does not provide the same amount of security as an ephemeral system (see *Prepare environment* above).
-
-Here is an example QEMU invocation after placing `yubikeyLive` in `result/iso` using the above `nix build` command, with 4G memory, 2 CPUs and KVM enabled:
+Test builds using virtualization tools like QEMU. A virtual machine provides less isolation than a booted live system. To test the image in QEMU with 4 GiB of RAM, two CPUs, and KVM enabled:
 
 ```bash
 qemu-system-x86_64 -enable-kvm -m 4G -smp 2 \
   -drive readonly=on,media=cdrom,format=raw,file=result/iso/yubikeyLive.iso
 ```
 
-**Arch**
+**Arch Linux**
 
 ```bash
 sudo pacman -Syu --needed gnupg pcsclite ccid yubikey-personalization
 ```
 
-**RHEL7**
+**Red Hat Enterprise Linux (RHEL)**
 
 ```bash
-sudo yum install -y gnupg2 pinentry-curses pcsc-lite pcsc-lite-libs gnupg2-smime
+sudo yum install -y gnupg2 pinentry pcsc-lite pcsc-lite-libs gnupg2-smime
 ```
 
 **Fedora**
@@ -276,7 +274,7 @@ printf "\nTemporary directory:\t%s\n\n" "$GNUPGHOME"
 ```
 
 > [!NOTE]
-> This temporary directory is only cleared on reboot only when /tmp is memory-backed. Verify the environment uses [tmpfs](https://en.wikipedia.org/wiki/Tmpfs), or securely remove the directory after use.
+> This temporary directory is cleared on reboot only if /tmp is memory-backed. Verify the environment uses [tmpfs](https://en.wikipedia.org/wiki/Tmpfs), or securely remove the directory after completing setup.
 
 ## Configuration
 
@@ -318,14 +316,14 @@ throw-keyids
 
 ## Identity
 
-Generate a random attribute for the Identity label:
+Generate a random user ID for the Identity label:
 
 ```bash
 export IDENTITY="yk.$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 16)"
 printf "\nIdentity:\t\t%s\n\n" "$IDENTITY"
 ```
 
-If you intend to use email encryption or Git verification, set the Identity label to a real name or email:
+If you intend to use email encryption or Git verification, set the Identity label to a name and email address:
 
 ```bash
 export IDENTITY="YubiKey User <yubikey@example.com>"
@@ -346,13 +344,15 @@ export KEY_TYPE=rsa4096
 
 ## Expiration
 
-Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable. However, setting an expiry on the Certify key is pointless, because it can be used to extend itself.[^1]
+Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable.
+
+Do not set an expiration date on the Certify key: it is kept offline and is needed to manage Subkeys.[^1]
 
 A two-year expiration for Subkeys is recommended, balancing security and usability. Longer expiration durations reduce maintenance frequency.
 
 When Subkeys expire, they can still be used to decrypt with GnuPG and authenticate with SSH, however they can **not** be used to encrypt nor sign new messages.
 
-Subkeys are renewed or rotated using the Certify key - see [Updating keys](#updating-keys).
+Subkeys are renewed or rotated using the Certify key. See [Updating keys](#updating-keys).
 
 Set Subkeys to expire on a planned date:
 
@@ -383,7 +383,7 @@ export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z3-9" < /dev/urandom |
 printf "\nCertify passphrase:\t%s\n\n" "$CERTIFY_PASS"
 ```
 
-To change the passphrase length, delimiting character or group sizes, export the respective variable(s) prior to running the passphrase generation command, for example:
+To change the passphrase length, delimiter character or group size, export the respective variable(s) prior to running the passphrase generation command, for example:
 
 ```bash
 export PASS_GROUPSIZE=6
@@ -434,7 +434,7 @@ Skip this section unless [multiple public identities](https://github.com/drduh/Y
 
 - different email addresses for different languages
 - different email addresses for professional versus personal but please see alternative reason below for not tying these addresses together
-- anonymized email addresses for different git providers
+- anonymized email addresses for different Git providers
 
 An alternative would be to have distinct keys but you would then require multiple YubiKeys, as each can only hold a single Subkey for each type (Signing, Encryption, Authentication). Nevertheless, there can be good reasons to have multiple YubiKeys:
 
@@ -546,7 +546,7 @@ printf '%s' "$CERTIFY_PASS" |
 
 Create a backup on encrypted storage to be kept offline in a secure and durable location.
 
-The following process is recommended to be repeated several times on multiple portable storage devices, as they may fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can create a physical copy of key materials for improved durability.
+Repeat the process several times on multiple portable storage devices, as they may fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can create a physical copy of key materials for improved durability.
 
 > [!TIP]
 > [ext2](https://en.wikipedia.org/wiki/Ext2) file systems (without encryption) can be mounted on Linux and OpenBSD.
@@ -568,7 +568,7 @@ $ sudo fdisk -l /dev/sdc
 Disk /dev/sdc: 14.9 GiB, 15931539456 bytes, 31116288 sectors
 ```
 
-Zero the header to prepare for encryption:
+Clear the first 4 MiB so the operating system does not retain previous partition tables:
 
 ```bash
 sudo dd if=/dev/zero of=/dev/sdc bs=4M count=1
@@ -576,7 +576,7 @@ sudo dd if=/dev/zero of=/dev/sdc bs=4M count=1
 
 Remove and reconnect the storage device so the operating system reads the cleared partition table before the next command.
 
-Erase and create a new partition table:
+Create a new GPT partition table:
 
 ```bash
 sudo fdisk /dev/sdc <<EOF
@@ -585,7 +585,7 @@ w
 EOF
 ```
 
-Create a small partition (at least 20 MB, to account for the LUKS header) for storing secret materials:
+Create a small partition (at least 20 MB, to account for the LUKS header) for storing backups:
 
 ```bash
 sudo fdisk /dev/sdc <<EOF
@@ -611,6 +611,12 @@ printf "\nLUKS passphrase:\t%s\n\n" "$LUKS_PASS"
 ```
 
 This passphrase unlocks the encrypted backup volume, which contains the Certify key. It is needed to renew, rotate, or recover Subkeys. Write the passphrase down or memorize it.
+
+Confirm root privileges are available:
+
+```bash
+sudo -v
+```
 
 Format the partition:
 
@@ -729,13 +735,13 @@ See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for 
 # Export public key
 
 > [!IMPORTANT]
-> The YubiKey holds private keys, but each computer also needs the public key and metadata to identify Subkeys and use them with GnuPG. Without the public key, it will **not** be possible to use GnuPG to decrypt and sign. However, YubiKey can still be used for SSH authentication.
+> The YubiKey stores the transferred private Subkeys. Each computer also needs the public key and its metadata to identify and use them with GnuPG. Without the public key, it is **not** be possible to use GnuPG to decrypt and sign. However, YubiKey can still be used for SSH authentication.
 
 Connect another portable storage device or create a new partition on the existing one.
 
 **Linux**
 
-Using the same `/dev/sdc` device as in the previous step, create a small (at least 20 Mb is recommended) partition for storing materials:
+Using the same `/dev/sdc` device as in the previous step, create a small (at least 20 MB is recommended) partition for storing materials:
 
 ```bash
 sudo fdisk /dev/sdc <<EOF
@@ -1234,13 +1240,14 @@ ykman openpgp keys set-touch dec on
 ```
 
 > [!NOTE]
-> YubiKey Manager prior to versions 5.1.0 use `enc` instead of `dec` for encryption:
+> YubiKey Manager prior to version 5.1.0 use `enc` instead of `dec` for encryption:
 
 ```bash
 ykman openpgp keys set-touch enc on
 ```
 
-Even older versions of YubiKey Manager use `touch` instead of `set-touch`
+> [!NOTE]
+> Legacy versions of YubiKey Manager use `touch` instead of `set-touch`.
 
 Signature:
 
@@ -1736,7 +1743,7 @@ On the local host, run:
 gpgconf --list-dirs agent-extra-socket
 ```
 
-This should return a path to agent-extra-socket - `/run/user/1000/gnupg/S.gpg-agent.extra` - though on older Linux distros (and macOS) it may be `/home/<user>/.gnupg/S.gpg-agent.extra`
+This should return a path to agent-extra-socket - `/run/user/1000/gnupg/S.gpg-agent.extra` - though on some Linux distros (and macOS) it may be `/home/<user>/.gnupg/S.gpg-agent.extra`
 
 Find the agent socket on the **remote** host:
 
@@ -1788,7 +1795,7 @@ On *local* you have `S.gpg-agent.extra` whereas on *remote* and *third*, you onl
 
 ## Using multiple YubiKeys
 
-When a GnuPG key is added to YubiKey using `keytocard`, the credential is deleted from the keyring and a **stub** pointing to the YubiKey is added. The stub identifies the GnuPG key ID and YubiKey serial number.
+When a GnuPG key is added to YubiKey using `keytocard`, the credential is deleted from the keyring and a local reference ('stub') pointing to the card is added. The stub identifies the GnuPG key ID and YubiKey serial number.
 
 When a Subkey is added to an additional YubiKey, the stub is overwritten and will now point to the latest YubiKey. GnuPG will request a specific YubiKey by serial number, as referenced by the stub, and will not recognize another YubiKey with a different serial number.
 
@@ -1818,7 +1825,7 @@ chmod +x ~/scripts/remove-keygrips.sh
 ~/scripts/remove-keygrips.sh $KEY_ID
 ```
 
-See discussion in Issues [#19](https://github.com/drduh/YubiKey-Guide/issues/19) and [#112](https://github.com/drduh/YubiKey-Guide/issues/112) for more information and troubleshooting steps.
+See discussion in [#19](https://github.com/drduh/YubiKey-Guide/issues/19) and [#112](https://github.com/drduh/YubiKey-Guide/issues/112) for more information.
 
 ## Email
 
@@ -2121,11 +2128,11 @@ sudo service rng-tools restart
 ## Enable KDF
 
 > [!IMPORTANT]
-> This feature may not be compatible with older GnuPG versions, especially mobile clients. These incompatible clients will not function because the PIN will always be rejected.
+> This feature is not compatible with legacy GnuPG versions, especially mobile clients, and may cause the PIN to always be rejected.
 
 This step must be completed before changing PINs or moving keys or an error will occur: `gpg: error for setup KDF: Conditions of use not satisfied`
 
-Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing the PIN from being passed as plain text.
+The Key Derived Function (KDF) enables YubiKey to store the hash of PINs, preventing them from being passed as plain text.
 
 Enable KDF using the default Admin PIN of `12345678`:
 
@@ -2147,9 +2154,7 @@ This is because services like `cups` or `avahi` can be listening by default. Whi
 
 **Disable listening services**
 
-- Ensures only essential network services are running
-- If the service doesn't exist you'll get a "Failed to stop" which is fine
-- Only disable `Bluetooth` if you don't need it
+Ensure only essential network services are running. If a service does not exist, a "Failed to stop" warning may appear:
 
 ```bash
 sudo systemctl stop bluetooth exim4 cups avahi avahi-daemon sshd
