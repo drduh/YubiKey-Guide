@@ -1468,7 +1468,7 @@ sudo service sshd reload
 
 Remove YubiKey and reboot. Log back into Windows, open a WSL console and enter `ssh-add -l` - no output should appear.
 
-Plug in YubiKey, enter the same command to display the ssh key.
+Plug in YubiKey, enter the same command to display the SSH key.
 
 Connect to the remote host and use `ssh-add -l` to confirm forwarding works.
 
@@ -1627,15 +1627,9 @@ You should now be able to use `ssh -A remote` on the _local_ host to log into _r
 
 #### Use S.gpg-agent.ssh
 
-First you need to go through [GnuPG agent forwarding](#gnupg-agent-forwarding), know the conditions for gpg-agent forwarding and know the location of `S.gpg-agent.ssh` on both the local and the remote.
+Before continuing, configure [GnuPG agent forwarding](gnupg-agent-forwarding) and record the local and remote values of `gpgconf --list-dirs agent-ssh-socket`.
 
-You may use the command:
-
-```bash
-gpgconf --list-dirs agent-ssh-socket
-```
-
-Edit `.ssh/config` to add the remote host:
+Edit `~/.ssh/config` to add the remote host:
 
 ```console
 Host
@@ -1646,23 +1640,21 @@ Host
   #Note that ForwardAgent is not wanted here!
 ```
 
-After successfully ssh into the remote host, confirm `/run/user/1000/gnupg/S.gpg-agent.ssh` exists.
-
-Then in the *remote* you can type in command line or configure in the shell rc file with:
+After successfully connecting to the remote host, confirm `/run/user/1000/gnupg/S.gpg-agent.ssh` exists and configure `SSH_AUTH_SOCK`:
 
 ```bash
 export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 ```
 
-After sourcing the shell rc file, `ssh-add -l` will return the correct public key.
+`ssh-add -l` should now return the correct public key.
 
 In this process no gpg-agent in the remote is involved, hence `gpg-agent.conf` in the remote is of no use. Also pinentry is invoked locally.
 
 #### Chained forwarding
 
-If you use `ssh-agent` provided by OpenSSH and want to forward it into a *third* box, you can just `ssh -A third` on the *remote*.
+To use `ssh-agent` provided by OpenSSH to forward into a *third* host, use `ssh -A third` on the *remote* host.
 
-Meanwhile, if you use `S.gpg-agent.ssh`, assume you have gone through the steps above and have `S.gpg-agent.ssh` on the *remote*, and you would like to forward this agent into a *third* box, first you may need to configure `sshd_config` and `SSH_AUTH_SOCK` of *third* in the same way as *remote*, then in the ssh config of *remote*, add the following lines
+If you use `S.gpg-agent.ssh`, assume you have gone through the steps above and have `S.gpg-agent.ssh` on the *remote*, and you would like to forward this agent into a *third* box, first configure `sshd_config` and `SSH_AUTH_SOCK` of *third* in the same way as *remote*, then configure SSH of *remote* by adding the following lines:
 
 ```console
 Host third
@@ -1677,7 +1669,7 @@ The path must be set according to `gpgconf --list-dirs agent-ssh-socket` on *rem
 
 ## GitHub
 
-YubiKey can be used to sign commits and tags, and authenticate SSH to GitHub when configured in [Settings](https://github.com/settings/keys).
+YubiKey can be used to sign Git commits and tags, and authenticate [SSH to GitHub](https://github.com/settings/keys).
 
 Configure the signing key:
 
@@ -1829,14 +1821,14 @@ See discussion in [#19](https://github.com/drduh/YubiKey-Guide/issues/19) and [#
 
 ## Email
 
-YubiKey can be used to decrypt and sign emails and attachments using [Thunderbird](https://www.thunderbird.net/), [Enigmail](https://www.enigmail.net) and [Mutt](http://www.mutt.org/). Thunderbird supports OAuth 2 authentication and can be used with Gmail. See [this EFF guide](https://ssd.eff.org/en/module/how-use-pgp-linux) for more information. Mutt has OAuth 2 support since version 2.0.
+YubiKey can decrypt and sign emails and attachments using [Thunderbird](https://www.thunderbird.net/) and [Mutt](http://www.mutt.org/). Thunderbird supports OAuth and can be used with Gmail. See [this EFF guide](https://ssd.eff.org/en/module/how-use-pgp-linux) for more information.
 
 ### Thunderbird
 
-Follow [instructions on the mozilla wiki](https://wiki.mozilla.org/Thunderbird:OpenPGP:Smartcards#Configure_an_email_account_to_use_an_external_GnuPG_key) to setup YubiKey with Thunderbird using the external GPG provider.
+Follow [Mozilla instructions](https://wiki.mozilla.org/Thunderbird:OpenPGP:Smartcards#Configure_an_email_account_to_use_an_external_GnuPG_key) to setup YubiKey with Thunderbird using the external GPG provider.
 
 > [!NOTE]
-> Thunderbird will [fail](https://github.com/drduh/YubiKey-Guide/issues/448) to decrypt emails if the ASCII `armor` option is enabled in `gpg.conf`. If you see the error `gpg: [don't know]: invalid packet (ctb=2d)` or `message cannot be decrypted (there are unknown problems with this encrypted message)` simply remove this option.
+> Thunderbird will [fail to decrypt](https://github.com/drduh/YubiKey-Guide/issues/448) messages if the `armor` option is enabled in `gpg.conf`. If you see the error `gpg: [don't know]: invalid packet (ctb=2d)` or `message cannot be decrypted (there are unknown problems with this encrypted message)`, remove this option.
 
 ### Mailvelope
 
