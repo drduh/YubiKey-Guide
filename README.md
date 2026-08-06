@@ -1,12 +1,12 @@
 This guide demonstrates how to store credentials on a [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/). The private keys cannot be copied back out of the device; a separate offline "Certify" key is retained only to replace or renew them.
 
 - [Purchase YubiKey](#purchase-yubikey)
-- [Prepare environment](#prepare-environment)
+- [Prepare setup environment](#prepare-setup-environment)
 - [Install software](#install-software)
 - [Prepare GnuPG](#prepare-gnupg)
   - [Configuration](#configuration)
   - [Identity](#identity)
-  - [Key](#key)
+  - [Key algorithm](#key-algorithm)
   - [Expiration](#expiration)
   - [Passphrase](#passphrase)
 - [Create Certify key](#create-certify-key)
@@ -66,7 +66,7 @@ Verify the YubiKey at [yubico.com/genuine](https://www.yubico.com/genuine/). Sel
 
 Have at least two USB drives or microSD cards for storing encrypted offline backups in different physical locations.
 
-# Prepare environment
+# Prepare setup environment
 
 Use a dedicated, hardened environment to generate the keys and backups.
 
@@ -334,9 +334,9 @@ export IDENTITY="YubiKey User <yubikey@example.com>"
 >
 > `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.com>'`
 
-## Key
+## Key algorithm
 
-Set the algorithm and key size - RSA 4096 is recommended:
+Set the key algorithm and size - RSA 4096 is recommended:
 
 ```bash
 export KEY_TYPE=rsa4096
@@ -1828,7 +1828,8 @@ YubiKey can decrypt and sign emails and attachments using [Thunderbird](https://
 Follow [Mozilla instructions](https://wiki.mozilla.org/Thunderbird:OpenPGP:Smartcards#Configure_an_email_account_to_use_an_external_GnuPG_key) to setup YubiKey with Thunderbird using the external GPG provider.
 
 > [!NOTE]
-> Thunderbird will [fail to decrypt](https://github.com/drduh/YubiKey-Guide/issues/448) messages if the `armor` option is enabled in `gpg.conf`. If you see the error `gpg: [don't know]: invalid packet (ctb=2d)` or `message cannot be decrypted (there are unknown problems with this encrypted message)`, remove this option.
+> Thunderbird will [fail to decrypt](https://github.com/drduh/YubiKey-Guide/issues/448) messages if the `armor` option is configured.
+> If you see the error `gpg: [don't know]: invalid packet (ctb=2d)` or `message cannot be decrypted (there are unknown problems with this encrypted message)`, remove `armor` from `~/.gnupg/gpg.conf`, then restart Thunderbird.
 
 ### Mailvelope
 
@@ -2037,13 +2038,19 @@ sudo umount /mnt/public
 
 Remove the storage device and follow the original steps to transfer new Subkeys (`4`, `5` and `6`) to YubiKey, replacing existing ones.
 
-Reboot or securely erase the GnuPG temporary working directory.
+Reboot or securely erase the temporary working directory.
 
 # Reset YubiKey
 
 If PIN attempts are exceeded, the YubiKey is locked and must be [Reset](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html) and set up again using the encrypted backup.
 
-Copy the following to a file and run `gpg-connect-agent -r $file`, then reinsert the YubiKey to complete reset.
+Use YubiKey Manager to reset the OpenPGP application:
+
+```bash
+ykman openpgp reset
+```
+
+YubiKey can also be reset with [scripts/resetCard.sh](https://github.com/drduh/YubiKey-Guide/blob/main/scripts/resetCard.sh), or by copying the following commands to a file and running `gpg-connect-agent -r <filename>`:
 
 ```console
 /hex
@@ -2062,17 +2069,7 @@ scd apdu 00 44 00 00
 /bye
 ```
 
-Or use `ykman` (sometimes in `~/.local/bin/`):
-
-```console
-$ ykman openpgp reset
-WARNING! This will delete all stored OpenPGP keys and data and restore factory settings? [y/N]: y
-Resetting OpenPGP data, don't remove your YubiKey...
-Success! All data has been cleared and default PINs are set.
-PIN:         123456
-Reset code:  NOT SET
-Admin PIN:   12345678
-```
+Remove and reinsert the YubiKey to complete reset.
 
 # Optional hardening
 
@@ -2124,7 +2121,7 @@ sudo service rng-tools restart
 
 This step must be completed before changing PINs or moving keys or an error will occur: `gpg: error for setup KDF: Conditions of use not satisfied`
 
-The Key Derived Function (KDF) enables YubiKey to store the hash of PINs, preventing them from being passed as plain text.
+A key derivation function (KDF) derives a value from the PIN before it is sent to the card, reducing its exposure.
 
 Enable KDF using the default Admin PIN of `12345678`:
 
@@ -2140,9 +2137,9 @@ EOF
 
 This section is primarily focused on Debian/Ubuntu systems, but the concepts apply to any system connected to a network.
 
-Whether using a VM, installing on dedicated hardware, or running a Live OS temporarily, start *without* a network connection and disable any unnecessary services listening on all interfaces before connecting to the network.
+Whether using a virtual machine, installing on dedicated hardware, or running a Live OS temporarily, start *without* a network connection and disable any unnecessary services listening on all interfaces before connecting to the network.
 
-This is because services like `cups` or `avahi` can be listening by default. While this isn't an immediate problem it simply broadens the attack surface. Not everyone will have a dedicated subnet or trusted network equipment they can control, and for the purposes of this guide, these steps treat *any* network as untrusted / hostile.
+Services such as cups and avahi may listen on the network by default, increasing potential attack surface. For this workflow, treat every network as untrusted.
 
 **Disable listening services**
 
@@ -2154,9 +2151,11 @@ sudo systemctl stop bluetooth exim4 cups avahi avahi-daemon sshd
 
 **Firewall**
 
-Enable a basic firewall policy of *deny inbound, allow outbound*. Note that Debian does not come with a firewall, simply disabling the services in the previous step is fine. The following options have Ubuntu and similar systems in mind.
+Enable a basic firewall policy of *deny inbound, allow outbound*.
 
-On Ubuntu, `ufw` is built in and easy to enable:
+Debian does not enable a default host-firewall policy by default.
+
+On Ubuntu, [ufw](https://ubuntu.com/server/docs/how-to/security/firewalls/) is built-in and can be enabled with:
 
 ```bash
 sudo ufw enable
@@ -2166,7 +2165,7 @@ On systems without `ufw`, `nftables` is replacing `iptables`. The [nftables wiki
 
 Download this README and any other resources to another external drive when creating the bootable media, to have this information ready to use offline.
 
-Regardless of which policy you use, write the contents to a file (e.g. `nftables.conf`) and apply the policy with the following command:
+Regardless of which policy is configured, write the contents to a file (e.g., `nftables.conf`) and apply the policy with the following command:
 
 ```bash
 sudo nft -f ./nftables.conf
