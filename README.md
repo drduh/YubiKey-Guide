@@ -2,6 +2,9 @@ This guide demonstrates how to store credentials on a [YubiKey](https://www.yubi
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Prepare setup environment](#prepare-setup-environment)
+  - [Download and verify Debian](#download-and-verify-debian)
+  - [Create bootable USB device](#create-bootable-usb-drive)
+  - [Prepare hardware](#prepare-hardware)
 - [Install software](#install-software)
 - [Prepare GnuPG](#prepare-gnupg)
   - [Configuration](#configuration)
@@ -82,6 +85,8 @@ The following environments are ordered from least to most secure for this task:
 
 Network isolation and dedicated hardware generally provide stronger protection than a daily-use online system. For most people, booting Debian Live from USB on a personal computer is a practical baseline.
 
+## Download and verify Debian
+
 Download the latest Debian Live image and signature files. These commands download the checksum file, its signature, and the current 64-bit XFCE Live ISO:
 
 ```bash
@@ -130,7 +135,9 @@ grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
 
-Connect a portable storage device and identify the device path - this guide uses `/dev/sdc` throughout, but this value may differ on your system.
+## Create bootable USB device
+
+Connect a storage device and identify the device path. This guide uses `/dev/sdc` throughout, but this value may differ on your system.
 
 > [!WARNING]
 > The following `dd` commands erase and overwrite the selected device. Check the device path before continuing!
@@ -162,7 +169,11 @@ $ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
-Power off. Disconnect internal hard drives and all unnecessary devices, such as the wireless card.
+## Prepare hardware
+
+Power off the device.
+
+Disconnect internal hard drives and all unnecessary devices, such as the wireless card.
 
 # Install software
 
@@ -274,14 +285,15 @@ printf "\nTemporary directory:\t%s\n\n" "$GNUPGHOME"
 ```
 
 > [!NOTE]
-> This temporary directory is cleared on reboot only if /tmp is memory-backed. Verify the environment uses [tmpfs](https://en.wikipedia.org/wiki/Tmpfs), or securely remove the directory after completing setup.
+> This temporary directory is cleared on reboot only if it is memory-backed. Verify the environment uses [tmpfs](https://en.wikipedia.org/wiki/Tmpfs), or securely remove the directory after completing setup.
 
 ## Configuration
 
 Download the recommended [GnuPG configuration](https://github.com/drduh/YubiKey-Guide/blob/main/config/gpg.conf) into the temporary GnuPG directory.
 
 ```bash
-wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/config/gpg.conf -P $GNUPGHOME
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/config/gpg.conf \
+  -P $GNUPGHOME
 ```
 
 Review it before use; modern algorithms and privacy-related defaults are selected:
@@ -735,7 +747,7 @@ See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for 
 # Export public key
 
 > [!IMPORTANT]
-> The YubiKey stores the transferred private Subkeys. Each computer also needs the public key and its metadata to identify and use them with GnuPG. Without the public key, it is **not** be possible to use GnuPG to decrypt and sign. However, YubiKey can still be used for SSH authentication.
+> YubiKey stores the transferred private Subkeys. Each computer also needs the public key and its metadata to identify and use them with GnuPG. Without the public key, it is **not** be possible to use GnuPG to decrypt and sign. However, YubiKey can still be used for SSH authentication.
 
 Connect another portable storage device or create a new partition on the existing one.
 
@@ -894,7 +906,7 @@ Verify the attribute:
 
 ```console
 $ gpg --card-status | grep Login
-Login data .......: yk-3i568zcrib5f
+Login data .......: yk.3i568zcrib5f
 ```
 
 [Smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) can also be set with `gpg --edit-card` and `admin` mode. Use `help` to see available options. The [login](https://www.gnupg.org/documentation/manuals/gnupg/gpg_002dcard.html) attribute is [required](https://github.com/drduh/YubiKey-Guide/issues/461) to transfer keys.
@@ -1117,7 +1129,7 @@ Name of cardholder: [not set]
 Language prefs ...: [not set]
 Salutation .......:
 URL of public key : [not set]
-Login data .......: yk-3i568zcrib5f
+Login data .......: yk.3i568zcrib5f
 Signature PIN ....: not forced
 Key attributes ...: rsa4096 rsa4096 rsa4096
 Max. PIN lengths .: 127 127 127
@@ -1240,7 +1252,7 @@ ykman openpgp keys set-touch dec on
 ```
 
 > [!NOTE]
-> YubiKey Manager prior to version 5.1.0 use `enc` instead of `dec` for encryption:
+> YubiKey Manager prior to version 5.1.0 uses `enc` instead of `dec` for encryption:
 
 ```bash
 ykman openpgp keys set-touch enc on
