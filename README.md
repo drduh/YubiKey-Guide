@@ -445,22 +445,13 @@ printf "\nKey ID/Fingerprint:\t%s\n%s\n\n" "$KEY_ID" "$KEY_FP"
 <details>
 <summary>Additional identities (optional)</summary>
 
-Skip this section unless [multiple public identities](https://github.com/drduh/YubiKey-Guide/issues/445) on the same key are needed, for example:
+Skip this section unless the OpenPGP key must have [multiple public identities](https://github.com/drduh/YubiKey-Guide/issues/445). Examples include addresses used for different languages or Git providers. Do not add both personal and professional addresses if linking those identities would reduce privacy - use separate YubiKeys instead.
 
-- different email addresses for different languages
-- different email addresses for professional versus personal but please see alternative reason below for not tying these addresses together
-- anonymized email addresses for different Git providers
-
-An alternative would be to have distinct keys but you would then require multiple YubiKeys, as each can only hold a single Subkey for each type (Signing, Encryption, Authentication). Nevertheless, there can be good reasons to have multiple YubiKeys:
-
-- if you have different email addresses for professional versus personal use cases, having distinct keys allows you to disassociate identities
-- if you are also using YubiKey as a U2F or FIDO2 device, having multiple YubiKeys is generally recommended as a backup measure
-
-Define an array containing additional user IDs. Each array element must be wrapped in quotes and each element must be space-delimited:
+Define a Bash array of additional user IDs. Put each complete user ID in quotes and separate array entries with spaces:
 
 ```bash
 declare -a additional_uids
-additional_uids=("Super Cool YubiKey 2026" "uid 1 <uid1@example.org>")
+additional_uids=("Super Cool YubiKey 2026" "uid 1 <uid1@example.com>")
 ```
 
 Add the additional UIDs to the Identity.
@@ -476,7 +467,7 @@ done
 Set UID trust levels to *ultimate*:
 
 ```bash
-gpg --command-fd 0 --pinentry-mode loopback --edit-key "$KEY_ID" <<EOF
+gpg --command-fd 0 --pinentry-mode loopback --edit-key "$KEY_FP" <<EOF
 uid *
 trust
 5
@@ -499,10 +490,10 @@ printf '%s' "$CERTIFY_PASS" |
       --quick-add-key "$KEY_FP" "$KEY_TYPE" encrypt "$KEY_EXPIRATION"
 ```
 
-Then generate the Authentication Subkey:
+Generate the Authentication Subkey:
 
 > [!NOTE]
-> Some systems do not accept RSA for SSH authentication. To use [Ed25519](https://ed25519.cr.yp.to/) instead, run `export KEY_TYPE=ed25519` before generating the Authentication Subkey with the following command.
+> Some SSH servers do not accept RSA authentication keys. To create the Authentication Subkey as [Ed25519](https://ed25519.cr.yp.to/), run `export KEY_TYPE=ed25519` before the following command.
 
 ```bash
 printf '%s' "$CERTIFY_PASS" |
@@ -557,7 +548,7 @@ printf '%s' "$CERTIFY_PASS" |
 ```
 
 > [!IMPORTANT]
-> The exported `.key` files contain private key material. Anyone with access to them and the Certify passphrase has full control of the identity.
+> The exported `.key` files contain secret keys. Anyone who obtains these files and the Certify key passphrase can create Subkeys and sign or decrypt data encrypted to those keys.
 
 Create a backup on encrypted storage to be kept offline in a secure and durable location.
 
@@ -612,9 +603,9 @@ w
 EOF
 ```
 
-Use [LUKS](https://dys2p.com/en/2023-05-luks-security.html) to encrypt the new partition.
+Use [LUKS](https://dys2p.com/en/2023-05-luks-security.html) to encrypt the backup partition before storing the Certify key on it.
 
-Generate another unique [Passphrase](#passphrase) (different from the Certify key passphrase) to protect the encrypted volume:
+Generate another unique [passphrase](#passphrase) (different from the Certify key passphrase) to protect the encrypted volume:
 
 ```bash
 export LUKS_PASS=$(LC_ALL=C tr -dc "A-Z3-9" < /dev/urandom |
@@ -639,7 +630,7 @@ Format the partition:
 printf '%s' "$LUKS_PASS" | sudo cryptsetup -q luksFormat /dev/sdc1
 ```
 
-Mount the partition:
+Unlock the encrypted partition and create the mapped device:
 
 ```bash
 printf '%s' "$LUKS_PASS" | sudo cryptsetup -q luksOpen /dev/sdc1 gnupg-secrets
@@ -683,7 +674,7 @@ Print the existing partitions to make sure it's the right device:
 doas disklabel -h sd2
 ```
 
-Initialize the disk by creating an `a` partition with FS type `RAID` and size of 25 Megabytes:
+Create an `a` partition of FS type `RAID` and size of 25 Megabytes:
 
 ```console
 $ doas fdisk -giy sd2
@@ -821,23 +812,23 @@ Connect YubiKey and confirm its status:
 gpg --card-status
 ```
 
-If the YubiKey is locked, [Reset](#reset-yubikey) it.
+If the YubiKey is locked, follow [Reset YubiKey](#reset-yubikey) to permanently delete any existing keys stored on it.
 
 ## Change PIN
 
-YubiKey's [OpenPGP application](https://developers.yubico.com/PGP/) has its own PINs separate from other modules such as [PIV](https://developers.yubico.com/PIV/Introduction/YubiKey_and_PIV.html):
+YubiKey contains several independent [applications](https://developers.yubico.com/). This guide uses the [OpenPGP application](https://developers.yubico.com/PGP/), whose PINs are separate from PINs used by [PIV](https://developers.yubico.com/PIV/), FIDO, and other card features.
 
 Name | Default | Capability
 :-: | :-: | -
-User PIN | `123456` | cryptographic operations (decrypt, sign, authenticate)
-Admin PIN | `12345678` | reset PIN, change Reset Code, add keys and owner information
+User PIN | `123456` | routine key operations (decrypt, sign, authenticate)
+Admin PIN | `12345678` | manage card settings (reset PIN, change Reset Code, add keys and owner information)
 Reset Code | None | reset PIN ([more information](https://forum.yubico.com/viewtopicd01c.html?p=9055#p9055))
 
 The *User PIN* must be at least 6 characters and the *Admin PIN* must be at least 8 characters. A maximum of 127 ASCII characters are allowed. See [Managing PINs](https://www.gnupg.org/howtos/card-howto/en/ch03s02.html) for more information.
 
 YubiKey limits failed PIN attempts, which reduces guessing risk, allowing the User PIN to be short and convenient for regular use.
 
-Generate PIN values - 6 digits for the User and 8 digits for the Admin:
+Generate convenient numeric PINs: an 8-digit Admin PIN and a 6-digit User PIN. These meet the minimum lengths but can be increased:
 
 ```bash
 PINS=$(LC_ALL=C tr -dc '0-9' < /dev/urandom | head -c 14)
@@ -875,7 +866,7 @@ Remove and reinsert YubiKey.
 > [!CAUTION]
 > Three incorrect *User PIN* entries will cause it to become blocked and must be unblocked with either the *Admin PIN* or *Reset Code*. Three incorrect *Admin PIN* or *Reset Code* entries will destroy data on YubiKey.
 
-The number of [retry attempts](https://docs.yubico.com/software/yubikey/tools/ykman/OpenPGP_Commands.html#ykman-openpgp-access-set-retries-options-pin-retries-reset-code-retries-admin-pin-retries) can be changed, for example to 5 attempts:
+Increase PIN limits if the risk of accidental lockout outweighs the increased opportunity for guessing. This command sets five attempts for the User PIN, Reset Code, and Admin PIN:
 
 ```bash
 ykman openpgp access set-retries 5 5 5 -f -a $ADMIN_PIN
@@ -917,7 +908,7 @@ Login data .......: yk.3i568zcrib5f
 # Transfer Subkeys
 
 > [!NOTE]
-> After transfer, the system no longer holds a usable private copy of the Subkey - it holds only a reference to the YubiKey. A backup is required to provision another YubiKey.
+> After each transfer, GnuPG deletes its usable local copy of the private key and retains only a record that the Subkey is on this YubiKey. The Subkey cannot be copied back from the YubiKey. Confirm that offline backups exist before continuing.
 
 The Certify key passphrase and Admin PIN are required to transfer keys.
 
