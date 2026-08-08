@@ -61,9 +61,11 @@ This guide demonstrates how to store credentials on a [YubiKey](https://www.yubi
 - [Alternative solutions](#alternative-solutions)
 - [Additional resources](#additional-resources)
 
+---
+
 # Purchase YubiKey
 
-Choose a [YubiKey](https://www.yubico.com/store/compare/) with the OpenPGP application - Security Key and Bio models are not compatible.
+Choose a [YubiKey model](https://www.yubico.com/store/compare/) that includes the OpenPGP application. YubiKey Security Key and YubiKey Bio models do not include OpenPGP support and cannot be used with this guide.
 
 Verify the YubiKey at [yubico.com/genuine](https://www.yubico.com/genuine/). Select Verify Device, touch the key when prompted, and allow the site to identify the device model. This can help detect some [supply chain tampering](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
@@ -171,13 +173,15 @@ $ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 
 ## Prepare hardware
 
-Power off the device.
+Shut down the computer that will be used to generate keys.
 
-Disconnect internal hard drives and all unnecessary devices, such as the wireless card.
+Disconnect internal storage and unnecessary peripherals, such as the wireless card.
 
 # Install software
 
-Load the operating system and configure networking. Optional hardening steps related to networking can be found [below](#network-considerations).
+Boot the computer from the Debian Live USB drive.
+
+Configure networking to install the required software; see [Network considerations](#network-considerations) for optional restrictions.
 
 > [!TIP]
 > If the screen locks on Debian Live, unlock with `user` / `live`
@@ -217,7 +221,7 @@ sudo port install gnupg2 yubikey-manager pinentry wget
 
 **NixOS**
 
-Build the image, then copy it to removable media and boot offline. The booted environment can be air-gapped.
+Use this repository's purpose-built live ISO instead of Debian Live. Copy the resulting ISO to a USB drive, boot from it, and keep the system offline while generating keys.
 
 ```bash
 ref=$(git ls-remote https://github.com/drduh/Yubikey-Guide refs/heads/main | awk '{print $1}')
@@ -285,7 +289,9 @@ printf "\nTemporary directory:\t%s\n\n" "$GNUPGHOME"
 ```
 
 > [!NOTE]
-> This temporary directory is cleared on reboot only if it is memory-backed. Verify the environment uses [tmpfs](https://en.wikipedia.org/wiki/Tmpfs), or securely remove the directory after completing setup.
+> This directory is cleared by reboot only when it is stored on a memory-backed filesystem such as [tmpfs](https://en.wikipedia.org/wiki/Tmpfs).
+>
+> If it is stored on persistent disk, remove it after completing the guide with `rm -rf "$GNUPGHOME"` and then reboot.
 
 ## Configuration
 
@@ -296,7 +302,7 @@ wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/config/gpg.conf 
   -P $GNUPGHOME
 ```
 
-Review it before use; modern algorithms and privacy-related defaults are selected:
+Review the configuration before using it. It selects modern cryptographic defaults and privacy-oriented options, such as hiding recipient key IDs:
 
 ```console
 $ grep -v "^#" $GNUPGHOME/gpg.conf
@@ -328,14 +334,16 @@ throw-keyids
 
 ## Identity
 
-Generate a random user ID for the Identity label:
+Create a user ID - the public label attached to the key.
+
+Use a random label if the key does not need to be publicly identified:
 
 ```bash
 export IDENTITY="yk.$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 16)"
 printf "\nIdentity:\t\t%s\n\n" "$IDENTITY"
 ```
 
-If you intend to use email encryption or Git verification, set the Identity label to a name and email address:
+If email encryption or Git verification use is anticipated, set the Identity label to a name and email address:
 
 ```bash
 export IDENTITY="YubiKey User <yubikey@example.com>"
@@ -356,13 +364,12 @@ export KEY_TYPE=rsa4096
 
 ## Expiration
 
-Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable.
+The Certify key is the offline primary key and should not have an expiration date.[^1]
 
-Do not set an expiration date on the Certify key: it is kept offline and is needed to manage Subkeys.[^1]
+The signing, encryption, and authentication Subkeys will be stored on YubiKey. Assign Subkeys an expiration date so a lost or obsolete YubiKey becomes inoperable after that date. A two-year expiration for Subkeys is recommended, balancing security and usability. Longer expiration durations reduce maintenance frequency.
 
-A two-year expiration for Subkeys is recommended, balancing security and usability. Longer expiration durations reduce maintenance frequency.
-
-When Subkeys expire, they can still be used to decrypt with GnuPG and authenticate with SSH, however they can **not** be used to encrypt nor sign new messages.
+> [!NOTE]
+> After a Subkey expires, GnuPG can still use it to decrypt existing messages, and SSH may still use it for authentication. However, the expired Subkey cannot encrypt new data or create new signatures!
 
 Subkeys are renewed or rotated using the Certify key. See [Updating keys](#updating-keys).
 
@@ -380,7 +387,7 @@ export KEY_EXPIRATION=2y
 
 ## Passphrase
 
-Generate a passphrase for the Certify key, which will be used to manage the identity and Subkeys.
+Create a passphrase for the offline Certify key. This passphrase protects the backup copy of the Certify key and is required to manage Subkeys.
 
 A passphrase consisting only of uppercase letters and numbers is recommended: the limited character set makes handwritten storage easier to write and read.
 
@@ -403,11 +410,11 @@ export PASS_DELIMITER=+
 export PASS_LENGTH=48
 ```
 
-Write the passphrase in a secure location - separate from the portable storage device used for key material, or memorize it.
+Record the Certify key passphrase on durable media and store it separately from the encrypted backup containing the key material, or memorize it.
 
-This repository includes a [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) template to help with credential transcription. Save the [raw file](https://github.com/drduh/YubiKey-Guide/raw/refs/heads/main/templates/passphrase.html), open in a browser to render and print.
+The included [passphrase.html](https://github.com/drduh/YubiKey-Guide/blob/main/templates/passphrase.html) and [passphrase.txt](https://github.com/drduh/YubiKey-Guide/blob/main/templates/passphrase.txt) templates can assist with accurate transcription.
 
-Mark the corresponding character on sequential rows for each passphrase character. [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) can also be printed without a browser:
+Save the [html file](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html), open in a browser to render and print. Mark the corresponding character on sequential rows for each passphrase character. [passphrase.txt](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) can also be printed for use without a browser:
 
 ```bash
 lp -d Printer-Name passphrase.txt
@@ -417,11 +424,7 @@ lp -d Printer-Name passphrase.txt
 
 # Create Certify key
 
-The primary key to generate is the Certify key, which is used to issue Subkeys for signing (sign commits/messages), encryption (decrypt data), and authentication (SSH login).
-
-The Certify key should be kept offline and only accessed from a dedicated and secure environment to issue or revoke Subkeys.
-
-Do not set an expiration date on the Certify key.
+The Certify key is the primary OpenPGP key: it authorizes the signing, encryption, and authentication Subkeys. Keep it offline and use it only in a secure environment to create, renew, revoke, or replace Subkeys.
 
 Generate the Certify key:
 
@@ -431,7 +434,7 @@ printf '%s' "$CERTIFY_PASS" |
       --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
 ```
 
-Set and view the Certify key identifier and fingerprint for use later:
+Set and print `KEY_FP` (the full key fingerprint) and `KEY_ID` (the last 16 characters of the fingerprint - a shorter identifier commonly accepted by GnuPG):
 
 ```bash
 export KEY_FP=$(gpg -k --with-colons $IDENTITY | awk -F: '/^fpr:/ { print $10; exit }')
@@ -1081,7 +1084,7 @@ doas mount /dev/sd3i /mnt/public
 Import the public key:
 
 ```bash
-gpg --import /mnt/public/*.asc
+gpg --import /mnt/public/public-*.asc
 ```
 
 Or download the public key from a keyserver:
