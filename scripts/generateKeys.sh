@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# https://github.com/drduh/YubiKey-Guide/blob/main/scripts/generate.sh
+# https://github.com/drduh/YubiKey-Guide/blob/main/scripts/generateKeys.sh
 # Generates GnuPG keys and corresponding passphrases.
 
 #set -x  # uncomment to debug
@@ -8,7 +8,6 @@ set -o nounset
 set -o pipefail
 
 umask 077
-
 export LC_ALL="C"
 
 gpgExec="$(command -v gpg || command -v gpg2)"
@@ -26,7 +25,7 @@ print_cred() { log 2 "$@"; }
 print_id() { log 3 "$@"; }
 
 get_id_label() { # Returns Identity name/label.
-  printf "YubiKey User <yubikey@example.domain>"
+  printf "yk.$(tr -dc 'a-z0-9' < /dev/urandom | head -c 16)"
 }
 
 get_key_type_sign() { # Returns signature subkey type.
@@ -54,7 +53,7 @@ preflight() { # Fail if GnuPG is not available.
 }
 
 get_temp_dir() { # Returns temporary working dir path.
-  mktemp -d -t "$(date +%Y.%m.%d)-XXXX"
+  mktemp -d "${TMPDIR:-/tmp}/$(date +%Y.%m.%d)-XXXXXXXX"
 }
 
 set_temp_dir() { # Exports and switches to temporary dir.
@@ -74,11 +73,11 @@ set_attrs() { # Sets identity and key attributes.
 }
 
 get_pass() { # Returns random passphrase.
-  tr -dc "A-Z2-9" < /dev/urandom |
+  tr -dc "A-Z3-9" < /dev/urandom |
     tr -d "IOUS5" |
-    fold -w "${PASS_GROUPSIZE:-4}" |
-    paste -sd "${PASS_DELIMITER:--}" - |
-    head -c "${PASS_LENGTH:-29}"
+    head -c ${PASS_LENGTH:-24} |
+    fold -w ${PASS_GROUPSIZE:-4} |
+    paste -sd ${PASS_DELIMITER:--} -
 }
 
 set_pass() { # Exports Certify and LUKS passphrases.
@@ -89,18 +88,16 @@ set_pass() { # Exports Certify and LUKS passphrases.
 }
 
 gen_key_certify() { # Generates Certify key with no expiration.
-  echo "$CERTIFY_PASS" |
+  printf '%s' "$CERTIFY_PASS" |
     $gpgExec --batch --passphrase-fd 0 \
       --quick-generate-key "$IDENTITY" "$KEY_TYPE_SIGN" \
       "cert" "never"
 }
 
 set_fingerprint() { # Sets Key ID and Fingerprint environment vars.
-  key_list=$($gpgExec --list-secret-keys --with-colons)
-  export KEY_ID=$(printf "%s" "$key_list" |
-    awk -F: '/^sec/ { print  $5; exit }')
-  export KEY_FP=$(printf "%s" "$key_list" |
-    awk -F: '/^fpr/ { print $10; exit }')
+  local key_list=$($gpgExec --list-secret-keys --with-colons)
+  export KEY_FP=$(printf '%s' "$key_list" | awk -F: '/^fpr:/ { print $10; exit }')
+  export KEY_ID="${KEY_FP: -16}"
   if [[ -z "$KEY_FP" || -z "$KEY_ID" ]]; then
     fail "could not set key fingerprint"
   fi
@@ -108,35 +105,35 @@ set_fingerprint() { # Sets Key ID and Fingerprint environment vars.
 }
 
 gen_key_subs() { # Generates Subkeys with specified expiration.
-  echo "$CERTIFY_PASS" |
-    $gpgExec --batch --passphrase-fd 0 --pinentry-mode=loopback \
+  printf '%s' "$CERTIFY_PASS" |
+    $gpgExec --batch --passphrase-fd 0 --pinentry-mode loopback \
       --quick-add-key "$KEY_FP" "$KEY_TYPE_SIGN" \
       "sign" "$KEY_EXPIRATION"
-  echo "$CERTIFY_PASS" |
-    $gpgExec --batch --passphrase-fd 0 --pinentry-mode=loopback \
+  printf '%s' "$CERTIFY_PASS" |
+    $gpgExec --batch --passphrase-fd 0 --pinentry-mode loopback \
       --quick-add-key "$KEY_FP" "$KEY_TYPE_ENC" \
       "encrypt" "$KEY_EXPIRATION"
-  echo "$CERTIFY_PASS" |
-    $gpgExec --batch --passphrase-fd 0 --pinentry-mode=loopback \
+  printf '%s' "$CERTIFY_PASS" |
+    $gpgExec --batch --passphrase-fd 0 --pinentry-mode loopback \
       --quick-add-key "$KEY_FP" "$KEY_TYPE_AUTH" \
       "auth" "$KEY_EXPIRATION"
 }
 
 save_secrets() { # Exports secret keys to local files.
-  export OUTPUT_CERTIFY="$GNUPGHOME/$KEY_ID-Certify.key"
-  export OUTPUT_SUBKEYS="$GNUPGHOME/$KEY_ID-Subkeys.key"
-  echo "$CERTIFY_PASS" |
+  local OUTPUT_CERTIFY="$GNUPGHOME/secret-$KEY_ID-Certify.key"
+  local OUTPUT_SUBKEYS="$GNUPGHOME/secret-$KEY_ID-Subkeys.key"
+  printf '%s' "$CERTIFY_PASS" |
     $gpgExec --output "$OUTPUT_CERTIFY" \
-      --batch --pinentry-mode=loopback --passphrase-fd 0 \
+      --batch --pinentry-mode loopback --passphrase-fd 0 \
       --armor --export-secret-keys "$KEY_ID"
-  echo "$CERTIFY_PASS" |
+  printf '%s' "$CERTIFY_PASS" |
     $gpgExec --output "$OUTPUT_SUBKEYS" \
-      --batch --pinentry-mode=loopback --passphrase-fd 0 \
+      --batch --pinentry-mode loopback --passphrase-fd 0 \
       --armor --export-secret-subkeys "$KEY_ID"
 }
 
 save_pubkey() { # Exports public key to local file.
-  export OUTPUT_PUBKEY="$GNUPGHOME/$KEY_ID-Public.asc"
+  export OUTPUT_PUBKEY="$GNUPGHOME/public-$KEY_ID-$(date +%F).asc"
   $gpgExec --output "$OUTPUT_PUBKEY" \
     --armor --export "$KEY_ID"
 }

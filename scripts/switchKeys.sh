@@ -1,4 +1,5 @@
 #!/bin/sh
+# https://github.com/drduh/YubiKey-Guide/blob/main/scripts/switchKeys.sh
 #
 # To duplicate YubiKey for GPG credentials:
 # 1. Generate keys/subkeys

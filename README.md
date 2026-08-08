@@ -1,12 +1,15 @@
 This guide demonstrates how to store credentials on a [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/). The private keys cannot be copied back out of the device; a separate offline "Certify" key is retained only to replace or renew them.
 
 - [Purchase YubiKey](#purchase-yubikey)
-- [Prepare environment](#prepare-environment)
+- [Prepare setup environment](#prepare-setup-environment)
+  - [Download and verify Debian](#download-and-verify-debian)
+  - [Create bootable USB device](#create-bootable-usb-drive)
+  - [Prepare hardware](#prepare-hardware)
 - [Install software](#install-software)
 - [Prepare GnuPG](#prepare-gnupg)
   - [Configuration](#configuration)
   - [Identity](#identity)
-  - [Key](#key)
+  - [Key algorithm](#key-algorithm)
   - [Expiration](#expiration)
   - [Passphrase](#passphrase)
 - [Create Certify key](#create-certify-key)
@@ -62,15 +65,15 @@ This guide demonstrates how to store credentials on a [YubiKey](https://www.yubi
 
 Choose a [YubiKey](https://www.yubico.com/store/compare/) with the OpenPGP application - Security Key and Bio models are not compatible.
 
-[Verify YubiKey](https://support.yubico.com/hc/en-us/articles/360013723419-How-to-Confirm-Your-Yubico-Device-is-Genuine) by visiting [yubico.com/genuine](https://www.yubico.com/genuine/). Select *Verify Device* to begin the process. Touch the YubiKey when prompted and allow the site to see the make and model of the device when prompted. This device attestation may help mitigate [supply chain attacks](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
+Verify the YubiKey at [yubico.com/genuine](https://www.yubico.com/genuine/). Select Verify Device, touch the key when prompted, and allow the site to identify the device model. This can help detect some [supply chain tampering](https://media.defcon.org/DEF%20CON%2025/DEF%20CON%2025%20presentations/DEF%20CON%2025%20-%20r00killah-and-securelyfitz-Secure-Tokin-and-Doobiekeys.pdf).
 
 Have at least two USB drives or microSD cards for storing encrypted offline backups in different physical locations.
 
-# Prepare environment
+# Prepare setup environment
 
-A dedicated and hardened operating environment should be used to generate materials.
+Use a dedicated, hardened environment to generate the keys and backups.
 
-The following is a ranked list of least to most defensible environments to consider:
+The following environments are ordered from least to most secure for this task:
 
 1. Public, shared or other computer owned by someone else
 1. Daily-use personal operating system with unrestricted network access
@@ -80,12 +83,14 @@ The following is a ranked list of least to most defensible environments to consi
 1. Hardened hardware and firmware (e.g., [Coreboot](https://www.coreboot.org/), [Intel ME removed](https://github.com/corna/me_cleaner))
 1. Air-gapped system without network capabilities, preferably ARM-based Raspberry Pi or other architecturally diverse equivalent
 
-For most people, booting Debian Live from USB on a personal computer is a practical baseline.
+Network isolation and dedicated hardware generally provide stronger protection than a daily-use online system. For most people, booting Debian Live from USB on a personal computer is a practical baseline.
+
+## Download and verify Debian
 
 Download the latest Debian Live image and signature files. These commands download the checksum file, its signature, and the current 64-bit XFCE Live ISO:
 
 ```bash
-export imageUrl="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
+imageUrl="https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/"
 curl -sfL -O "$imageUrl/SHA512SUMS" -O "$imageUrl/SHA512SUMS.sign"
 curl -sfLO "$imageUrl/$(awk '/xfce\.iso$/ {print $NF}' SHA512SUMS)"
 ```
@@ -130,10 +135,12 @@ grep $(sha512sum debian-live-*-amd64-xfce.iso) SHA512SUMS
 
 See [Verifying authenticity of Debian CDs](https://www.debian.org/CD/verify) for more information.
 
-Connect a portable storage device and identify the device path - this guide uses `/dev/sdc` throughout, but this value may differ on your system.
+## Create bootable USB device
+
+Connect a storage device and identify the device path. This guide uses `/dev/sdc` throughout, but this value may differ on your system.
 
 > [!WARNING]
-> The following `dd` commands overwrite every partition and file on the selected device. Check the device path before continuing.
+> The following `dd` commands erase and overwrite the selected device. Check the device path before continuing!
 
 **Linux**
 
@@ -162,7 +169,11 @@ $ doas dd if=debian-live-*-amd64-xfce.iso of=/dev/rsd2c bs=4m
 1951432704 bytes transferred in 139.125 secs (14026448 bytes/sec)
 ```
 
-Power off. Disconnect internal hard drives and all unnecessary devices, such as the wireless card.
+## Prepare hardware
+
+Power off the device.
+
+Disconnect internal hard drives and all unnecessary devices, such as the wireless card.
 
 # Install software
 
@@ -236,25 +247,23 @@ sudo cp -v result/iso/yubikeyLive.iso /dev/sdc ; sync
 
 Skip steps to create a temporary working directory and a hardened configuration, as they are already part of the image.
 
-Test builds using virtualization tools like QEMU. Keep in mind a virtualized environment does not provide the same amount of security as an ephemeral system (see *Prepare environment* above).
-
-Here is an example QEMU invocation after placing `yubikeyLive` in `result/iso` using the above `nix build` command, with 4G memory, 2 CPUs and KVM enabled:
+Test builds using virtualization tools like QEMU. A virtual machine provides less isolation than a booted live system. To test the image in QEMU with 4 GiB of RAM, two CPUs, and KVM enabled:
 
 ```bash
 qemu-system-x86_64 -enable-kvm -m 4G -smp 2 \
   -drive readonly=on,media=cdrom,format=raw,file=result/iso/yubikeyLive.iso
 ```
 
-**Arch**
+**Arch Linux**
 
 ```bash
 sudo pacman -Syu --needed gnupg pcsclite ccid yubikey-personalization
 ```
 
-**RHEL7**
+**Red Hat Enterprise Linux (RHEL)**
 
 ```bash
-sudo yum install -y gnupg2 pinentry-curses pcsc-lite pcsc-lite-libs gnupg2-smime
+sudo yum install -y gnupg2 pinentry pcsc-lite pcsc-lite-libs gnupg2-smime
 ```
 
 **Fedora**
@@ -276,14 +285,15 @@ printf "\nTemporary directory:\t%s\n\n" "$GNUPGHOME"
 ```
 
 > [!NOTE]
-> This temporary directory is only cleared on reboot only when /tmp is memory-backed. Verify the environment uses [tmpfs](https://en.wikipedia.org/wiki/Tmpfs), or securely remove the directory after use.
+> This temporary directory is cleared on reboot only if it is memory-backed. Verify the environment uses [tmpfs](https://en.wikipedia.org/wiki/Tmpfs), or securely remove the directory after completing setup.
 
 ## Configuration
 
 Download the recommended [GnuPG configuration](https://github.com/drduh/YubiKey-Guide/blob/main/config/gpg.conf) into the temporary GnuPG directory.
 
 ```bash
-wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/config/gpg.conf -P $GNUPGHOME
+wget https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/config/gpg.conf \
+  -P $GNUPGHOME
 ```
 
 Review it before use; modern algorithms and privacy-related defaults are selected:
@@ -318,14 +328,14 @@ throw-keyids
 
 ## Identity
 
-Generate a random attribute for the Identity label:
+Generate a random user ID for the Identity label:
 
 ```bash
 export IDENTITY="yk.$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 16)"
 printf "\nIdentity:\t\t%s\n\n" "$IDENTITY"
 ```
 
-If you intend to use email encryption or Git verification, set the Identity label to a real name or email:
+If you intend to use email encryption or Git verification, set the Identity label to a name and email address:
 
 ```bash
 export IDENTITY="YubiKey User <yubikey@example.com>"
@@ -336,9 +346,9 @@ export IDENTITY="YubiKey User <yubikey@example.com>"
 >
 > `export IDENTITY='My Identity (a.k.a. "YubiKey User") <yubikey@example.com>'`
 
-## Key
+## Key algorithm
 
-Set the algorithm and key size - RSA 4096 is recommended:
+Set the key algorithm and size - RSA 4096 is recommended:
 
 ```bash
 export KEY_TYPE=rsa4096
@@ -346,13 +356,15 @@ export KEY_TYPE=rsa4096
 
 ## Expiration
 
-Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable. However, setting an expiry on the Certify key is pointless, because it can be used to extend itself.[^1]
+Determine the desired Subkey validity duration. An expiration date means Subkeys must be periodically renewed or replaced. This limits how long a lost or obsolete key remains usable.
+
+Do not set an expiration date on the Certify key: it is kept offline and is needed to manage Subkeys.[^1]
 
 A two-year expiration for Subkeys is recommended, balancing security and usability. Longer expiration durations reduce maintenance frequency.
 
 When Subkeys expire, they can still be used to decrypt with GnuPG and authenticate with SSH, however they can **not** be used to encrypt nor sign new messages.
 
-Subkeys are renewed or rotated using the Certify key - see [Updating keys](#updating-keys).
+Subkeys are renewed or rotated using the Certify key. See [Updating keys](#updating-keys).
 
 Set Subkeys to expire on a planned date:
 
@@ -383,7 +395,7 @@ export CERTIFY_PASS=$(LC_ALL=C tr -dc "A-Z3-9" < /dev/urandom |
 printf "\nCertify passphrase:\t%s\n\n" "$CERTIFY_PASS"
 ```
 
-To change the passphrase length, delimiting character or group sizes, export the respective variable(s) prior to running the passphrase generation command, for example:
+To change the passphrase length, delimiter character or group size, export the respective variable(s) prior to running the passphrase generation command, for example:
 
 ```bash
 export PASS_GROUPSIZE=6
@@ -434,7 +446,7 @@ Skip this section unless [multiple public identities](https://github.com/drduh/Y
 
 - different email addresses for different languages
 - different email addresses for professional versus personal but please see alternative reason below for not tying these addresses together
-- anonymized email addresses for different git providers
+- anonymized email addresses for different Git providers
 
 An alternative would be to have distinct keys but you would then require multiple YubiKeys, as each can only hold a single Subkey for each type (Signing, Encryption, Authentication). Nevertheless, there can be good reasons to have multiple YubiKeys:
 
@@ -546,7 +558,7 @@ printf '%s' "$CERTIFY_PASS" |
 
 Create a backup on encrypted storage to be kept offline in a secure and durable location.
 
-The following process is recommended to be repeated several times on multiple portable storage devices, as they may fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can create a physical copy of key materials for improved durability.
+Repeat the process several times on multiple portable storage devices, as they may fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can create a physical copy of key materials for improved durability.
 
 > [!TIP]
 > [ext2](https://en.wikipedia.org/wiki/Ext2) file systems (without encryption) can be mounted on Linux and OpenBSD.
@@ -568,7 +580,7 @@ $ sudo fdisk -l /dev/sdc
 Disk /dev/sdc: 14.9 GiB, 15931539456 bytes, 31116288 sectors
 ```
 
-Zero the header to prepare for encryption:
+Clear the first 4 MiB so the operating system does not retain previous partition tables:
 
 ```bash
 sudo dd if=/dev/zero of=/dev/sdc bs=4M count=1
@@ -576,7 +588,7 @@ sudo dd if=/dev/zero of=/dev/sdc bs=4M count=1
 
 Remove and reconnect the storage device so the operating system reads the cleared partition table before the next command.
 
-Erase and create a new partition table:
+Create a new GPT partition table:
 
 ```bash
 sudo fdisk /dev/sdc <<EOF
@@ -585,7 +597,7 @@ w
 EOF
 ```
 
-Create a small partition (at least 20 MB, to account for the LUKS header) for storing secret materials:
+Create a small partition (at least 20 MB, to account for the LUKS header) for storing backups:
 
 ```bash
 sudo fdisk /dev/sdc <<EOF
@@ -611,6 +623,12 @@ printf "\nLUKS passphrase:\t%s\n\n" "$LUKS_PASS"
 ```
 
 This passphrase unlocks the encrypted backup volume, which contains the Certify key. It is needed to renew, rotate, or recover Subkeys. Write the passphrase down or memorize it.
+
+Confirm root privileges are available:
+
+```bash
+sudo -v
+```
 
 Format the partition:
 
@@ -729,13 +747,13 @@ See [OpenBSD FAQ#14](https://www.openbsd.org/faq/faq14.html#softraidCrypto) for 
 # Export public key
 
 > [!IMPORTANT]
-> The YubiKey holds private keys, but each computer also needs the public key and metadata to identify Subkeys and use them with GnuPG. Without the public key, it will **not** be possible to use GnuPG to decrypt and sign. However, YubiKey can still be used for SSH authentication.
+> YubiKey stores the transferred private Subkeys. Each computer also needs the public key and its metadata to identify and use them with GnuPG. Without the public key, it is **not** be possible to use GnuPG to decrypt and sign. However, YubiKey can still be used for SSH authentication.
 
 Connect another portable storage device or create a new partition on the existing one.
 
 **Linux**
 
-Using the same `/dev/sdc` device as in the previous step, create a small (at least 20 Mb is recommended) partition for storing materials:
+Using the same `/dev/sdc` device as in the previous step, create a small (at least 20 MB is recommended) partition for storing materials:
 
 ```bash
 sudo fdisk /dev/sdc <<EOF
@@ -888,7 +906,7 @@ Verify the attribute:
 
 ```console
 $ gpg --card-status | grep Login
-Login data .......: yk-3i568zcrib5f
+Login data .......: yk.3i568zcrib5f
 ```
 
 [Smart card attributes](https://gnupg.org/howtos/card-howto/en/smartcard-howto-single.html) can also be set with `gpg --edit-card` and `admin` mode. Use `help` to see available options. The [login](https://www.gnupg.org/documentation/manuals/gnupg/gpg_002dcard.html) attribute is [required](https://github.com/drduh/YubiKey-Guide/issues/461) to transfer keys.
@@ -1111,7 +1129,7 @@ Name of cardholder: [not set]
 Language prefs ...: [not set]
 Salutation .......:
 URL of public key : [not set]
-Login data .......: yk-3i568zcrib5f
+Login data .......: yk.3i568zcrib5f
 Signature PIN ....: not forced
 Key attributes ...: rsa4096 rsa4096 rsa4096
 Max. PIN lengths .: 127 127 127
@@ -1234,13 +1252,14 @@ ykman openpgp keys set-touch dec on
 ```
 
 > [!NOTE]
-> YubiKey Manager prior to versions 5.1.0 use `enc` instead of `dec` for encryption:
+> YubiKey Manager prior to version 5.1.0 uses `enc` instead of `dec` for encryption:
 
 ```bash
 ykman openpgp keys set-touch enc on
 ```
 
-Even older versions of YubiKey Manager use `touch` instead of `set-touch`
+> [!NOTE]
+> Legacy versions of YubiKey Manager use `touch` instead of `set-touch`.
 
 Signature:
 
@@ -1461,7 +1480,7 @@ sudo service sshd reload
 
 Remove YubiKey and reboot. Log back into Windows, open a WSL console and enter `ssh-add -l` - no output should appear.
 
-Plug in YubiKey, enter the same command to display the ssh key.
+Plug in YubiKey, enter the same command to display the SSH key.
 
 Connect to the remote host and use `ssh-add -l` to confirm forwarding works.
 
@@ -1620,15 +1639,9 @@ You should now be able to use `ssh -A remote` on the _local_ host to log into _r
 
 #### Use S.gpg-agent.ssh
 
-First you need to go through [GnuPG agent forwarding](#gnupg-agent-forwarding), know the conditions for gpg-agent forwarding and know the location of `S.gpg-agent.ssh` on both the local and the remote.
+Before continuing, configure [GnuPG agent forwarding](gnupg-agent-forwarding) and record the local and remote values of `gpgconf --list-dirs agent-ssh-socket`.
 
-You may use the command:
-
-```bash
-gpgconf --list-dirs agent-ssh-socket
-```
-
-Edit `.ssh/config` to add the remote host:
+Edit `~/.ssh/config` to add the remote host:
 
 ```console
 Host
@@ -1639,23 +1652,21 @@ Host
   #Note that ForwardAgent is not wanted here!
 ```
 
-After successfully ssh into the remote host, confirm `/run/user/1000/gnupg/S.gpg-agent.ssh` exists.
-
-Then in the *remote* you can type in command line or configure in the shell rc file with:
+After successfully connecting to the remote host, confirm `/run/user/1000/gnupg/S.gpg-agent.ssh` exists and configure `SSH_AUTH_SOCK`:
 
 ```bash
 export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"
 ```
 
-After sourcing the shell rc file, `ssh-add -l` will return the correct public key.
+`ssh-add -l` should now return the correct public key.
 
 In this process no gpg-agent in the remote is involved, hence `gpg-agent.conf` in the remote is of no use. Also pinentry is invoked locally.
 
 #### Chained forwarding
 
-If you use `ssh-agent` provided by OpenSSH and want to forward it into a *third* box, you can just `ssh -A third` on the *remote*.
+To use `ssh-agent` provided by OpenSSH to forward into a *third* host, use `ssh -A third` on the *remote* host.
 
-Meanwhile, if you use `S.gpg-agent.ssh`, assume you have gone through the steps above and have `S.gpg-agent.ssh` on the *remote*, and you would like to forward this agent into a *third* box, first you may need to configure `sshd_config` and `SSH_AUTH_SOCK` of *third* in the same way as *remote*, then in the ssh config of *remote*, add the following lines
+If you use `S.gpg-agent.ssh`, assume you have gone through the steps above and have `S.gpg-agent.ssh` on the *remote*, and you would like to forward this agent into a *third* box, first configure `sshd_config` and `SSH_AUTH_SOCK` of *third* in the same way as *remote*, then configure SSH of *remote* by adding the following lines:
 
 ```console
 Host third
@@ -1670,7 +1681,7 @@ The path must be set according to `gpgconf --list-dirs agent-ssh-socket` on *rem
 
 ## GitHub
 
-YubiKey can be used to sign commits and tags, and authenticate SSH to GitHub when configured in [Settings](https://github.com/settings/keys).
+YubiKey can be used to sign Git commits and tags, and authenticate [SSH to GitHub](https://github.com/settings/keys).
 
 Configure the signing key:
 
@@ -1736,7 +1747,7 @@ On the local host, run:
 gpgconf --list-dirs agent-extra-socket
 ```
 
-This should return a path to agent-extra-socket - `/run/user/1000/gnupg/S.gpg-agent.extra` - though on older Linux distros (and macOS) it may be `/home/<user>/.gnupg/S.gpg-agent.extra`
+This should return a path to agent-extra-socket - `/run/user/1000/gnupg/S.gpg-agent.extra` - though on some Linux distros (and macOS) it may be `/home/<user>/.gnupg/S.gpg-agent.extra`
 
 Find the agent socket on the **remote** host:
 
@@ -1788,7 +1799,7 @@ On *local* you have `S.gpg-agent.extra` whereas on *remote* and *third*, you onl
 
 ## Using multiple YubiKeys
 
-When a GnuPG key is added to YubiKey using `keytocard`, the credential is deleted from the keyring and a **stub** pointing to the YubiKey is added. The stub identifies the GnuPG key ID and YubiKey serial number.
+When a GnuPG key is added to YubiKey using `keytocard`, the credential is deleted from the keyring and a local reference ('stub') pointing to the card is added. The stub identifies the GnuPG key ID and YubiKey serial number.
 
 When a Subkey is added to an additional YubiKey, the stub is overwritten and will now point to the latest YubiKey. GnuPG will request a specific YubiKey by serial number, as referenced by the stub, and will not recognize another YubiKey with a different serial number.
 
@@ -1818,18 +1829,19 @@ chmod +x ~/scripts/remove-keygrips.sh
 ~/scripts/remove-keygrips.sh $KEY_ID
 ```
 
-See discussion in Issues [#19](https://github.com/drduh/YubiKey-Guide/issues/19) and [#112](https://github.com/drduh/YubiKey-Guide/issues/112) for more information and troubleshooting steps.
+See discussion in [#19](https://github.com/drduh/YubiKey-Guide/issues/19) and [#112](https://github.com/drduh/YubiKey-Guide/issues/112) for more information.
 
 ## Email
 
-YubiKey can be used to decrypt and sign emails and attachments using [Thunderbird](https://www.thunderbird.net/), [Enigmail](https://www.enigmail.net) and [Mutt](http://www.mutt.org/). Thunderbird supports OAuth 2 authentication and can be used with Gmail. See [this EFF guide](https://ssd.eff.org/en/module/how-use-pgp-linux) for more information. Mutt has OAuth 2 support since version 2.0.
+YubiKey can decrypt and sign emails and attachments using [Thunderbird](https://www.thunderbird.net/) and [Mutt](http://www.mutt.org/). Thunderbird supports OAuth and can be used with Gmail. See [this EFF guide](https://ssd.eff.org/en/module/how-use-pgp-linux) for more information.
 
 ### Thunderbird
 
-Follow [instructions on the mozilla wiki](https://wiki.mozilla.org/Thunderbird:OpenPGP:Smartcards#Configure_an_email_account_to_use_an_external_GnuPG_key) to setup YubiKey with Thunderbird using the external GPG provider.
+Follow [Mozilla instructions](https://wiki.mozilla.org/Thunderbird:OpenPGP:Smartcards#Configure_an_email_account_to_use_an_external_GnuPG_key) to setup YubiKey with Thunderbird using the external GPG provider.
 
 > [!NOTE]
-> Thunderbird will [fail](https://github.com/drduh/YubiKey-Guide/issues/448) to decrypt emails if the ASCII `armor` option is enabled in `gpg.conf`. If you see the error `gpg: [don't know]: invalid packet (ctb=2d)` or `message cannot be decrypted (there are unknown problems with this encrypted message)` simply remove this option.
+> Thunderbird will [fail to decrypt](https://github.com/drduh/YubiKey-Guide/issues/448) messages if the `armor` option is configured.
+> If you see the error `gpg: [don't know]: invalid packet (ctb=2d)` or `message cannot be decrypted (there are unknown problems with this encrypted message)`, remove `armor` from `~/.gnupg/gpg.conf`, then restart Thunderbird.
 
 ### Mailvelope
 
@@ -2038,13 +2050,19 @@ sudo umount /mnt/public
 
 Remove the storage device and follow the original steps to transfer new Subkeys (`4`, `5` and `6`) to YubiKey, replacing existing ones.
 
-Reboot or securely erase the GnuPG temporary working directory.
+Reboot or securely erase the temporary working directory.
 
 # Reset YubiKey
 
 If PIN attempts are exceeded, the YubiKey is locked and must be [Reset](https://developers.yubico.com/ykneo-openpgp/ResetApplet.html) and set up again using the encrypted backup.
 
-Copy the following to a file and run `gpg-connect-agent -r $file`, then reinsert the YubiKey to complete reset.
+Use YubiKey Manager to reset the OpenPGP application:
+
+```bash
+ykman openpgp reset
+```
+
+YubiKey can also be reset with [scripts/resetCard.sh](https://github.com/drduh/YubiKey-Guide/blob/main/scripts/resetCard.sh), or by copying the following commands to a file and running `gpg-connect-agent -r <filename>`:
 
 ```console
 /hex
@@ -2063,17 +2081,7 @@ scd apdu 00 44 00 00
 /bye
 ```
 
-Or use `ykman` (sometimes in `~/.local/bin/`):
-
-```console
-$ ykman openpgp reset
-WARNING! This will delete all stored OpenPGP keys and data and restore factory settings? [y/N]: y
-Resetting OpenPGP data, don't remove your YubiKey...
-Success! All data has been cleared and default PINs are set.
-PIN:         123456
-Reset code:  NOT SET
-Admin PIN:   12345678
-```
+Remove and reinsert the YubiKey to complete reset.
 
 # Optional hardening
 
@@ -2121,11 +2129,11 @@ sudo service rng-tools restart
 ## Enable KDF
 
 > [!IMPORTANT]
-> This feature may not be compatible with older GnuPG versions, especially mobile clients. These incompatible clients will not function because the PIN will always be rejected.
+> This feature is not compatible with legacy GnuPG versions, especially mobile clients, and may cause the PIN to always be rejected.
 
 This step must be completed before changing PINs or moving keys or an error will occur: `gpg: error for setup KDF: Conditions of use not satisfied`
 
-Key Derived Function (KDF) enables YubiKey to store the hash of PIN, preventing the PIN from being passed as plain text.
+A key derivation function (KDF) derives a value from the PIN before it is sent to the card, reducing its exposure.
 
 Enable KDF using the default Admin PIN of `12345678`:
 
@@ -2141,15 +2149,13 @@ EOF
 
 This section is primarily focused on Debian/Ubuntu systems, but the concepts apply to any system connected to a network.
 
-Whether using a VM, installing on dedicated hardware, or running a Live OS temporarily, start *without* a network connection and disable any unnecessary services listening on all interfaces before connecting to the network.
+Whether using a virtual machine, installing on dedicated hardware, or running a Live OS temporarily, start *without* a network connection and disable any unnecessary services listening on all interfaces before connecting to the network.
 
-This is because services like `cups` or `avahi` can be listening by default. While this isn't an immediate problem it simply broadens the attack surface. Not everyone will have a dedicated subnet or trusted network equipment they can control, and for the purposes of this guide, these steps treat *any* network as untrusted / hostile.
+Services such as cups and avahi may listen on the network by default, increasing potential attack surface. For this workflow, treat every network as untrusted.
 
 **Disable listening services**
 
-- Ensures only essential network services are running
-- If the service doesn't exist you'll get a "Failed to stop" which is fine
-- Only disable `Bluetooth` if you don't need it
+Ensure only essential network services are running. If a service does not exist, a "Failed to stop" warning may appear:
 
 ```bash
 sudo systemctl stop bluetooth exim4 cups avahi avahi-daemon sshd
@@ -2157,9 +2163,11 @@ sudo systemctl stop bluetooth exim4 cups avahi avahi-daemon sshd
 
 **Firewall**
 
-Enable a basic firewall policy of *deny inbound, allow outbound*. Note that Debian does not come with a firewall, simply disabling the services in the previous step is fine. The following options have Ubuntu and similar systems in mind.
+Enable a basic firewall policy of *deny inbound, allow outbound*.
 
-On Ubuntu, `ufw` is built in and easy to enable:
+Debian does not enable a default host-firewall policy by default.
+
+On Ubuntu, [ufw](https://ubuntu.com/server/docs/how-to/security/firewalls/) is built-in and can be enabled with:
 
 ```bash
 sudo ufw enable
@@ -2169,7 +2177,7 @@ On systems without `ufw`, `nftables` is replacing `iptables`. The [nftables wiki
 
 Download this README and any other resources to another external drive when creating the bootable media, to have this information ready to use offline.
 
-Regardless of which policy you use, write the contents to a file (e.g. `nftables.conf`) and apply the policy with the following command:
+Regardless of which policy is configured, write the contents to a file (e.g., `nftables.conf`) and apply the policy with the following command:
 
 ```bash
 sudo nft -f ./nftables.conf
