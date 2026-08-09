@@ -980,25 +980,31 @@ ssb>  rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
 
 # Finish setup
 
-Confirm the following steps were successfully completed to finish setup:
+Confirm that each of the following steps was successfully completed:
 
-- [ ] Memorized or recorded the Certify key passphrase and stored it in a secure, durable location
-  - `echo $CERTIFY_PASS` to see it again
-  - [passphrase.html](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [passphrase.txt](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe it
-- [ ] Memorized or recorded the passphrase for the encrypted backup volume and stored it separately from that volume
-  - `echo $LUKS_PASS` to see it again
-  - [passphrase.html](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [passphrase.txt](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe it
-- [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
-  - At least two backups are recommended
-  - Backups stored at separate locations
-- [ ] Exported a copy of the public key where it can be easily accessed later
-  - Separate device or non-encrypted partition was used
-- [ ] Memorized or wrote down the User PIN and Admin PIN, which are unique and changed from default values
-  - `echo $USER_PIN $ADMIN_PIN` to see them again
-  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe them
-- [ ] Moved Encryption, Signature and Authentication Subkeys to YubiKey
-  - `gpg -K` shows `ssb>` for all 3 Subkeys
-- [ ] Cleared temporary working directory/environment with reboot or explicit command
+- [ ] Memorized or recorded the Certify key passphrase and stored it in a secure, durable location separate from the encrypted backup.
+  - Run `echo $CERTIFY_PASS` to display it again.
+  - Use [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to record it.
+
+- [ ] Memorized or recorded the passphrase for the encrypted backup volume and stored it separately from that volume.
+  - Run `echo $LUKS_PASS` to display it again.
+  - Use [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to record it.
+
+- [ ] Saved the Certify key and Subkeys to encrypted portable storage and stored the backups offline.
+  - Keep at least two backups.
+  - Store the backups in separate physical locations.
+
+- [ ] Exported a copy of the public key to a location that is easy to access later.
+  - Use a separate device or a non-encrypted partition.
+
+- [ ] Memorized or recorded the unique User PIN and Admin PIN after changing them from their default values.
+  - Run `echo $USER_PIN $ADMIN_PIN` to display them again.
+  - Use [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to record them.
+
+- [ ] Transferred the Encryption, Signature, and Authentication Subkeys to the YubiKey.
+  - Confirm that `gpg -K` shows `ssb>` for all three Subkeys.
+
+- [ ] Cleared the temporary GnuPG working directory by rebooting or by removing it.
 
 # Using YubiKey
 
