@@ -1194,7 +1194,7 @@ secret() {
   local output="${file}.$(date +%s).enc"
   gpg --encrypt --armor --recipient "${KEY_ID}" \
       --output "${output}" -- "${file}" &&
-    printf '%s -> %s' "${file}" ${output}"
+    printf '%s -> %s' "${file}" "${output}"
 }
 
 reveal() {
@@ -1830,7 +1830,7 @@ mkdir -p ~/scripts && cat >> ~/scripts/remove-keygrips.sh <<EOF
 KEYGRIPS=$(gpg --with-keygrip --list-secret-keys "$@" | awk '/Keygrip/ { print $3 }')
 for keygrip in $KEYGRIPS
 do
-    rm "$HOME/.gnupg/private-keys-v1.d/$keygrip.key" 2> /dev/null
+  rm "$HOME/.gnupg/private-keys-v1.d/$keygrip.key" 2> /dev/null
 done
 
 gpg --card-status
@@ -2248,7 +2248,7 @@ General YubiKey or GnuPG issue | Remove and reinsert the YubiKey, or restart `gp
 `Yubikey core error: no yubikey present` | Confirm that the YubiKey is inserted correctly. It should blink once when plugged in.
 `Yubikey core error: no yubikey present` persists | Install a newer version of `yubikey-personalization`, as described in [Install software](#install-software).
 `General key info..: [none]` in card-status output | Import the public key.
-The public key is lost | Follow [Recovering lost GPG public keys from your YubiKey](https://www.nicksherlock.com/2021/08/recovering-lost-gpg-public-keys-from-your-yubikey/) to recover it from the YubiKey.
+The public key is lost | Follow [Recovering lost GPG public keys from your YubiKey](https://www.nicksherlock.com/2021/08/recovering-lost-gpg-public-keys-from-your-yubikey/).
 `gpg: decryption failed: secret key not available` | Install GnuPG 2.x. Also verify that the PIN is correct and that the required private Subkey is available on the YubiKey.
 `Yubikey core error: write error` | The YubiKey may be locked. Install and run `yubikey-personalization-gui` to unlock it.
 `Key does not match the card's capability` | Use 2048-bit RSA key sizes.
@@ -2272,7 +2272,7 @@ Unexpected PIN prompts during SSH authentication | Add `disable-application piv`
 
 Create `/etc/polkit-1/rules.d/99-pcscd.rules` with the following contents:
 
-```toml
+```console
 polkit.addRule(function(action, subject) {
         if (action.id == "org.debian.pcsc-lite.access_card" &&
                 subject.isInGroup("wheel")) {
@@ -2299,7 +2299,6 @@ polkit.addRule(function(action, subject) {
 - [Yubico - PGP](https://developers.yubico.com/PGP/)
 - [Yubico - YubiKey Personalization](https://developers.yubico.com/yubikey-personalization/)
 - [A Visual Explanation of GPG Subkeys (2022)](https://rgoulter.com/blog/posts/programming/2022-06-10-a-visual-explanation-of-gpg-subkeys.html)
-- [dhess/nixos-yubikey](https://github.com/dhess/nixos-yubikey)
 - [lsasolutions/makegpg](https://gitlab.com/lsasolutions/makegpg)
 - [Trammell Hudson - Yubikey (2020)](https://trmm.net/Yubikey)
 - [Yubikey forwarding SSH keys (2019)](https://blog.onefellow.com/post/180065697833/yubikey-forwarding-ssh-keys)
