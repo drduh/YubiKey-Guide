@@ -980,12 +980,12 @@ ssb>  rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
 
 Confirm the following steps were successfully completed to finish setup:
 
-- [ ] Memorized or wrote down the Certify key (identity) passphrase to a secure and durable location
+- [ ] Memorized or recorded the Certify key passphrase and stored it in a secure, durable location
   - `echo $CERTIFY_PASS` to see it again
-  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe it
-- [ ] Memorized or wrote down passphrase to encrypted volume on portable storage
+  - [passphrase.html](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [passphrase.txt](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe it
+- [ ] Memorized or recorded the passphrase for the encrypted backup volume and stored it separately from that volume
   - `echo $LUKS_PASS` to see it again
-  - [`passphrase.html`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [`passphrase.txt`](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe it
+  - [passphrase.html](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.html) or [passphrase.txt](https://raw.githubusercontent.com/drduh/YubiKey-Guide/main/templates/passphrase.txt) to transcribe it
 - [ ] Saved the Certify key and Subkeys to encrypted portable storage, to be kept offline
   - At least two backups are recommended
   - Backups stored at separate locations
@@ -1629,7 +1629,7 @@ For example, tmux does not have environment variables such as `$SSH_AUTH_SOCK` w
 
 #### Use ssh-agent
 
-You should now be able to use `ssh -A remote` on the _local_ host to log into _remote_ host, and should then be able to use YubiKey as if it were connected to the remote host. For example, using e.g. `ssh-add -l` on that remote host will show the public key from the YubiKey (`cardno:`). Always use `ForwardAgent yes` only for a single host, never for all servers.
+Run `ssh -A remote` from the local host. On the remote host, `ssh-add -l` should list the public key from the YubiKey as a `cardno:` entry. Enable `ForwardAgent yes` only for explicitly trusted hosts!
 
 #### Use S.gpg-agent.ssh
 
@@ -1675,7 +1675,7 @@ The path must be set according to `gpgconf --list-dirs agent-ssh-socket` on *rem
 
 ## GitHub
 
-YubiKey can be used to sign Git commits and tags, and authenticate [SSH to GitHub](https://github.com/settings/keys).
+Use YubiKey to sign Git commits and tags and to authenticate to GitHub over SSH. To authenticate, first add the exported SSH public key to [GitHub SSH keys](https://github.com/settings/keys).
 
 Configure the signing key:
 
@@ -1690,7 +1690,7 @@ git config --global gpg.format ssh
 git config --global user.signingkey ~/.ssh/id_rsa_yubikey.pub
 ```
 
-Configure the `user.name` and `user.email` option to match the email address associated with the identity:
+Configure the `user.name` and `user.email` options to match the identity associated with this key:
 
 ```bash
 git config --global user.name 'YubiKey User'
@@ -1717,11 +1717,11 @@ Then update the repository URL to `git@github.com:USERNAME/repository`
 
 ## GnuPG agent forwarding
 
-YubiKey can be used sign git commits and decrypt files on remote hosts with GnuPG Agent Forwarding. To ssh through another network, especially to push to/pull from GitHub using ssh, see [Remote Machines (SSH Agent forwarding)](#ssh-agent-forwarding).
+YubiKey can sign Git commits and decrypt files on remote hosts by forwarding GnuPG agent operations. To connect through an intermediate host and then access GitHub over SSH, see [SSH agent forwarding](#ssh-agent-forwarding).
 
-`gpg-agent.conf` is not needed on the remote host; after forwarding, remote GnuPG directly communicates with `S.gpg-agent` without starting `gpg-agent` on the remote host.
+After forwarding is configured, GnuPG on the remote host communicates through a forwarded socket to gpg-agent on the local host. The local agent accesses the YubiKey and displays any PIN prompt locally.
 
-On the remote host, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink yes`
+On the remote host, edit `/etc/ssh/sshd_config` to set `StreamLocalBindUnlink yes`.
 
 **Optional** Without root access on the remote host to edit `/etc/ssh/sshd_config`, socket located at `gpgconf --list-dir agent-socket` on the remote host will need to be removed before forwarding works. See [AgentForwarding GNUPG wiki page](https://wiki.gnupg.org/AgentForwarding) for more information.
 
@@ -1874,20 +1874,16 @@ Finally, install the [Mailvelope extension](https://chromewebstore.google.com/de
 
 ### Mutt
 
-Mutt has both CLI and TUI interfaces - the latter provides powerful functions for processing email. In addition, PGP can be integrated such that cryptographic operations can be done without leaving TUI.
-
-To enable GnuPG support, copy `/usr/share/doc/mutt/samples/gpg.rc`
-
-Edit the file to enable options `pgp_default_key`, `pgp_sign_as` and `pgp_autosign`
-
-`source` the file in `muttrc`
+Mutt can be used from the command line or its text-based interface. To enable OpenPGP support, copy the sample GnuPG configuration file (`/usr/share/doc/mutt/samples/gpg.rc`), set `pgp_default_key`, `pgp_sign_as`, and `pgp_autosign` in that file, then add a source line for it in the Mutt configuration file (`~/.muttrc`).
 
 > [!NOTE]
-> `pinentry-tty` set as the pinentry program (in `gpg-agent.conf`) is reported to cause problems with Mutt TUI, because it uses curses; use `pinentry-curses` or other graphic pinentry program instead.
+> `pinentry-tty` set as the pinentry program in `gpg-agent.conf` may cause problems with Mutt because it uses curses; use `pinentry-curses` or other graphic pinentry program instead.
 
 ## Keyserver
 
-Public keys can be uploaded to a public server for discoverability:
+Optionally, publish the public key to a keyserver so others can find it.
+
+Select a server to send it to:
 
 ```bash
 gpg --send-key $KEY_ID
@@ -1901,7 +1897,7 @@ Or if [uploading to keys.openpgp.org](https://keys.openpgp.org/about/usage):
 gpg --export $KEY_ID | curl -T - https://keys.openpgp.org
 ```
 
-The public key URL can also be added to YubiKey (based on [Shaw 2003](https://datatracker.ietf.org/doc/html/draft-shaw-openpgp-hkp-00)):
+A retrieval URL can also be stored on YubiKey:
 
 ```bash
 URL="hkps://keyserver.ubuntu.com:443/pks/lookup?op=get&search=${KEY_ID}"
@@ -1920,13 +1916,12 @@ gpg/card> quit
 
 # Updating keys
 
-PGP does not provide [forward secrecy](https://en.wikipedia.org/wiki/Forward_secrecy), meaning a compromised key may be used to decrypt all past messages. Although keys stored on YubiKey are more difficult to exploit, it is not impossible: the key and PIN could be physically compromised, or a vulnerability may be discovered in firmware or in the random number generator used to create keys, for example. Therefore, it is recommended practice to rotate Subkeys periodically.
+OpenPGP does not provide [forward secrecy](https://en.wikipedia.org/wiki/Forward_secrecy): if an encryption key is compromised, an attacker may be able to decrypt messages encrypted to that key in the past. Renewing or replacing Subkeys limits future use of a lost or obsolete key, but it may not protect previously encrypted data. Choose an expiration and renewal schedule to meet individual risk tolerance and maintenance capacity preferences.
 
 When a Subkey expires, it can either be renewed or replaced. Both actions require access to the Certify key.
 
-- Renewing Subkeys by updating expiration indicates continued custody of the Certify key and is generally more convenient.
-
-- Replacing Subkeys is less convenient, but potentially more secure: new Subkeys will **not** be able to decrypt previous messages, nor authenticate with SSH, etc. Recipients will need the updated public key. Any encrypted secrets must be decrypted and re-encrypted to new Subkeys. This process is functionally equivalent to losing the YubiKey and provisioning a new one.
+- Renewal preserves existing Subkeys and is generally simpler to operate.
+- Replacement creates new Subkeys and may be more secure: new Subkeys will **not** be able to decrypt previous data, authenticate with SSH, etc. The public key will need to be updated and any encrypted data must be decrypted and re-encrypted to new Subkeys. This process is functionally equivalent to provisioning a new YubiKey.
 
 Neither rotation method is superior and it is up to personal philosophy on identity management and individual threat modeling to decide which one to use, or whether to expire Subkeys at all. Ideally, Subkeys would be ephemeral: used only once for each unique encryption, signature and authentication event, however in practice that is not really practical nor worthwhile with YubiKey. Advanced users may dedicate an air-gapped machine for frequent credential rotation.
 
@@ -2181,7 +2176,7 @@ sudo nft -f ./nftables.conf
 
 `NetworkManager` should be the only listening service on port 68/udp to obtain a DHCP lease (and 58/icmp6 if you have IPv6).
 
-If you want to look at every process's command line arguments you can use `ps axjf`. This prints a process tree which may have a large number of lines but should be easy to read on a live image or fresh install.
+To examine a process's command line arguments, use `ps axjf` to print a process tree.
 
 ```bash
 # Dump network state information
@@ -2210,21 +2205,19 @@ pgrep -f '<process-name-or-command-line-string>'
 sudo kill <pid>
 ```
 
-Now connect networking.
+After reviewing the system state and applying any desired restrictions, connect to the network only to download required software. Disconnect again before generating keys.
 
 # Notes
 
-1. YubiKey has two configurations, invoked with either a short or long press. By default, the short-press mode is configured for HID OTP; a brief touch will emit an OTP string starting with `cccccccc`. OTP mode can be swapped to the second configuration via the YubiKey Personalization tool or disabled entirely using [YubiKey Manager](https://developers.yubico.com/yubikey-manager): `ykman config usb -d OTP`
+1. YubiKey has two USB configurations selected by a short or long touch. By default, a short touch may type a one-time-password string beginning with `cccccccc`. This behavior is separate from the OpenPGP workflow and can be moved to the second configuration or disabled with `ykman config usb -d OTP`.
 
 1. Using YubiKey for GnuPG does not prevent use of [other features](https://developers.yubico.com/), such as [WebAuthn](https://developers.yubico.com/WebAuthn/) and [OTP](https://developers.yubico.com/OTP/).
 
-1. Add additional identities to a Certify key with the `adduid` command during setup, then trust it ultimately with `trust` and `5` to configure for use.
-
-1. To switch between YubiKeys, remove the first YubiKey and restart gpg-agent, ssh-agent and pinentry with `pkill "gpg-agent|ssh-agent|pinentry" ; eval $(gpg-agent --daemon --enable-ssh-support)` then insert the other YubiKey and run `gpg-connect-agent updatestartuptty /bye`
+1. To switch between YubiKeys, remove the first YubiKey and restart gpg-agent, ssh-agent and pinentry with `pkill "gpg-agent|ssh-agent|pinentry" ; eval $(gpg-agent --daemon --enable-ssh-support)` then insert the other YubiKey and run `gpg-connect-agent updatestartuptty /bye`.
 
 1. To use YubiKey on multiple computers, import the corresponding public keys, then confirm YubiKey is visible with `gpg --card-status`. Trust the imported public keys ultimately with `trust` and `5`, then `gpg --list-secret-keys` will show the correct and trusted key.
 
-1. When the Certify key is offline, *caveat emptor*: If you wish to [participate in keysigning parties](https://www.gnupg.org/gph/en/manual/x334.html), you'll find [signing others' imported public keys](https://gist.github.com/F21/b0e8c62c49dfab267ff1d0c6af39ab84) requires first setting up a secure enclave such as the ephemeral environment described above and importing your Certify key into that enclave. [A signing subkey cannot be used to sign others' imported public keys](https://security.stackexchange.com/questions/153057/possible-to-sign-an-imported-key-with-a-subkey-using-gpg).
+1. To [participate in keysigning parties](https://www.gnupg.org/gph/en/manual/x334.html), signing [imported public keys](https://gist.github.com/F21/b0e8c62c49dfab267ff1d0c6af39ab84) requires first setting up a secure ephemeral environment and importing the Certify key into that enclave; a signing Subkey cannot be used to sign [imported public keys](https://security.stackexchange.com/questions/153057/possible-to-sign-an-imported-key-with-a-subkey-using-gpg).
 
 # Troubleshooting
 
