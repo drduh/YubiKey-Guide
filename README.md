@@ -2221,79 +2221,52 @@ After reviewing the system state and applying any desired restrictions, connect 
 
 # Troubleshooting
 
-- Use `man gpg` to understand GnuPG options and command-line flags.
+Symptom or error | Recommended action
+--- | ---
+General GnuPG questions or unfamiliar options | Use `man gpg` to review GnuPG options and command-line flags.
+Need more diagnostic detail | Restart `gpg-agent` with verbose debug output: `pkill gpg-agent; gpg-agent --daemon --no-detach -v -v --debug-level advanced --homedir ~/.gnupg`
+General YubiKey or GnuPG issue | Remove and reinsert the YubiKey, or restart `gpg-agent`.
+`Yubikey core error: no yubikey present` | Confirm that the YubiKey is inserted correctly. It should blink once when plugged in.
+`Yubikey core error: no yubikey present` persists | Install a newer version of `yubikey-personalization`, as described in [Install software](#install-software).
+`General key info..: [none]` in card-status output | Import the public key.
+The public key is lost | Follow [Recovering lost GPG public keys from your YubiKey](https://www.nicksherlock.com/2021/08/recovering-lost-gpg-public-keys-from-your-yubikey/) to recover it from the YubiKey.
+`gpg: decryption failed: secret key not available` | Install GnuPG 2.x. Also verify that the PIN is correct and that the required private Subkey is available on the YubiKey.
+`Yubikey core error: write error` | The YubiKey may be locked. Install and run `yubikey-personalization-gui` to unlock it.
+`Key does not match the card's capability` | Use 2048-bit RSA key sizes.
+`sign_and_send_pubkey: signing failed: agent refused operation` | Verify that `ssh-agent` has been replaced with `gpg-agent`, as described in [Replace agents](#replace-agents).
+`sign_and_send_pubkey: signing failed: agent refused operation` persists | Run `gpg-connect-agent updatestartuptty /bye`.
+`sign_and_send_pubkey: signing failed: agent refused operation` persists after updating the startup TTY | Set a valid `pinentry` program path in `~/.gnupg/gpg-agent.conf`. A related error may be `gpg: decryption failed: No secret key`.
+`sign_and_send_pubkey: signing failed: agent refused operation` with OpenSSH 8.9p1 or later | This may be a known OpenSSH issue. Review the linked [Arch Linux discussion](https://bbs.archlinux.org/viewtopic.php?id=274571).
+`The agent has no identities` from `ssh-add -L` | Install and start `scdaemon`.
+`Error connecting to agent: No such file or directory` from `ssh-add -L` | Ensure that the agent's UNIX socket is configured and available. Review [Replace agents](#replace-agents).
+`Permission denied (publickey)` | Run SSH with verbosity, for example `ssh -v host`, and confirm that the card's public key is offered: `Offering public key: RSA SHA256:... cardno:00060123456`. Also verify the user exists on the target system (different from the user on the local system).
+SSH authentication still fails | Increase SSH verbosity with up to three flags: `ssh -vvv host`.
+SSH authentication still fails after reviewing verbose client output | On the server, stop the background SSH service, for example with `sudo systemctl stop sshd`, then run `/usr/sbin/sshd -eddd` in the foreground with extensive debug logging to inspect the authentication attempt. Note that the server will not fork and will only process one connection and has to be restarted after every SSH connection test.
+`Please insert the card with serial number ...` | See [Using multiple YubiKeys](#using-multiple-yubikeys).
+`There is no assurance this key belongs to the named user`, `encryption failed: Unusable public key`, or `No public key` | Run `gpg --edit-key` and set owner trust to `5 = I trust ultimately`.
+`Need the secret key to do this` while setting trust | Specify trust for the identity with the `trust-key [key ID]` directive.
+`pass insert` reports `There is no assurance this key belongs to the named user` and `encryption failed: Unusable public key` | Adjust the identity's trust level as described above.
+`gpg: ... skipped: Unusable public key`, `signing failed: Unusable secret key`, or `encryption failed: Unusable public key` | The Subkey may have expired. Follow [Updating keys](#updating-keys) to renew or rotate the Subkeys.
+The pinentry dialog does not appear and SSH signing fails with `agent refused operation` | Install the `dbus-user-session` package, then restart the session or system.
+`gpg: selecting card failed: No such device` or `gpg: OpenPGP card not available: No such device` | The local `pcscd` service may lack permission to access the card. Create the Polkit rule shown below, replacing `wheel` if the system uses a different administrative group.
 
-- To get more information on potential errors, restart the `gpg-agent` process with debug output to the console with `pkill gpg-agent; gpg-agent --daemon --no-detach -v -v --debug-level advanced --homedir ~/.gnupg`.
+Create `/etc/polkit-1/rules.d/99-pcscd.rules` with the following contents:
 
-- A lot of issues can be fixed by removing and reinserting YubiKey, or restarting the `gpg-agent` process.
-
-- If you receive the error, `Yubikey core error: no yubikey present` - make sure the YubiKey is inserted correctly. It should blink once when plugged in.
-
-- If you still receive the error, `Yubikey core error: no yubikey present` - you likely need to install newer versions of yubikey-personalize as outlined in [Install software](#install-software).
-
-- If you see `General key info..: [none]` in card status output - import the public key.
-
-- If you receive the error, `gpg: decryption failed: secret key not available` - you likely need to install GnuPG version 2.x. Another possibility is that there is a problem with the PIN, e.g., it is too short or blocked.
-
-- If you receive the error, `Yubikey core error: write error` - YubiKey is likely locked. Install and run yubikey-personalization-gui to unlock it.
-
-- If you receive the error, `Key does not match the card's capability` - you likely need to use 2048-bit RSA key sizes.
-
-- If you receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - make sure you replaced `ssh-agent` with `gpg-agent` as noted above.
-
-- If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - [run the command](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=835394) `gpg-connect-agent updatestartuptty /bye`
-
-- If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - edit `~/.gnupg/gpg-agent.conf` to set a valid `pinentry` program path. `gpg: decryption failed: No secret key` could also indicate an invalid `pinentry` path
-
-- If you still receive the error, `sign_and_send_pubkey: signing failed: agent refused operation` - it is a [known issue](https://bbs.archlinux.org/viewtopic.php?id=274571) that openssh 8.9p1 and higher has issues with YubiKey. Adding `KexAlgorithms -sntrup761x25519-sha512@openssh.com` to `/etc/ssh/ssh_config` often resolves the issue.
-
-- If you receive the error, `The agent has no identities` from `ssh-add -L`, make sure you have installed and started `scdaemon`
-
-- If you receive the error, `Error connecting to agent: No such file or directory` from `ssh-add -L`, the UNIX file socket that the agent uses for communication with other processes may not be set up correctly. On Debian, try `export SSH_AUTH_SOCK="/run/user/$UID/gnupg/S.gpg-agent.ssh"`. Also see that `gpgconf --list-dirs agent-ssh-socket` is returning single path, to existing `S.gpg-agent.ssh` socket.
-
-- If you receive the error, `Permission denied (publickey)`, increase ssh verbosity with the `-v` flag and verify the public key from the card is being offered: `Offering public key: RSA SHA256:abcdefg... cardno:00060123456`. If it is, verify the correct user the target system - not the user on the local system. Otherwise, be sure `IdentitiesOnly` is not [enabled](https://github.com/FiloSottile/whosthere#how-do-i-stop-it) for this host.
-
-- If SSH authentication still fails - add up to 3 `-v` flags to the `ssh` command to increase verbosity.
-
-- If it still fails, it may be useful to stop the background `sshd` daemon process service on the server (e.g. using `sudo systemctl stop sshd`) and instead start it in the foreground with extensive debugging output, using `/usr/sbin/sshd -eddd`. Note that the server will not fork and will only process one connection, therefore has to be restarted after every `ssh` test.
-
-- If you receive the error, `Please insert the card with serial number` see [Using Multiple Keys](#using-multiple-yubikeys).
-
-- If you receive the error, `There is no assurance this key belongs to the named user` or `encryption failed: Unusable public key` or `No public key` use `gpg --edit-key` to set `trust` to `5 = I trust ultimately`
-
-- If, when you try the above command, you get the error `Need the secret key to do this` - specify trust for the identity by using the `trust-key [key ID]` directive.
-
-- If, when using a previously provisioned YubiKey on a new computer with `pass`, you see the following error on `pass insert`, you need to adjust the trust associated with the identity. See the previous note.
-
-```
-gpg: 0x0000000000000000: There is no assurance this key belongs to the named user
-gpg: [stdin]: encryption failed: Unusable public key
-```
-
-- If you receive the error, `gpg: 0x0000000000000000: skipped: Unusable public key`, `signing failed: Unusable secret key`, or `encryption failed: Unusable public key` the Subkey may be expired and can no longer be used to encrypt nor sign messages. It can still be used to decrypt and authenticate, however.
-
-- If the _pinentry_ graphical dialog does not show and this error appears: `sign_and_send_pubkey: signing failed: agent refused operation`, install the `dbus-user-session` package and restart for the `dbus` user session to be fully inherited. This is because `pinentry` complains about `No $DBUS_SESSION_BUS_ADDRESS found`, falls back to `curses` but doesn't find the expected `tty`
-
-- If, when you try the above `--card-status` command, you receive the error, `gpg: selecting card failed: No such device` or `gpg: OpenPGP card not available: No such device`, it's possible that the latest release of pcscd now requires polkit rules to operate properly. Create the following file to allow users in the `wheel` group to use the card. Restart `pcscd` to apply the new rules.
-
-```bash
-cat << EOF >  /etc/polkit-1/rules.d/99-pcscd.rules
+```toml
 polkit.addRule(function(action, subject) {
         if (action.id == "org.debian.pcsc-lite.access_card" &&
                 subject.isInGroup("wheel")) {
                 return polkit.Result.YES;
         }
 });
+
 polkit.addRule(function(action, subject) {
         if (action.id == "org.debian.pcsc-lite.access_pcsc" &&
                 subject.isInGroup("wheel")) {
                 return polkit.Result.YES;
         }
 });
-EOF
 ```
-
-- If the public key is lost, follow [this guide](https://www.nicksherlock.com/2021/08/recovering-lost-gpg-public-keys-from-your-yubikey/) to recover it from YubiKey.
 
 # Alternative solutions
 
