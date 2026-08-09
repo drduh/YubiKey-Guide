@@ -493,7 +493,9 @@ printf '%s' "$CERTIFY_PASS" |
 Generate the Authentication Subkey:
 
 > [!NOTE]
-> Some SSH servers do not accept RSA authentication keys. To create the Authentication Subkey as [Ed25519](https://ed25519.cr.yp.to/), run `export KEY_TYPE=ed25519` before the following command.
+> Some SSH servers do not accept RSA authentication keys. To use [Ed25519](https://ed25519.cr.yp.to/) instead, run the following command before creating the Authentication Subkey:
+>
+> `export KEY_TYPE=ed25519`
 
 ```bash
 printf '%s' "$CERTIFY_PASS" |
@@ -1156,7 +1158,7 @@ YubiKey is now ready for use!
 Encrypt a message to yourself (useful for storing credentials or protecting backups):
 
 ```bash
-echo -e "\ntest message string" |
+printf "test message string\n" |
   gpg --encrypt --armor \
       --recipient $KEY_ID --output encrypted.txt
 ```
@@ -1170,27 +1172,30 @@ gpg --decrypt --armor encrypted.txt
 To encrypt to multiple recipients/keys, set the preferred key ID last:
 
 ```bash
-echo "test message string" |
+printf "test message string\n" |
   gpg --encrypt --armor \
-      --recipient $KEY_ID_2 \
-      --recipient $KEY_ID_1 \
-      --recipient $KEY_ID_0 \
+      --recipient $KEY_ID3 \
+      --recipient $KEY_ID2 \
+      --recipient $KEY_ID1 \
       --output encrypted.txt
 ```
 
 Use a [shell function](https://github.com/drduh/config/blob/main/zshrc) to make encrypting files easier:
 
 ```bash
-secret () {
-  output="${1}".$(date +%s).enc
-  gpg --encrypt --armor --output ${output} \
-    -r $KEY_ID "${1}" && echo "${1} -> ${output}"
+secret() {
+  local file="${1}"
+  local output="${file}.$(date +%s).enc"
+  gpg --encrypt --armor --recipient "${KEY_ID}" \
+      --output "${output}" -- "${file}" &&
+    printf '%s -> %s' "${file}" ${output}"
 }
 
-reveal () {
-  output=$(echo "${1}" | rev | cut -c16- | rev)
-  gpg --decrypt --output ${output} "${1}" && \
-    echo "${1} -> ${output}"
+reveal() {
+  local file="${1}"
+  local output="${file%.[0-9]*.enc}"
+  gpg --decrypt --output "${output}" -- "${file}" &&
+    printf '%s -> %s' "${file}" "${output}"
 }
 ```
 
@@ -1201,9 +1206,9 @@ $ secret document.pdf
 document.pdf -> document.pdf.1780000000.enc
 
 $ reveal document.pdf.1780000000.enc
+gpg: encrypted with RSA key, ID 0x0000000000000000
 gpg: anonymous recipient; trying secret key 0xF0F2CFEB04341FB5 ...
 gpg: okay, we are the anonymous recipient.
-gpg: encrypted with RSA key, ID 0x0000000000000000
 document.pdf.1780000000.enc -> document.pdf
 ```
 
@@ -1214,7 +1219,8 @@ document.pdf.1780000000.enc -> document.pdf
 Sign a message:
 
 ```bash
-echo "test message string" | gpg --armor --clearsign > signed.txt
+printf "test message string\n" |
+  gpg --armor --clearsign > signed.txt
 ```
 
 Verify the signature:
@@ -1993,7 +1999,8 @@ printf '%s' "$CERTIFY_PASS" |
 Export the updated public key:
 
 ```bash
-gpg --armor --export $KEY_ID | sudo tee /mnt/public/$KEY_ID-$(date +%F).asc
+gpg --armor --export $KEY_ID |
+  sudo tee /mnt/public/public-$KEY_ID-$(date +%F).asc
 ```
 
 Transfer the public key to the destination host and import it:
