@@ -2248,6 +2248,7 @@ SSH authentication still fails after reviewing verbose client output | On the se
 `pass insert` reports `There is no assurance this key belongs to the named user` and `encryption failed: Unusable public key` | Adjust the identity's trust level as described above.
 `gpg: ... skipped: Unusable public key`, `signing failed: Unusable secret key`, or `encryption failed: Unusable public key` | The Subkey may have expired. Follow [Updating keys](#updating-keys) to renew or rotate the Subkeys.
 The pinentry dialog does not appear and SSH signing fails with `agent refused operation` | Install the `dbus-user-session` package, then restart the session or system.
+Unexpected PIN prompts during SSH authentication | Add `disable-application piv` to `~/.gnupg/scdaemon.conf`.
 `gpg: selecting card failed: No such device` or `gpg: OpenPGP card not available: No such device` | The local `pcscd` service may lack permission to access the card. Create the Polkit rule shown below, replacing `wheel` if the system uses a different administrative group.
 
 Create `/etc/polkit-1/rules.d/99-pcscd.rules` with the following contents:
