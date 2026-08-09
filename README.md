@@ -1267,7 +1267,13 @@ Authentication:
 ykman openpgp keys set-touch aut on
 ```
 
-To view and adjust policy options:
+To view the configured touch policy:
+
+```bash
+ykman openpgp info
+```
+
+To adjust the policy, see available options with:
 
 ```bash
 ykman openpgp keys set-touch --help
