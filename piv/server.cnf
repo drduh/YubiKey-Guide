@@ -1,0 +1,43 @@
+# https://github.com/drduh/YubiKey-Guide/blob/main/piv/server.cnf
+
+openssl_conf         = openssl_init
+
+[openssl_init]
+engines              = engine_section
+
+[engine_section]
+pkcs11               = pkcs11_section
+
+[pkcs11_section]
+dynamic_path         = /opt/homebrew/lib/engines-3/libpkcs11.dylib
+MODULE_PATH          = /opt/homebrew/lib/opensc-pkcs11.so
+init                 = 1
+engine_id            = pkcs11
+
+[ ca ]
+default_ca           = yk_piv_server
+
+[ yk_piv_server ]
+certificate          = root.pem
+default_days         = 100
+default_md           = sha512
+dir                  = ./yk_piv_server
+database             = $dir/index
+new_certs_dir        = $dir/certs
+serial               = $dir/serial
+private_key          = pkcs11:object=%02;type=private
+policy               = policy_piv_server
+
+[ policy_piv_server ]
+commonName           = supplied
+
+[ yk_piv_server_cert ]
+basicConstraints     = CA:FALSE
+extendedKeyUsage     = serverAuth
+keyUsage             = digitalSignature, keyEncipherment
+nsCertType           = server
+subjectKeyIdentifier = hash
+subjectAltName       = @alt_names
+
+[ alt_names ]
+DNS.1                = example.local

@@ -138,7 +138,7 @@ default_ca           = yk_piv_server
 
 [ yk_piv_server ]
 certificate          = root.pem
-default_days         = 180
+default_days         = 100
 default_md           = sha512
 dir                  = ./yk_piv_server
 database             = $dir/index
@@ -211,7 +211,7 @@ OPENSSL_CONF=server.cnf $OPENSSL ca \
   -keyform engine \
   -keyfile "pkcs11:id=%02;type=private" \
   -extensions yk_piv_server_cert \
-  -days 180 \
+  -days 100 \
   -in server.csr \
   -out cert.pem
 ```
