@@ -22,11 +22,11 @@ get_cert_start() {
 }
 
 get_cert_end() {
-  printf "20500101000000Z"
+  printf '20500101000000Z'
 }
 
 get_cert_name() {
-  printf '/CN=%s.%s' "yk" "$(tr -dc 'a-z0-9' < /dev/urandom | head -c 16)"
+  printf '/CN=yk.%s' "$(tr -dc 'a-z0-9' < /dev/urandom | head -c 16)"
 }
 
 init_cert_name() {
@@ -38,8 +38,9 @@ init_openssl_bin() {
 }
 
 init_work_dir() {
-  export YK_CA_WORKDIR="$(get_temp_dir)"
+  local YK_CA_WORKDIR="$(get_temp_dir)"
   cp "root.cnf" "$YK_CA_WORKDIR"
+  cd "$YK_CA_WORKDIR"
 }
 
 init_piv_ca() {
@@ -84,6 +85,16 @@ get_cert_detail() {
   $OPENSSL x509 -text -noout -in root.pem
 }
 
+prep_card() {
+  ykman piv info
+  ykman piv reset
+}
+
+load_card() {
+  ykman piv keys import 9c root.key
+  ykman piv certificates import 9c root.pem
+}
+
 # 0. Set temp dir, cert common name and serial
 preflight
 
@@ -99,3 +110,8 @@ self_sign_cert
 # 4. Print signed certificate details
 get_cert_detail
 
+# 5. Check status and reset card
+#prep_card
+
+# 6. Import key and certificate to card
+#load_card
