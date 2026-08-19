@@ -431,7 +431,8 @@ Generate the Certify key:
 ```bash
 printf '%s' "$CERTIFY_PASS" |
   gpg --batch --passphrase-fd 0 \
-      --quick-generate-key "$IDENTITY" "$KEY_TYPE" cert never
+      --quick-generate-key "$IDENTITY" "${KEY_TYPE-rsa4096}" \
+      cert never
 ```
 
 Set and print `KEY_FP` (the full key fingerprint) and `KEY_ID` (the last 16 characters of the fingerprint - a shorter identifier commonly accepted by GnuPG):
@@ -484,10 +485,12 @@ Generate Signature and Encryption Subkeys:
 ```bash
 printf '%s' "$CERTIFY_PASS" |
   gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
-      --quick-add-key "$KEY_FP" "$KEY_TYPE" sign "$KEY_EXPIRATION"
+      --quick-add-key "$KEY_FP" "${KEY_TYPE-rsa4096}" \
+      sign "${KEY_EXPIRATION-2y}"
 printf '%s' "$CERTIFY_PASS" |
   gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
-      --quick-add-key "$KEY_FP" "$KEY_TYPE" encrypt "$KEY_EXPIRATION"
+      --quick-add-key "$KEY_FP" "${KEY_TYPE-rsa4096}" \
+      encrypt "${KEY_EXPIRATION-2y}"
 ```
 
 Generate the Authentication Subkey:
@@ -500,7 +503,8 @@ Generate the Authentication Subkey:
 ```bash
 printf '%s' "$CERTIFY_PASS" |
   gpg --batch --pinentry-mode loopback --passphrase-fd 0 \
-      --quick-add-key "$KEY_FP" "$KEY_TYPE" auth "$KEY_EXPIRATION"
+      --quick-add-key "$KEY_FP" "${KEY_TYPE-ed25519}" \
+      auth "${KEY_EXPIRATION-2y}"
 ```
 
 # Verify keys
@@ -1208,14 +1212,15 @@ reveal() {
 Example output:
 
 ```console
-$ secret document.pdf
-document.pdf -> document.pdf.1780000000.enc
+$ printf 'hello, world!\n' > document.txt
 
-$ reveal document.pdf.1780000000.enc
+$ secret document.txt
+document.txt -> document.txt.1780000000.enc
+
+$ reveal document.txt.*.enc
 gpg: encrypted with RSA key, ID 0x0000000000000000
-gpg: anonymous recipient; trying secret key 0xF0F2CFEB04341FB5 ...
 gpg: okay, we are the anonymous recipient.
-document.pdf.1780000000.enc -> document.pdf
+document.txt.1780000000.enc -> document.txt
 ```
 
 [drduh/Purse](https://github.com/drduh/Purse) is a secrets manager implemented with GnuPG and YubiKey.
@@ -1502,7 +1507,7 @@ An alternate method is the [usbipd-win](https://github.com/dorssel/usbipd-win) l
 
 Create a new rule file at /etc/polkit-1/rules.d/99-pcscd.rules:
 
-```bash
+```conf
 polkit.addRule(function(action, subject) {
     if (action.id == "org.debian.pcsc-lite.access_card" &&
         subject.isInGroup("scard")) {
@@ -2296,8 +2301,11 @@ polkit.addRule(function(action, subject) {
 
 # Additional resources
 
+- [YubiKey Technical Manual (HTML)](https://docs.yubico.com/hardware/yubikey/yk-tech-manual/index.html)
+- [YubiKey Technical Manual (PDF)](https://docs.yubico.com/hardware/yubikey/yk-tech-manual/webdocs.pdf)
 - [Yubico - PGP](https://developers.yubico.com/PGP/)
 - [Yubico - YubiKey Personalization](https://developers.yubico.com/yubikey-personalization/)
+- [Kernel Maintainer PGP guide](https://www.kernel.org/doc/html/v6.19-rc4/process/maintainer-pgp-guide.html)
 - [A Visual Explanation of GPG Subkeys (2022)](https://rgoulter.com/blog/posts/programming/2022-06-10-a-visual-explanation-of-gpg-subkeys.html)
 - [lsasolutions/makegpg](https://gitlab.com/lsasolutions/makegpg)
 - [Trammell Hudson - Yubikey (2020)](https://trmm.net/Yubikey)
