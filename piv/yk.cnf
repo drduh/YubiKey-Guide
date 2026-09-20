@@ -1,0 +1,56 @@
+# https://github.com/drduh/YubiKey-Guide/blob/main/piv/yk.cnf
+
+openssl_conf = openssl_init
+
+[ openssl_init ]
+providers              = yk_provider
+
+[ yk_provider ]
+default                = yk_default
+pkcs11                 = config_pkcs11
+
+[ yk_default ]
+activate               = 1
+
+[ config_pkcs11 ]
+identity               = pkcs11prov
+module                 = /opt/homebrew/opt/libp11/lib/ossl-modules/pkcs11prov.dylib
+pkcs11_module          = /opt/homebrew/lib/opensc-pkcs11.so
+activate               = 1
+
+[ config_root ]
+basicConstraints       = critical, CA:true, pathlen:1
+keyUsage               = critical, keyCertSign, cRLSign
+subjectKeyIdentifier   = hash
+
+[ config_intermediate ]
+authorityKeyIdentifier = keyid, issuer
+basicConstraints       = critical, CA:true, pathlen:0
+keyUsage               = critical, keyCertSign, cRLSign
+subjectKeyIdentifier   = hash
+
+[ config_server ]
+basicConstraints       = CA:FALSE
+extendedKeyUsage       = serverAuth
+keyUsage               = digitalSignature, keyEncipherment
+nsCertType             = server
+subjectKeyIdentifier   = hash
+subjectAltName         = @server_alt_names
+
+[ ca ]
+default_ca             = yk_piv_ca
+
+[ yk_piv_ca ]
+default_days           = 100
+default_md             = sha512
+database               = index
+new_certs_dir          = certs
+serial                 = serial
+policy                 = policy_piv
+
+[ policy_piv ]
+commonName             = supplied
+
+[ server_alt_names ]
+DNS.1                  = example.local
+#DNS.1                  = $ENV::NAME_SERVER
