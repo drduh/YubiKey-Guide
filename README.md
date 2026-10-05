@@ -1656,7 +1656,7 @@ Run `ssh -A remote` from the local host. On the remote host, `ssh-add -l` should
 
 #### Use S.gpg-agent.ssh
 
-Before continuing, configure [GnuPG agent forwarding](gnupg-agent-forwarding) and record the local and remote values of `gpgconf --list-dirs agent-ssh-socket`.
+Before continuing, configure [GnuPG agent forwarding](#gnupg-agent-forwarding) and record the local and remote values of `gpgconf --list-dirs agent-ssh-socket`.
 
 Edit `~/.ssh/config` to add the remote host:
 
