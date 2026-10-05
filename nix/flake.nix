@@ -2,7 +2,7 @@
   description = "A Nix Flake for an xfce-based system with YubiKey setup";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
   };
 
   outputs = {
@@ -24,7 +24,7 @@
             }: let
               gpgAgentConf = pkgs.runCommand "gpg-agent.conf" {} ''
                 sed '/pinentry-program/d' ${self}/../config/gpg-agent.conf > $out
-                echo "pinentry-program ${pkgs.pinentry.curses}/bin/pinentry" >> $out
+                echo "pinentry-program ${pkgs.pinentry-curses}/bin/pinentry" >> $out
               '';
               dicewareAddress = "localhost";
               dicewarePort = 8080;
@@ -81,12 +81,12 @@
                 exec = "${dicewareScript}/bin/${dicewareScript.name}";
               };
             in {
+              image.baseName = lib.mkForce "yubikeyLive";
               isoImage = {
-                isoName = "yubikeyLive.iso";
-                # As of writing, zstd-based iso is 1542M, takes ~2mins to
-                # compress. If you prefer a smaller image and are happy to
-                # wait, delete the line below, it will default to a
-                # slower-but-smaller xz (1375M in 8mins as of writing).
+                # As of writing (nixos-26.05, 2026-10), the zstd-based iso is
+                # 3.1G. The xz default is only marginally smaller (3.0G) but
+                # compresses roughly four times slower, so there is no reason
+                # to delete the line below.
                 squashfsCompression = "zstd";
 
                 appendToMenuLabel = " YubiKey Live ${self.lastModifiedDate}";
@@ -191,7 +191,6 @@
                 # Yubico's official tools
                 yubikey-manager
                 yubikey-personalization
-                yubikey-personalization-gui
                 yubico-piv-tool
                 yubioath-flutter
 
@@ -206,7 +205,7 @@
 
                 # Might be useful beyond the scope of the guide
                 cfssl
-                pcsctools
+                pcsc-tools
                 tmux
                 htop
 
