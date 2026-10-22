@@ -1457,7 +1457,7 @@ PuTTY can now be used for public-key SSH authentication. When the server asks fo
 
 The goal is to configure SSH client inside WSL work together with the Windows agent, such as gpg-agent.exe.
 
-See the [WSL agent architecture](media/schema_gpg.png) illustration for an overview.
+See the [WSL agent architecture](media/schema_gpg.md) illustration for an overview.
 
 GnuPG forwarding for cryptographic operations is not supported. See [vuori/weasel-pageant](https://github.com/vuori/weasel-pageant) for more information.
 
