@@ -1,0 +1,9 @@
+# https://github.com/drduh/YubiKey-Guide/blob/main/config/Brewfile
+# https://docs.brew.sh/Brew-Bundle-and-Brewfile
+# Review a package:  brew info <formula>
+# Install packages:  brew bundle install
+brew "gnupg"
+brew "pinentry-mac"
+brew "ykman"
+brew "yubikey-personalization"
+brew "wget"
