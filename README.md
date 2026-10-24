@@ -1,4 +1,4 @@
-This guide demonstrates how to store credentials on a [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/). The private keys cannot be copied back out of the device; a separate offline "Certify" key is retained only to replace or renew them.
+This guide demonstrates how to store credentials on a [YubiKey](https://www.yubico.com/products/identifying-your-yubikey/). The private keys cannot be copied back out of the device. Keys are first generated on an offline computer, then exported to encrypted offline backups, and then transferred to YubiKey for daily use. If the YubiKey is lost, stolen, or destroyed, keys can be restored from an encrypted backup to a new device.
 
 - [Purchase YubiKey](#purchase-yubikey)
 - [Prepare setup environment](#prepare-setup-environment)
@@ -528,14 +528,14 @@ ssb   rsa4096/0xAD9E24E1B8CB9600 2026-08-01 [A] [expires: 2028-08-01]
 
 # Backup keys
 
-Export the public key:
+Export the public key (not secret - copy goes on unencrypted media later):
 
 ```bash
 gpg --output $GNUPGHOME/public-$KEY_ID-$(date +%F).asc \
     --armor --export $KEY_ID
 ```
 
-Export the Certify key:
+Export the Certify key (secret - this file is the complete recovery copy):
 
 ```bash
 printf '%s' "$CERTIFY_PASS" |
@@ -544,7 +544,7 @@ printf '%s' "$CERTIFY_PASS" |
       --armor --export-secret-keys $KEY_ID
 ```
 
-Export the Subkeys:
+Export the Subkeys (secret - a separate copy without the Certify key):
 
 ```bash
 printf '%s' "$CERTIFY_PASS" |
@@ -553,12 +553,12 @@ printf '%s' "$CERTIFY_PASS" |
       --armor --export-secret-subkeys $KEY_ID
 ```
 
+The Certify key file alone is sufficient for a full recovery. The Subkeys file is an additional copy that excludes the Certify key, so it cannot be used to create new Subkeys or revoke existing ones.
+
 > [!IMPORTANT]
-> The exported `.key` files contain secret keys. Anyone who obtains these files and the Certify key passphrase can create Subkeys and sign or decrypt data encrypted to those keys.
+> The exported `.key` files contain secrets. Anyone who obtains these files and the Certify key passphrase can create Subkeys and sign or decrypt data encrypted to those keys.
 
-Create a backup on encrypted storage to be kept offline in a secure and durable location.
-
-Repeat the process several times on multiple portable storage devices, as they may fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can create a physical copy of key materials for improved durability.
+Next, store the exported files on an encrypted USB drive kept offline in a secure, durable location. Repeat the process several times on multiple portable storage devices, as they may fail over time. As an additional backup measure, [Paperkey](https://www.jabberwocky.com/software/paperkey/) can create a physical copy of key materials for improved durability.
 
 > [!TIP]
 > [ext2](https://en.wikipedia.org/wiki/Ext2) file systems (without encryption) can be mounted on Linux and OpenBSD.
@@ -2274,6 +2274,7 @@ SSH authentication still fails after reviewing verbose client output | On the se
 The pinentry dialog does not appear and SSH signing fails with `agent refused operation` | Install the `dbus-user-session` package, then restart the session or system.
 Unexpected PIN prompts during SSH authentication | Add `disable-application piv` to `~/.gnupg/scdaemon.conf`.
 `gpg: selecting card failed: No such device` or `gpg: OpenPGP card not available: No such device` | The local `pcscd` service may lack permission to access the card. Create the Polkit rule shown below, replacing `wheel` if the system uses a different administrative group.
+Lost, stolen, damaged, or destroyed YubiKey | Restore from the encrypted backup to a new YubiKey. See [Backup keys](#backup-keys) and [Updating keys](#updating-keys).
 
 Create `/etc/polkit-1/rules.d/99-pcscd.rules` with the following contents:
 

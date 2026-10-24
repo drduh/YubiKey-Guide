@@ -7,3 +7,9 @@ brew "pinentry-mac"
 brew "ykman"
 brew "yubikey-personalization"
 brew "wget"
+# Mailvelope integration
+#brew "gpgme"
+# PIV
+#brew "libp11"
+#brew "opensc"
+#brew "openssl"
