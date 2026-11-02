@@ -81,7 +81,7 @@ The following environments are ordered from least to most secure for this task:
 1. Daily-use personal operating system with unrestricted network access
 1. Virtualized system with limited capabilities (using [virt-manager](https://virt-manager.org/), VirtualBox or VMware, for example)
 1. Dedicated and hardened [Debian](https://www.debian.org/) or [OpenBSD](https://www.openbsd.org/) installation
-1. Ephemeral [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.boum.org/index.en.html) booted without primary storage attached
+1. Ephemeral [Debian Live](https://www.debian.org/CD/live/) or [Tails](https://tails.net/) booted without primary storage attached
 1. Hardened hardware and firmware (e.g., [Coreboot](https://www.coreboot.org/), [Intel ME removed](https://github.com/corna/me_cleaner))
 1. Air-gapped system without network capabilities, preferably ARM-based Raspberry Pi or other architecturally diverse equivalent
 
