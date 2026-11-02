@@ -1501,7 +1501,7 @@ Plug in YubiKey, enter the same command to display the SSH key.
 
 Connect to the remote host and use `ssh-add -l` to confirm forwarding works.
 
-Agent forwarding may be chained through multiple hosts. Follow the same [protocol](#remote-host-configuration) to configure each host.
+Agent forwarding may be chained through multiple hosts. Follow the same [protocol](#chained-forwarding) to configure each host.
 
 An alternate method is the [usbipd-win](https://github.com/dorssel/usbipd-win) library. If you encounter issues with accessing the YubiKey in WSL after configuring usbipd-win, you may need to add custom polkit rules to ensure proper permissions for the pcscd service. Here's an example configuration using a scard group (the group logic is optional):
 
